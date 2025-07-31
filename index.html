@@ -1,240 +1,330 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Stand.earth Staff vCard Generator</title>
-    <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"></script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"
+    ></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <div class="main-container">
-        <div class="content-wrapper">
-            <div class="header-section">
-                <h1 class="main-heading">Stand Staff vCard Generator</h1>
-                <p class="sub-heading">Enter or edit your details below to generate your QR Code. Delete any fields you don't want to include.</p>
-            </div>
-
-            <div class="main-grid">
-                <!-- Left Column: Form -->
-                <div class="form-column">
-                    <div>
-                        <label for="first_name" class="form-label">First Name</label>
-                        <input type="text" id="first_name" class="form-input">
-                    </div>
-                    <div>
-                        <label for="last_name" class="form-label">Last Name</label>
-                        <input type="text" id="last_name" class="form-input">
-                    </div>
-                    <div>
-                        <label for="org" class="form-label">Organization</label>
-                        <input type="text" id="org" class="form-input">
-                    </div>
-                    <div>
-                        <label for="title" class="form-label">Title</label>
-                        <input type="text" id="title" class="form-input">
-                    </div>
-                    <div>
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" id="email" class="form-input">
-                    </div>
-                    
-                    <div>
-                        <label for="work_phone" class="form-label">Work Phone</label>
-                        <input type="tel" id="work_phone" class="form-input">
-                    </div>
-                    <div>
-                        <label for="cell_phone" class="form-label">Cell Phone</label>
-                        <input type="tel" id="cell_phone" class="form-input">
-                    </div>
-                    <div>
-                        <label for="website" class="form-label">Website</label>
-                        <input type="url" id="website" class="form-input">
-                    </div>
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="anniversary_logo" class="form-checkbox" checked>
-                        <label for="anniversary_logo" class="form-label-checkbox">Use 25th Anniversary Logo</label>
-                    </div>
-                </div>
-
-                <!-- Right Column: QR Code Preview -->
-                <div class="qr-preview-column">
-                    <div id="canvas" class="qr-canvas-wrapper"></div>
-                     <div id="download-container" class="download-buttons-container">
-                         <button id="download-png" class="download-button download-button-png">Download PNG</button>
-                         <button id="download-jpg" class="download-button download-button-jpg">Download JPG</button>
-                         <button id="download-svg" class="download-button download-button-svg">Download SVG</button>
-                         <button id="download-vcard" class="download-button download-button-vcard">Download vCard</button>
-                    </div>
-                </div>
-            </div>
-            <div class="vcard-text-container">
-                <h3 class="vcard-text-heading">vCard Text</h3>
-                <pre id="vcard-text-output" class="vcard-text-output"></pre>
-            </div>
-
-            <button id="toggle-advanced-controls" class="toggle-button">Show Advanced Controls</button>
-
-            <div id="advanced-controls" class="advanced-controls-container hidden">
-                <div class="advanced-section">
-                    <h3 class="advanced-section-heading">Main Options</h3>
-                    <div class="advanced-grid-3-col">
-                        <div>
-                            <label for="form-width" class="form-label">Width</label>
-                            <input id="form-width" type="number" min="100" max="10000" value="500" class="form-input"/>
-                        </div>
-                        <div>
-                            <label for="form-height" class="form-label">Height</label>
-                            <input id="form-height" type="number" min="100" max="10000" value="500" class="form-input"/>
-                        </div>
-                        <div>
-                            <label for="form-margin" class="form-label">Margin</label>
-                            <input id="form-margin" type="number" min="0" max="10000" value="5" class="form-input"/>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="advanced-section">
-                    <h3 class="advanced-section-heading">Dots Options</h3>
-                    <div class="advanced-grid-2-col">
-                        <div>
-                            <label for="form-dots-type" class="form-label">Dots Style</label>
-                            <select id="form-dots-type" class="form-input">
-                                <option value="square" selected>Square</option>
-                                <option value="dots">Dots</option>
-                                <option value="rounded">Rounded</option>
-                                <option value="extra-rounded">Extra rounded</option>
-                                <option value="classy">Classy</option>
-                                <option value="classy-rounded">Classy rounded</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="form-round-size" class="form-label">Round Size</label>
-                            <input id="form-round-size" type="checkbox" checked/>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="form-dots-color" class="form-label">Dots Color</label>
-                        <input id="form-dots-color" type="color" value="#000000" class="form-input"/>
-                    </div>
-                </div>
-
-                <div class="advanced-section">
-                    <h3 class="advanced-section-heading">Corners Square Options</h3>
-                    <div class="advanced-grid-2-col">
-                        <div>
-                            <label for="form-corners-square-type" class="form-label">Corners Square Style</label>
-                            <select id="form-corners-square-type" class="form-input">
-                                <option value="" selected>Default</option>
-                                <option value="square">Square</option>
-                                <option value="dot">Dot</option>
-                                <option value="extra-rounded">Extra rounded</option>
-                                <option value="rounded">Rounded</option>
-                                <option value="dots">Dots</option>
-                                <option value="classy">Classy</option>
-                                <option value="classy-rounded">Classy rounded</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="form-corners-square-color" class="form-label">Corners Square Color</label>
-                            <input id="form-corners-square-color" type="color" value="#000000" class="form-input"/>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="advanced-section">
-                    <h3 class="advanced-section-heading">Corners Dot Options</h3>
-                    <div class="advanced-grid-2-col">
-                        <div>
-                            <label for="form-corners-dot-type" class="form-label">Corners Dot Style</label>
-                            <select id="form-corners-dot-type" class="form-input">
-                                <option value="" selected>Default</option>
-                                <option value="square">Square</option>
-                                <option value="dot">Dot</option>
-                                <option value="rounded">Rounded</option>
-                                <option value="dots">Dots</option>
-                                <option value="classy">Classy</option>
-                                <option value="classy-rounded">Classy rounded</option>
-                                <option value="extra-rounded">Extra rounded</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="form-corners-dot-color" class="form-label">Corners Dot Color</label>
-                            <input id="form-corners-dot-color" type="color" value="#e50b12" class="form-input"/>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="advanced-section">
-                    <h3 class="advanced-section-heading">Background Options</h3>
-                    <div class="advanced-grid-2-col">
-                        <div>
-                            <label for="form-background-color" class="form-label">Background Color</label>
-                            <input id="form-background-color" type="color" value="#ffffff" class="form-input"/>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="advanced-section">
-                    <h3 class="advanced-section-heading">Image Options</h3>
-                    <div class="advanced-grid-2-col">
-                        <div>
-                            <label for="form-image-file" class="form-label">Image File</label>
-                            <input id="form-image-file" type="file" class="form-input"/>
-                        </div>
-                        <div>
-                            <label for="form-hide-background-dots" class="form-label">Hide Background Dots</label>
-                            <input id="form-hide-background-dots" type="checkbox" checked/>
-                        </div>
-                        <div>
-                            <label for="form-save-as-blob" class="form-label">Save Image as Blob (SVG)</label>
-                            <input id="form-save-as-blob" type="checkbox" checked/>
-                        </div>
-                    </div>
-                    <div class="advanced-grid-2-col">
-                        <div>
-                            <label for="form-image-size" class="form-label">Image Size</label>
-                            <input id="form-image-size" type="number" min="0" max="1" step="0.1" value="0.4" class="form-input"/>
-                        </div>
-                        <div>
-                            <label for="form-image-margin" class="form-label">Margin</label>
-                            <input id="form-image-margin" type="number" min="0" max="10000" value="5" class="form-input"/>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="advanced-section">
-                    <h3 class="advanced-section-heading">QR Options</h3>
-                    <div class="advanced-grid-2-col">
-                        <div>
-                            <label for="form-qr-type-number" class="form-label">Type Number</label>
-                            <input id="form-qr-type-number" type="number" min="0" max="40" value="0" class="form-input"/>
-                        </div>
-                        <div>
-                            <label for="form-qr-mode" class="form-label">Mode</label>
-                            <select id="form-qr-mode" class="form-input">
-                                <option value="Numeric">Numeric</option>
-                                <option value="Alphanumeric">Alphanumeric</option>
-                                <option value="Byte" selected>Byte</option>
-                                <option value="Kanji">Kanji</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="form-qr-error-correction-level" class="form-label">Error Correction Level</label>
-                        <select id="form-qr-error-correction-level" class="form-input">
-                            <option value="L">L</option>
-                            <option value="M">M</option>
-                            <option value="Q" selected>Q</option>
-                            <option value="H">H</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            </div>
+      <div class="content-wrapper">
+        <div class="header-section">
+          <h1 class="main-heading">Stand QR Code Generator</h1>
+          <p class="sub-heading">
+            Enter or edit your details below to generate your QR Code. Delete
+            any fields you don't want to include.
+          </p>
         </div>
+
+        <div class="main-grid">
+          <!-- Left Column: Form -->
+          <div class="form-column">
+            <div>
+              <label for="first_name" class="form-label">First Name</label>
+              <input type="text" id="first_name" class="form-input" />
+            </div>
+            <div>
+              <label for="last_name" class="form-label">Last Name</label>
+              <input type="text" id="last_name" class="form-input" />
+            </div>
+            <div>
+              <label for="org" class="form-label">Organization</label>
+              <input type="text" id="org" class="form-input" />
+            </div>
+            <div>
+              <label for="title" class="form-label">Title</label>
+              <input type="text" id="title" class="form-input" />
+            </div>
+            <div>
+              <label for="email" class="form-label">Email</label>
+              <input type="email" id="email" class="form-input" />
+            </div>
+
+            <div>
+              <label for="work_phone" class="form-label">Work Phone</label>
+              <input type="tel" id="work_phone" class="form-input" />
+            </div>
+            <div>
+              <label for="cell_phone" class="form-label">Cell Phone</label>
+              <input type="tel" id="cell_phone" class="form-input" />
+            </div>
+            <div>
+              <label for="website" class="form-label">Website</label>
+              <input type="url" id="website" class="form-input" />
+            </div>
+            <div class="checkbox-container">
+              <input
+                type="checkbox"
+                id="anniversary_logo"
+                class="form-checkbox"
+                checked
+              />
+              <label for="anniversary_logo" class="form-label-checkbox"
+                >Use 25th Anniversary Logo</label
+              >
+            </div>
+          </div>
+
+          <!-- Right Column: QR Code Preview -->
+          <div class="qr-preview-column">
+            <div id="canvas" class="qr-canvas-wrapper"></div>
+            <div id="download-container" class="download-buttons-container">
+              <button
+                id="download-png"
+                class="download-button download-button-png"
+              >
+                Download PNG
+              </button>
+              <button
+                id="download-jpg"
+                class="download-button download-button-jpg"
+              >
+                Download JPG
+              </button>
+              <button
+                id="download-svg"
+                class="download-button download-button-svg"
+              >
+                Download SVG
+              </button>
+              <button
+                id="download-vcard"
+                class="download-button download-button-vcard"
+              >
+                Download vCard
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="qrcode-text-container">
+          <h3 class="qrcode-text-heading">QR Code Contents</h3>
+          <pre id="qrcode-text-output" class="qrcode-text-output"></pre>
+        </div>
+
+        <div class="button-group">
+          <button id="toggle-advanced-controls" class="toggle-button">
+            Show Advanced Controls
+          </button>
+          <button id="reset-styles-button" class="toggle-button">
+            Reset Style
+          </button>
+        </div>
+
+        <div id="advanced-controls" class="advanced-controls-container hidden">
+          <div class="advanced-section">
+            <h3 class="advanced-section-heading">Background</h3>
+            <div class="color-swatch-container">
+              <input
+                id="form-background-color"
+                type="color"
+                value="#ffffff"
+                class="color-swatch"
+              />
+            </div>
+            <div class="advanced-grid-3-col">
+              <div>
+                <label for="form-width" class="form-label">Width</label>
+                <input
+                  id="form-width"
+                  type="number"
+                  min="100"
+                  max="10000"
+                  value="500"
+                  class="form-input"
+                />
+              </div>
+              <div>
+                <label for="form-height" class="form-label">Height</label>
+                <input
+                  id="form-height"
+                  type="number"
+                  min="100"
+                  max="10000"
+                  value="500"
+                  class="form-input"
+                />
+              </div>
+              <div>
+                <label for="form-margin" class="form-label">Margin</label>
+                <input
+                  id="form-margin"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  value="5"
+                  class="form-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <h3 class="advanced-section-heading">Dots</h3>
+            <div class="color-swatch-container">
+              <input
+                id="form-dots-color"
+                type="color"
+                value="#000000"
+                class="color-swatch"
+              />
+            </div>
+            <div class="advanced-grid-2-col">
+              <div>
+                <select id="form-dots-type" class="form-input">
+                  <option value="square" selected>Square</option>
+                  <option value="dots">Dots</option>
+                  <option value="rounded">Rounded</option>
+                  <option value="extra-rounded">Extra rounded</option>
+                  <option value="classy">Classy</option>
+                  <option value="classy-rounded">Classy rounded</option>
+                </select>
+              </div>
+              <div>
+                <input id="form-round-size" type="checkbox" checked />
+                <label for="form-round-size" class="form-label-checkbox"
+                  >Apply Size Rounding</label
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <h3 class="advanced-section-heading">Corner Squares</h3>
+            <div class="color-swatch-container">
+              <input
+                id="form-corners-square-color"
+                type="color"
+                value="#000000"
+                class="color-swatch"
+              />
+            </div>
+            <div class="advanced-grid-2-col">
+              <div>
+                <select id="form-corners-square-type" class="form-input">
+                  <option value="" selected>Default</option>
+                  <option value="square">Square</option>
+                  <option value="dot">Dot</option>
+                  <option value="extra-rounded">Extra rounded</option>
+                  <option value="rounded">Rounded</option>
+                  <option value="dots">Dots</option>
+                  <option value="classy">Classy</option>
+                  <option value="classy-rounded">Classy rounded</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <h3 class="advanced-section-heading">Corners Dots</h3>
+            <div class="color-swatch-container">
+              <input
+                id="form-corners-dot-color"
+                type="color"
+                value="#e50b12"
+                class="color-swatch"
+              />
+            </div>
+            <div class="advanced-grid-2-col">
+              <div>
+                <select id="form-corners-dot-type" class="form-input">
+                  <option value="" selected>Default</option>
+                  <option value="square">Square</option>
+                  <option value="dot">Dot</option>
+                  <option value="rounded">Rounded</option>
+                  <option value="dots">Dots</option>
+                  <option value="classy">Classy</option>
+                  <option value="classy-rounded">Classy rounded</option>
+                  <option value="extra-rounded">Extra rounded</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <h3 class="advanced-section-heading">Logo / Image</h3>
+            <div class="advanced-grid-2-col">
+              <div style="grid-column: span 2">
+                <input id="form-image-file" type="file" class="form-input" />
+              </div>
+              <div>
+                <label for="form-image-size" class="form-label"
+                  >Image Size</label
+                >
+                <input
+                  id="form-image-size"
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value="0.4"
+                  class="form-input"
+                />
+              </div>
+              <div>
+                <label for="form-image-margin" class="form-label">Margin</label>
+                <input
+                  id="form-image-margin"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  value="5"
+                  class="form-input"
+                />
+              </div>
+              <div>
+                <input id="form-hide-background-dots" type="checkbox" checked />
+                <label for="form-hide-background-dots" class="form-label-checkbox"
+                  >Hide Dots</label
+                >
+              </div>
+              <div>
+                <input id="form-save-as-blob" type="checkbox" checked />
+                <label for="form-save-as-blob" class="form-label-checkbox"
+                  >Save SVG Blob</label
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="advanced-section">
+            <h3 class="advanced-section-heading">QR Options</h3>
+            <div class="advanced-grid-2-col">
+              <div>
+                <label for="form-qr-type-number" class="form-label"
+                  >Type Number</label
+                >
+                <input
+                  id="form-qr-type-number"
+                  type="number"
+                  min="0"
+                  max="40"
+                  value="0"
+                  class="form-input"
+                />
+              </div>
+
+              <div>
+                <label for="form-qr-error-correction-level" class="form-label"
+                  >Error Correction</label
+                >
+                <select id="form-qr-error-correction-level" class="form-input">
+                  <option value="L">Low</option>
+                  <option value="M">Medium</option>
+                  <option value="Q" selected>High</option>
+                  <option value="H">Very High</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>
-</body>
+  </body>
 </html>

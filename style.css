@@ -286,6 +286,11 @@ body {
 .checkbox-container {
   display: flex;
   align-items: flex-start; /* Align items to the top */
+  margin-top: 1rem;
+}
+
+#anniversary-logo-checkbox-container {
+  justify-content: center;
 }
 
 .form-checkbox {
@@ -341,42 +346,34 @@ body {
 .download-buttons-group,
 .control-buttons-group {
   display: flex;
-  flex-wrap: nowrap; /* Prevent internal wrapping */
+  flex-wrap: wrap; /* Allows internal wrapping of buttons */
+  justify-content: center;
   gap: 0.75rem; /* Gap between buttons within the group */
 }
 
-#anniversary-logo-checkbox-container {
-  justify-content: center;
-  margin-top: 1rem; /* Add some top margin for spacing */
+.button-break {
+  display: none; /* Hidden by default */
 }
 
-.logo-toggle-container {
-  width: 100%; /* Ensure it takes full width to center its content */
-  display: flex;
-  justify-content: center;
-  align-items: center;
+@media (min-width: 600px) {
+  /* Adjust this breakpoint as needed */
+  .button-break {
+    display: block; /* Show the break element */
+    flex-basis: 100%; /* Force a new line */
+    height: 0; /* No visual height */
+    margin: 0; /* No extra margin */
+    padding: 0; /* No extra padding */
+  }
 }
 
-.button-controls-wrapper {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
+@media (max-width: 40rem) {
+  /* Target narrow screens */
+  .download-buttons-group .button {
+    flex-basis: calc(50% - 0.375rem); /* Two buttons per line */
+  }
 
-@media (min-width: 48rem) {
-  .button-group {
-    grid-column: span 2;
-    /* flex-direction remains column */
-  }
-  .button-group .toggle-button {
-    width: auto;
-  }
-  .logo-toggle-container {
-    margin-right: 0; /* Remove right margin on desktop */
-  }
-  .button-controls-wrapper {
-    margin-top: 0; /* Remove extra margin if any */
+  .control-buttons-group .button {
+    flex-basis: 100%; /* One button per line */
   }
 }
 

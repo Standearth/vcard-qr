@@ -23,18 +23,12 @@ body {
   margin-left: auto;
   margin-right: auto;
   padding: 1rem;
-  max-width: 90rem; /* Max width for very large screens */
+  /* max-width: 90rem; */
 }
 @media (min-width: 40rem) {
   /* 640px */
   .main-container {
     padding: 1.5rem;
-  }
-}
-@media (min-width: 64rem) {
-  /* 1024px */
-  .main-container {
-    padding: 2rem;
   }
 }
 
@@ -127,12 +121,6 @@ body {
     order: unset; /* Resets order for desktop */
   }
 }
-@media (min-width: 64rem) {
-  /* 1024px */
-  .main-grid {
-    gap: 2rem; /* Matches .main-container padding at 64rem */
-  }
-}
 
 .form-column {
   display: grid;
@@ -201,10 +189,19 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  margin: 0.75rem 0 0;
 }
 
-.button:hover {
-  transform: scale(1.05);
+@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+    transform: scale(
+      1.05
+    ); /* Apply transform only on hover for fine pointers */
+  }
+}
+
+.button:active {
+  transform: scale(1.05); /* Apply transform only when actively pressed */
 }
 
 .button:focus {
@@ -339,23 +336,16 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.75rem; /* Gap between button groups */
+  gap: 0 0.75rem; /* Gap between buttons */
   margin-top: 1.5rem;
-}
-
-.download-buttons-group,
-.control-buttons-group {
-  display: flex;
-  flex-wrap: wrap; /* Allows internal wrapping of buttons */
-  justify-content: center;
-  gap: 0.75rem; /* Gap between buttons within the group */
+  container-type: inline-size;
 }
 
 .button-break {
   display: none; /* Hidden by default */
 }
 
-@media (min-width: 600px) {
+@container (min-width: 30rem) {
   /* Adjust this breakpoint as needed */
   .button-break {
     display: block; /* Show the break element */
@@ -366,13 +356,15 @@ body {
   }
 }
 
-@media (max-width: 40rem) {
+@container (max-width: 30rem) {
   /* Target narrow screens */
-  .download-buttons-group .button {
+  .buttons-section .button:nth-child(-n + 4) {
+    /* First 4 buttons (download) */
     flex-basis: calc(50% - 0.375rem); /* Two buttons per line */
   }
 
-  .control-buttons-group .button {
+  .buttons-section .button:nth-child(n + 5) {
+    /* Buttons from 5th onwards (control) */
     flex-basis: 100%; /* One button per line */
   }
 }

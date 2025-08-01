@@ -39,18 +39,26 @@ const tabSpecificDefaults = {
 const defaultFormFields = {
   firstName: '',
   lastName: '',
-  org: '',
+  org: 'Stand.earth',
   title: '',
   email: '',
+  officePhone: '',
+  extension: '',
   workPhone: '',
   cellPhone: '',
-  website: '',
+  website: 'https://stand.earth',
   linkedin: '',
   linkUrl: 'https://stand.earth',
   wifiSsid: '',
   wifiPassword: '',
   wifiEncryption: 'WPA',
   wifiHidden: false,
+};
+
+const officePhoneAliases = {
+  SF: '415-863-4563',
+  BHAM: '360-734-2951',
+  VAN: '604-331-6201',
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -87,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
     org: document.getElementById('org'),
     title: document.getElementById('title'),
     email: document.getElementById('email'),
+    officePhone: document.getElementById('office_phone'),
+    extension: document.getElementById('extension'),
     workPhone: document.getElementById('work_phone'),
     cellPhone: document.getElementById('cell_phone'),
     website: document.getElementById('website'),
@@ -101,6 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
     linkUrl: document.getElementById('link_url'),
   };
 
+  const qrcodeTextContainer = document.querySelector('.qrcode-text-container');
+  const contentWrapper = document.querySelector('.content-wrapper');
   const vcardTextOutput = document.getElementById('qrcode-text-output');
   const downloadVCardButton = document.getElementById('download-vcard');
   const downloadPngButton = document.getElementById('download-png');
@@ -126,9 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveAsBlob: document.getElementById('form-save-as-blob'),
     imageSize: document.getElementById('form-image-size'),
     imageMargin: document.getElementById('form-image-margin'),
-    qrTypeNumber: document.getElementById(
-      'form-qr-type-number'
-    ),
+    qrTypeNumber: document.getElementById('form-qr-type-number'),
     qrErrorCorrectionLevel: document.getElementById(
       'form-qr-error-correction-level'
     ),
@@ -268,9 +278,38 @@ document.addEventListener('DOMContentLoaded', () => {
       updateQRCode();
       updateUrlParameters();
     }
+    handleQrTextContainerPlacement();
+  };
+
+  const isTwoColumnLayoutActive = () => {
+    return window.innerWidth >= 768; // Corresponds to 48rem
+  };
+
+  const handleQrTextContainerPlacement = () => {
+    if (
+      (currentMode === 'link' || currentMode === 'wifi') &&
+      isTwoColumnLayoutActive()
+    ) {
+      formColumn.appendChild(qrcodeTextContainer);
+    } else {
+      // Ensure it's in its original place if not link/wifi or not two-column
+      contentWrapper.appendChild(qrcodeTextContainer);
+    }
   };
 
   const getQRCodeData = () => {
+    const formatPhoneNumberForVCard = (phoneNumber) => {
+      if (!phoneNumber) return '';
+      // Remove all characters other than 0-9, comma ',' and the plus sign '+'
+      let cleanedNumber = phoneNumber.replace(/[^0-9,+]/g, '');
+
+      // If the resulting number is only 10 digits and nothing else, add '+1' to the start
+      if (/^\d{10}$/.test(cleanedNumber)) {
+        cleanedNumber = '+1' + cleanedNumber;
+      }
+      return cleanedNumber;
+    };
+
     if (currentMode === 'vcard') {
       const vcardLines = [
         'BEGIN:VCARD',
@@ -286,11 +325,22 @@ document.addEventListener('DOMContentLoaded', () => {
         formFields.org.value ? `ORG:${formFields.org.value}` : '',
         formFields.title.value ? `TITLE:${formFields.title.value}` : '',
         formFields.email.value ? `EMAIL:${formFields.email.value}` : '',
+        formFields.officePhone.value
+          ? `TEL;TYPE=WORK,VOICE:${formFields.officePhone.value}${
+              formFields.extension.value
+                ? ';x=' + formFields.extension.value
+                : ''
+            }`
+          : '',
         formFields.workPhone.value
-          ? `TEL;TYPE=WORK:${formFields.workPhone.value}`
+          ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumberForVCard(
+              formFields.workPhone.value
+            )}`
           : '',
         formFields.cellPhone.value
-          ? `TEL;TYPE=CELL:${formFields.cellPhone.value}`
+          ? `TEL;TYPE=CELL:${formatPhoneNumberForVCard(
+              formFields.cellPhone.value
+            )}`
           : '',
         formFields.website.value ? `URL:${formFields.website.value}` : '',
         formFields.linkedin.value ? `URL:${formFields.linkedin.value}` : '',
@@ -505,6 +555,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (paramValue !== null) {
         if (element.type === 'checkbox') {
           element.checked = paramValue === 'true';
+        } else if (
+          key === 'officePhone' &&
+          officePhoneAliases[paramValue.toUpperCase()]
+        ) {
+          element.value = officePhoneAliases[paramValue.toUpperCase()];
         } else {
           element.value = paramValue;
         }
@@ -515,6 +570,17 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           element.value = defaultValue;
         }
+      }
+    }
+
+    // Special handling for officePhone and extension
+    if (formFields.extension.value && !formFields.officePhone.value) {
+      // If extension is present but officePhone is not selected, default to the first option
+      const firstOfficePhoneOption = formFields.officePhone.querySelector(
+        'option:not([value=""])'
+      );
+      if (firstOfficePhoneOption) {
+        formFields.officePhone.value = firstOfficePhoneOption.value;
       }
     }
 
@@ -575,6 +641,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Add input filtering for the extension field
+  if (formFields.extension) {
+    formFields.extension.addEventListener('input', (event) => {
+      event.target.value = event.target.value.replace(/[^0-9]/g, '');
+      // If extension is present but officePhone is not selected, default to the first option
+      if (event.target.value && !formFields.officePhone.value) {
+        const firstOfficePhoneOption = formFields.officePhone.querySelector(
+          'option:not([value=""])'
+        );
+        if (firstOfficePhoneOption) {
+          formFields.officePhone.value = firstOfficePhoneOption.value;
+        }
+      }
+      updateQRCode();
+    });
+  }
+
   formFields.wifiEncryption.addEventListener('change', () => {
     if (formFields.wifiEncryption.value === 'nopass') {
       formFields.wifiPassword.value = ''; // Clear password
@@ -584,6 +667,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateQRCode();
   });
+
+  // Clear extension if officePhone is blank
+  if (formFields.officePhone) {
+    formFields.officePhone.addEventListener('change', (event) => {
+      if (event.target.value === '') {
+        formFields.extension.value = '';
+        updateQRCode();
+      }
+    });
+  }
 
   window.addEventListener('hashchange', handleRouteChange);
 

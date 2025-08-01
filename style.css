@@ -97,6 +97,7 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem; /* Matches default .main-container padding */
+  align-items: start;
 }
 
 /* Mobile: QR code first, then form */
@@ -194,14 +195,12 @@ body {
 
 @media (hover: hover) and (pointer: fine) {
   .button:hover {
-    transform: scale(
-      1.05
-    ); /* Apply transform only on hover for fine pointers */
+    transform: scale(1.05); /* Apply transform only on hover for fine pointers */
   }
 }
 
 .button:active {
-  transform: scale(1.05); /* Apply transform only when actively pressed */
+  transform: scale(0.95); /* Slightly shrink button when actively pressed */
 }
 
 .button:focus {
@@ -586,4 +585,19 @@ input[type='file'] {
 
 .credit-link a:hover {
   text-decoration: underline;
+}
+
+.office-phone-group {
+  display: grid;
+  grid-template-columns: 1fr auto; /* Office phone takes remaining space, extension is auto */
+  gap: 1rem; /* Gap between the two fields */
+  align-items: end; /* Align items to the bottom */
+}
+
+.office-phone-group > div:first-child {
+  flex-grow: 1;
+}
+
+.office-phone-group > div:last-child {
+  width: 6rem; /* Fixed width for extension field */
 }

@@ -67,8 +67,39 @@
                 <input type="email" id="email" class="form-input" />
               </div>
 
+              <div class="office-phone-group">
+                <div>
+                  <label for="office_phone" class="form-label"
+                    >Office Phone</label
+                  >
+                  <select id="office_phone" class="form-input">
+                    <option value=""></option>
+                    <option value="+14158634563">
+                      San Francisco (415-863-4563)
+                    </option>
+                    <option value="+13607342951">
+                      Bellingham (360-734-2951)
+                    </option>
+                    <option value="+16043316201">
+                      Vancouver (604-331-6201)
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label for="extension" class="form-label">Extension</label>
+                  <input
+                    type="text"
+                    id="extension"
+                    class="form-input"
+                    maxlength="4"
+                    pattern="[0-9]*"
+                    inputmode="numeric"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label for="work_phone" class="form-label">Work Phone</label>
+                <label for="work_phone" class="form-label">Direct Line</label>
                 <input type="tel" id="work_phone" class="form-input" />
               </div>
               <div>

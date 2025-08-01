@@ -6,7 +6,6 @@
   --color-secondary-wine: #5c1a2e;
   --color-secondary-teal: #00857d;
   --color-secondary-marigold: #f09914;
-  --color-secondary-plum: #8e4585;
 }
 
 *,
@@ -16,7 +15,7 @@
 }
 
 body {
-  font-family: "Readex Pro", sans-serif;
+  font-family: 'Readex Pro', sans-serif;
   background-color: var(--color-primary-light);
 }
 
@@ -75,6 +74,7 @@ body {
   font-weight: 500;
   color: var(--color-primary-dark);
   margin-bottom: 0.25rem;
+  margin-top: 0.75rem;
 }
 
 .header-section {
@@ -104,6 +104,12 @@ body {
   grid-template-columns: 1fr;
   gap: 1rem; /* Matches default .main-container padding */
 }
+
+/* Mobile: QR code first, then form */
+.main-grid > .qr-preview-column {
+  order: -1; /* Puts QR column first on mobile */
+}
+
 @media (min-width: 40rem) {
   /* 640px */
   .main-grid {
@@ -113,21 +119,18 @@ body {
 @media (min-width: 48rem) {
   /* 768px */
   .main-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr 1fr; /* Two equal columns for desktop */
     gap: 1.5rem; /* Still matches .main-container padding at 40rem, as 48rem is > 40rem */
+  }
+  /* Desktop: Form on left, QR on right */
+  .main-grid > .qr-preview-column {
+    order: unset; /* Resets order for desktop */
   }
 }
 @media (min-width: 64rem) {
   /* 1024px */
   .main-grid {
-    grid-template-columns: repeat(
-      2,
-      minmax(0, 1fr)
-    ); /* Two equal columns for larger screens */
     gap: 2rem; /* Matches .main-container padding at 64rem */
-  }
-  .form-column {
-    grid-column: span 1; /* Form column spans one column on larger screens */
   }
 }
 
@@ -140,10 +143,19 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  position: sticky;
-  top: 1rem;
-  align-self: start;
+  justify-content: flex-start; /* Align items to the start of the column */
+}
+
+.qr-sticky-container {
+  width: 100%; /* Ensure it takes full width of its column */
+}
+
+@media (min-width: 48rem) {
+  .qr-sticky-container {
+    position: sticky;
+    top: 2rem; /* Adjust as needed, considering header/padding */
+    align-self: start; /* Align to the start of the grid cell */
+  }
 }
 
 .preview-heading {
@@ -161,8 +173,8 @@ body {
 
 .qr-canvas-wrapper canvas,
 .qr-canvas-wrapper svg {
-  width: 100%;
   height: auto;
+  border: 1px solid var(--color-primary-dark); /* Added border */
 }
 
 .download-buttons-container {
@@ -173,62 +185,76 @@ body {
   justify-content: center;
 }
 
-@media (min-width: 40rem) {
-  /* Adjust breakpoint as needed */
-  .download-buttons-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-}
-
-.download-button {
+.button {
   color: var(--color-primary-white);
   font-weight: 600;
-  padding: 0.5rem 1.25rem;
+  padding: 0.75rem 1.25rem;
   border-radius: 0.5rem;
   box-shadow: 0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
     0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
   outline: none;
-  transition: transform 0.2s ease-in-out;
-  width: 100%; /* Ensure buttons take full width in their grid cell */
+  transition: all 0.2s ease-in-out;
   cursor: pointer;
-}
-.download-button:hover {
-  transform: scale(1.05);
-}
-.download-button:focus {
-  box-shadow: 0 0 0 0.125rem var(--focus-ring-color),
-    0 0 0 0.25rem var(--focus-ring-offset-color);
+  border: none;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.download-button-png,
-.download-button-jpg {
+.button:hover {
+  transform: scale(1.05);
+}
+
+.button:focus {
+  box-shadow: 0 0 0 0.125rem var(--focus-ring-color),
+    0 0 0 0.25rem var(--color-primary-white);
+}
+
+.button-primary {
   background-color: var(--color-secondary-teal);
   --focus-ring-color: var(--color-secondary-teal);
-  --focus-ring-offset-color: var(--color-primary-white);
 }
-.download-button-png:hover,
-.download-button-jpg:hover {
+
+.button-primary:hover {
   background-color: #006b66;
 }
 
-.download-button-svg {
-  background-color: var(--color-secondary-plum);
-  --focus-ring-color: var(--color-secondary-plum);
-  --focus-ring-offset-color: var(--color-primary-white);
-}
-.download-button-svg:hover {
-  background-color: #7a3a72;
+.button-secondary {
+  background-color: var(--color-secondary-marigold);
+  --focus-ring-color: var(--color-secondary-marigold);
 }
 
-.download-button-vcard {
+.button-secondary:hover {
+  background-color: #d78912;
+}
+
+.button-alternate {
   background-color: var(--color-primary-dark);
   --focus-ring-color: var(--color-primary-dark);
-  --focus-ring-offset-color: var(--color-primary-white);
 }
-.download-button-vcard:hover {
+
+.button-alternate:hover {
   background-color: #0a0a0a;
+}
+
+.button-special {
+  background-color: var(--color-secondary-wine);
+  --focus-ring-color: var(--color-secondary-wine);
+}
+
+.button-special:hover {
+  background-color: #4a1525;
+}
+
+.button-cancel {
+  background-color: var(--color-primary-red);
+  --focus-ring-color: var(--color-primary-red);
+}
+
+.button-cancel:hover {
+  background-color: #b8090f;
 }
 
 .qrcode-text-container {
@@ -259,13 +285,13 @@ body {
 
 .checkbox-container {
   display: flex;
-  align-items: center;
-  margin-top: 1rem;
+  align-items: flex-start; /* Align items to the top */
 }
 
 .form-checkbox {
   width: 1rem;
   height: 1rem;
+  margin-top: 0; /* Align with the first line of text */
   margin-right: 0.5rem;
   border: 0.0625rem solid var(--color-primary-dark);
   border-radius: 0.25rem;
@@ -275,6 +301,7 @@ body {
   outline: none;
   cursor: pointer;
   position: relative;
+  flex-shrink: 0;
 }
 
 .form-checkbox:checked {
@@ -283,7 +310,7 @@ body {
 }
 
 .form-checkbox:checked::before {
-  content: "\2713"; /* Checkmark character */
+  content: '\2713'; /* Checkmark character */
   display: block;
   color: var(--color-primary-white);
   font-size: 0.75rem;
@@ -303,53 +330,53 @@ body {
 }
 
 /* Advanced Controls Styling */
-.toggle-button {
-  display: block;
-  margin-top: 2rem;
-  width: 100%;
-  padding: 0.75rem;
-  background-color: var(--color-secondary-marigold);
-  color: var(--color-primary-white);
-  font-weight: 600;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-
-#toggle-advanced-controls {
-  background-color: var(--color-secondary-teal);
-}
-
-#toggle-advanced-controls:hover {
-  background-color: #7a3a72;
-}
-
-#reset-styles-button {
-  background-color: var(--color-primary-red);
-}
-
-#reset-styles-button:hover {
-  background-color: #b8090f;
-}
-
-.toggle-button:hover {
-  background-color: #d48712;
-}
-
-.button-group {
+.buttons-section {
   display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem; /* Gap between button groups */
+  margin-top: 1.5rem;
+}
+
+.download-buttons-group,
+.control-buttons-group {
+  display: flex;
+  flex-wrap: nowrap; /* Prevent internal wrapping */
+  gap: 0.75rem; /* Gap between buttons within the group */
+}
+
+#anniversary-logo-checkbox-container {
+  justify-content: center;
+  margin-top: 1rem; /* Add some top margin for spacing */
+}
+
+.logo-toggle-container {
+  width: 100%; /* Ensure it takes full width to center its content */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.button-controls-wrapper {
+  display: flex;
+  gap: 0.75rem;
   justify-content: center;
   flex-wrap: wrap;
 }
 
-
-
 @media (min-width: 48rem) {
+  .button-group {
+    grid-column: span 2;
+    /* flex-direction remains column */
+  }
   .button-group .toggle-button {
     width: auto;
+  }
+  .logo-toggle-container {
+    margin-right: 0; /* Remove right margin on desktop */
+  }
+  .button-controls-wrapper {
+    margin-top: 0; /* Remove extra margin if any */
   }
 }
 
@@ -436,7 +463,7 @@ body {
 .advanced-grid-2-col {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
+  gap: 0.5rem 1rem;
 }
 
 .radio-group {
@@ -446,7 +473,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-.radio-group input[type="radio"] {
+.radio-group input[type='radio'] {
   width: auto;
   margin-right: 0.25rem;
 }
@@ -459,14 +486,9 @@ body {
   display: none;
 }
 
-/* General form input spacing */
-.form-column > div {
-  margin-bottom: 1rem;
-}
-
 /* Adjustments for specific elements within panels */
 .advanced-section .form-label {
-  margin-top: 0.5rem;
+  margin-top: 0rem;
 }
 
 .advanced-section .form-input {
@@ -484,11 +506,11 @@ body {
 }
 
 /* Adjustments for the image file input to align with other inputs */
-input[type="file"] {
+input[type='file'] {
   padding: 0.5rem; /* Adjust padding to match other inputs visually */
   height: auto; /* Allow height to adjust based on content */
   background-color: transparent;
-  border: none;
+  border: 1px solid var(--color-primary-dark);
 }
 
 /* Adjustments for checkbox within panel */
@@ -499,4 +521,80 @@ input[type="file"] {
 
 .advanced-section .checkbox-container:last-child {
   margin-bottom: 0;
+}
+
+/* Tab styling */
+.tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-primary-light);
+}
+
+.tab-link {
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-secondary-teal);
+  transition: all 0.2s ease-in-out;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.tab-link:hover {
+  color: var(--color-primary-red);
+}
+
+.tab-link.active {
+  color: var(--color-primary-red);
+  border-bottom-color: var(--color-primary-red);
+}
+
+.tab-content.hidden {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Specific adjustments for link and wifi forms */
+#link-form .form-input,
+#wifi-form .form-input {
+  margin-bottom: 0; /* Remove extra margin from inputs within these forms */
+}
+
+#link-form > div,
+#wifi-form > div {
+  margin-bottom: 1rem; /* Add consistent spacing between form groups */
+}
+
+#link-form > div:last-child,
+#wifi-form > div:last-child {
+  margin-bottom: 0;
+}
+
+/* Ensure the QR code canvas itself is responsive */
+#canvas canvas {
+  max-width: 100%;
+  height: auto;
+  display: block; /* Remove extra space below canvas */
+}
+
+.credit-link {
+  text-align: center;
+  margin: 0 0 1rem;
+  font-size: 0.75rem;
+  color: var(--color-primary-dark);
+}
+
+.credit-link a {
+  color: var(--color-secondary-teal);
+  text-decoration: none;
+}
+
+.credit-link a:hover {
+  text-decoration: underline;
 }

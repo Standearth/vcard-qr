@@ -3,12 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stand.earth Staff vCard Generator</title>
+    <title>QR Code Generator</title>
     <script
       type="text/javascript"
       src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"
     ></script>
     <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./favicon-16x16.png"
+    />
+    <link
+      rel="icon"
+      type="image/webp"
+      sizes="32x32"
+      href="./favicon-32x32.png"
+    />
   </head>
   <body>
     <div class="main-container">
@@ -21,100 +37,145 @@
           </p>
         </div>
 
+        <div class="tabs">
+          <button class="tab-link active" data-tab="vcard">vCard</button>
+          <button class="tab-link" data-tab="link">Link</button>
+          <button class="tab-link" data-tab="wifi">WiFi</button>
+        </div>
+
         <div class="main-grid">
-          <!-- Left Column: Form -->
           <div class="form-column">
-            <div>
-              <label for="first_name" class="form-label">First Name</label>
-              <input type="text" id="first_name" class="form-input" />
-            </div>
-            <div>
-              <label for="last_name" class="form-label">Last Name</label>
-              <input type="text" id="last_name" class="form-input" />
-            </div>
-            <div>
-              <label for="org" class="form-label">Organization</label>
-              <input type="text" id="org" class="form-input" />
-            </div>
-            <div>
-              <label for="title" class="form-label">Title</label>
-              <input type="text" id="title" class="form-input" />
-            </div>
-            <div>
-              <label for="email" class="form-label">Email</label>
-              <input type="email" id="email" class="form-input" />
-            </div>
+            <div id="vcard-form" class="tab-content active">
+              <div>
+                <label for="first_name" class="form-label">First Name</label>
+                <input type="text" id="first_name" class="form-input" />
+              </div>
+              <div>
+                <label for="last_name" class="form-label">Last Name</label>
+                <input type="text" id="last_name" class="form-input" />
+              </div>
+              <div>
+                <label for="org" class="form-label">Organization</label>
+                <input type="text" id="org" class="form-input" />
+              </div>
+              <div>
+                <label for="title" class="form-label">Title</label>
+                <input type="text" id="title" class="form-input" />
+              </div>
+              <div>
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" class="form-input" />
+              </div>
 
-            <div>
-              <label for="work_phone" class="form-label">Work Phone</label>
-              <input type="tel" id="work_phone" class="form-input" />
+              <div>
+                <label for="work_phone" class="form-label">Work Phone</label>
+                <input type="tel" id="work_phone" class="form-input" />
+              </div>
+              <div>
+                <label for="cell_phone" class="form-label">Cell Phone</label>
+                <input type="tel" id="cell_phone" class="form-input" />
+              </div>
+              <div>
+                <label for="website" class="form-label">Website</label>
+                <input type="url" id="website" class="form-input" />
+              </div>
+              <div>
+                <label for="linkedin" class="form-label">LinkedIn URL</label>
+                <input
+                  type="url"
+                  id="linkedin"
+                  class="form-input"
+                  placeholder="https://www.linkedin.com/in/your-name/"
+                />
+              </div>
             </div>
-            <div>
-              <label for="cell_phone" class="form-label">Cell Phone</label>
-              <input type="tel" id="cell_phone" class="form-input" />
+            <div id="link-form" class="tab-content hidden">
+              <div>
+                <label for="link_url" class="form-label">URL</label>
+                <input
+                  type="url"
+                  id="link_url"
+                  class="form-input"
+                  value="https://stand.earth"
+                />
+              </div>
             </div>
-            <div>
-              <label for="website" class="form-label">Website</label>
-              <input type="url" id="website" class="form-input" />
-            </div>
-            <div class="checkbox-container">
-              <input
-                type="checkbox"
-                id="anniversary_logo"
-                class="form-checkbox"
-                checked
-              />
-              <label for="anniversary_logo" class="form-label-checkbox"
-                >Use 25th Anniversary Logo</label
-              >
+            <div id="wifi-form" class="tab-content hidden">
+              <div>
+                <label for="wifi_ssid" class="form-label"
+                  >Network Name (SSID)</label
+                >
+                <input type="text" id="wifi_ssid" class="form-input" />
+              </div>
+              <div id="wifi-password-container">
+                <label for="wifi_password" class="form-label">Password</label>
+                <input type="text" id="wifi_password" class="form-input" />
+              </div>
+              <div>
+                <label for="wifi_encryption" class="form-label"
+                  >Encryption</label
+                >
+                <select id="wifi_encryption" class="form-input">
+                  <option value="WPA" selected>WPA/WPA2</option>
+                  <option value="WEP">WEP</option>
+                  <option value="nopass">None (No password)</option>
+                </select>
+              </div>
+              <div class="checkbox-container">
+                <input type="checkbox" id="wifi_hidden" class="form-checkbox" />
+                <label for="wifi_hidden" class="form-label-checkbox"
+                  >Hidden Network</label
+                >
+              </div>
             </div>
           </div>
-
-          <!-- Right Column: QR Code Preview -->
-          <div class="qr-preview-column">
-            <div id="canvas" class="qr-canvas-wrapper"></div>
-            <div id="download-container" class="download-buttons-container">
-              <button
-                id="download-png"
-                class="download-button download-button-png"
+          <div id="qr-preview-column">
+            <div class="qr-sticky-container">
+              <div id="canvas" class="qr-canvas-wrapper"></div>
+              <div class="buttons-section">
+                <div class="download-buttons-group">
+                  <button id="download-png" class="button button-primary">
+                    <i class="fas fa-download"></i> PNG
+                  </button>
+                  <button id="download-jpg" class="button button-primary">
+                    <i class="fas fa-download"></i> JPG
+                  </button>
+                  <button id="download-svg" class="button button-primary">
+                    <i class="fas fa-download"></i> SVG
+                  </button>
+                  <button id="download-vcard" class="button button-alternate">
+                    <i class="fas fa-download"></i> vCard
+                  </button>
+                </div>
+                <div class="control-buttons-group">
+                  <button
+                    id="toggle-advanced-controls"
+                    class="button button-special"
+                  >
+                    Show Advanced Controls
+                  </button>
+                  <button id="reset-styles-button" class="button button-cancel">
+                    Reset Style
+                  </button>
+                </div>
+              </div>
+              <div
+                class="checkbox-container"
+                id="anniversary-logo-checkbox-container"
               >
-                Download PNG
-              </button>
-              <button
-                id="download-jpg"
-                class="download-button download-button-jpg"
-              >
-                Download JPG
-              </button>
-              <button
-                id="download-svg"
-                class="download-button download-button-svg"
-              >
-                Download SVG
-              </button>
-              <button
-                id="download-vcard"
-                class="download-button download-button-vcard"
-              >
-                Download vCard
-              </button>
+                <input
+                  type="checkbox"
+                  id="anniversary_logo"
+                  class="form-checkbox"
+                  checked
+                />
+                <label for="anniversary_logo" class="form-label-checkbox"
+                  >Use 25th Anniversary Logo</label
+                >
+              </div>
             </div>
           </div>
         </div>
-        <div class="qrcode-text-container">
-          <h3 class="qrcode-text-heading">QR Code Contents</h3>
-          <pre id="qrcode-text-output" class="qrcode-text-output"></pre>
-        </div>
-
-        <div class="button-group">
-          <button id="toggle-advanced-controls" class="toggle-button">
-            Show Advanced Controls
-          </button>
-          <button id="reset-styles-button" class="toggle-button">
-            Reset Style
-          </button>
-        </div>
-
         <div id="advanced-controls" class="advanced-controls-container hidden">
           <div class="advanced-section">
             <h3 class="advanced-section-heading">Background</h3>
@@ -184,8 +245,13 @@
                   <option value="classy-rounded">Classy rounded</option>
                 </select>
               </div>
-              <div>
-                <input id="form-round-size" type="checkbox" checked />
+              <div class="checkbox-container">
+                <input
+                  id="form-round-size"
+                  type="checkbox"
+                  class="form-checkbox"
+                  checked
+                />
                 <label for="form-round-size" class="form-label-checkbox"
                   >Apply Size Rounding</label
                 >
@@ -276,14 +342,26 @@
                   class="form-input"
                 />
               </div>
-              <div>
-                <input id="form-hide-background-dots" type="checkbox" checked />
-                <label for="form-hide-background-dots" class="form-label-checkbox"
+              <div class="checkbox-container">
+                <input
+                  id="form-hide-background-dots"
+                  type="checkbox"
+                  class="form-checkbox"
+                  checked
+                />
+                <label
+                  for="form-hide-background-dots"
+                  class="form-label-checkbox"
                   >Hide Dots</label
                 >
               </div>
-              <div>
-                <input id="form-save-as-blob" type="checkbox" checked />
+              <div class="checkbox-container">
+                <input
+                  id="form-save-as-blob"
+                  type="checkbox"
+                  class="form-checkbox"
+                  checked
+                />
                 <label for="form-save-as-blob" class="form-label-checkbox"
                   >Save SVG Blob</label
                 >
@@ -322,9 +400,29 @@
             </div>
           </div>
         </div>
+        <div class="qrcode-text-container">
+          <h3 class="qrcode-text-heading">QR Code Contents</h3>
+          <pre id="qrcode-text-output" class="qrcode-text-output"></pre>
+        </div>
       </div>
     </div>
 
+    <div class="credit-link">
+      Built using
+      <a
+        href="https://qr-code-styling.com/"
+        target="_blank"
+        rel="noopener noreferrer"
+        >QR Code Styling</a
+      >
+      |
+      <a
+        href="https://github.com/standearth/vcard-qr"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Source Code</a
+      >
+    </div>
     <script src="script.js"></script>
   </body>
 </html>

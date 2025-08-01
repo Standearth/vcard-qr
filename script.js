@@ -1,447 +1,727 @@
-document.addEventListener("DOMContentLoaded", () => {
+const defaultAdvancedOptions = {
+  width: 500,
+  height: 500,
+  margin: 5,
+  dotsType: 'rounded',
+  dotsColor: '#000000',
+  roundSize: true,
+  cornersSquareType: '',
+  cornersSquareColor: '#000000',
+  cornersDotType: '',
+  cornersDotColor: '#e50b12',
+  backgroundColor: '#ffffff',
+  hideBackgroundDots: true,
+  saveAsBlob: true,
+  imageSize: 0.4,
+  imageMargin: 5,
+  qrTypeNumber: 0,
+  qrErrorCorrectionLevel: 'Q',
+  anniversaryLogo: true,
+};
+
+const STAND_LOGO_RED = './Stand_Logo_Block-RGB_Red.svg';
+const STAND_LOGO_25 = './Stand.earth_25th-red_logo-teal_accent-RGB.svg';
+const STAND_LOGO_WIFI = './Stand_WiFi.svg';
+
+const tabSpecificDefaults = {
+  vcard: {
+    qrErrorCorrectionLevel: 'Q',
+  },
+  link: {
+    qrErrorCorrectionLevel: 'H',
+  },
+  wifi: {
+    qrErrorCorrectionLevel: 'H',
+    wifiEncryption: 'WPA',
+  },
+};
+
+const defaultFormFields = {
+  firstName: '',
+  lastName: '',
+  org: '',
+  title: '',
+  email: '',
+  workPhone: '',
+  cellPhone: '',
+  website: '',
+  linkedin: '',
+  linkUrl: 'https://stand.earth',
+  wifiSsid: '',
+  wifiPassword: '',
+  wifiEncryption: 'WPA',
+  wifiHidden: false,
+};
+
+document.addEventListener('DOMContentLoaded', () => {
   // --- 1. Get DOM Elements and URL parameters ---
-  const urlParams = new URLSearchParams(window.location.search);
-  const getParam = (p) => urlParams.get(p);
+  let currentMode = 'vcard'; // Default mode
+
+  // Object to store advanced control states for each tab
+  const tabStates = {
+    vcard: {},
+    link: {},
+    wifi: {},
+  };
+
+  // --- Form and Tab Elements ---
+  const tabLinks = {
+    vcard: document.querySelector('.tab-link[data-tab="vcard"]'),
+    link: document.querySelector('.tab-link[data-tab="link"]'),
+    wifi: document.querySelector('.tab-link[data-tab="wifi"]'),
+  };
+
+  const formContainers = {
+    vcard: document.getElementById('vcard-form'),
+    link: document.getElementById('link-form'),
+    wifi: document.getElementById('wifi-form'),
+  };
+
+  const formColumn = document.querySelector('.form-column');
+  const qrPreviewColumn = document.getElementById('qr-preview-column');
 
   const formFields = {
-    firstName: document.getElementById("first_name"),
-    lastName: document.getElementById("last_name"),
-    org: document.getElementById("org"),
-    title: document.getElementById("title"),
-    email: document.getElementById("email"),
-    workPhone: document.getElementById("work_phone"),
-    cellPhone: document.getElementById("cell_phone"),
-    website: document.getElementById("website"),
-    anniversaryLogo: document.getElementById("anniversary_logo"),
+    // vCard fields
+    firstName: document.getElementById('first_name'),
+    lastName: document.getElementById('last_name'),
+    org: document.getElementById('org'),
+    title: document.getElementById('title'),
+    email: document.getElementById('email'),
+    workPhone: document.getElementById('work_phone'),
+    cellPhone: document.getElementById('cell_phone'),
+    website: document.getElementById('website'),
+    linkedin: document.getElementById('linkedin'),
+    // WiFi fields
+    wifiSsid: document.getElementById('wifi_ssid'),
+    wifiPassword: document.getElementById('wifi_password'),
+    wifiEncryption: document.getElementById('wifi_encryption'),
+    wifiHidden: document.getElementById('wifi_hidden'),
+    wifiPasswordContainer: document.getElementById('wifi-password-container'),
+    // Link fields
+    linkUrl: document.getElementById('link_url'),
   };
 
-  const vcardTextOutput = document.getElementById("qrcode-text-output");
+  const vcardTextOutput = document.getElementById('qrcode-text-output');
+  const downloadVCardButton = document.getElementById('download-vcard');
+  const downloadPngButton = document.getElementById('download-png');
+  const downloadJpgButton = document.getElementById('download-jpg');
+  const downloadSvgButton = document.getElementById('download-svg');
+  const subHeading = document.querySelector('.sub-heading');
 
   // --- Advanced Control Elements ---
-  const formWidth = document.getElementById("form-width");
-  const formHeight = document.getElementById("form-height");
-  const formMargin = document.getElementById("form-margin");
-
-  const formDotsType = document.getElementById("form-dots-type");
-  const formDotsColor = document.getElementById("form-dots-color");
-  const formRoundSize = document.getElementById("form-round-size");
-
-  const formCornersSquareType = document.getElementById(
-    "form-corners-square-type"
-  );
-  const formCornersSquareColor = document.getElementById(
-    "form-corners-square-color"
-  );
-
-  const formCornersDotType = document.getElementById("form-corners-dot-type");
-  const formCornersDotColor = document.getElementById("form-corners-dot-color");
-
-  const formBackgroundColor = document.getElementById("form-background-color");
-
-  const formImageFile = document.getElementById("form-image-file");
-  const formHideBackgroundDots = document.getElementById(
-    "form-hide-background-dots"
-  );
-  const formSaveAsBlob = document.getElementById("form-save-as-blob");
-  const formImageSize = document.getElementById("form-image-size");
-  const formImageMargin = document.getElementById("form-image-margin");
-
-  const formQrTypeNumber = document.getElementById("form-qr-type-number");
-  const formQrErrorCorrectionLevel = document.getElementById(
-    "form-qr-error-correction-level"
-  );
-
-  // --- Default Advanced Options ---
-  const defaultAdvancedOptions = {
-    width: 500,
-    height: 500,
-    margin: 5,
-    dotsType: "rounded",
-    dotsColor: "#000000",
-    roundSize: true,
-    cornersSquareType: "",
-    cornersSquareColor: "#000000",
-    cornersDotType: "",
-    cornersDotColor: "#e50b12",
-    backgroundColor: "#ffffff",
-    hideBackgroundDots: true,
-    saveAsBlob: true,
-    imageSize: 0.4,
-    imageMargin: 5,
-    qrTypeNumber: 0,
-    qrErrorCorrectionLevel: "Q",
+  const formControls = {
+    width: document.getElementById('form-width'),
+    height: document.getElementById('form-height'),
+    margin: document.getElementById('form-margin'),
+    dotsType: document.getElementById('form-dots-type'),
+    dotsColor: document.getElementById('form-dots-color'),
+    roundSize: document.getElementById('form-round-size'),
+    cornersSquareType: document.getElementById('form-corners-square-type'),
+    cornersSquareColor: document.getElementById('form-corners-square-color'),
+    cornersDotType: document.getElementById('form-corners-dot-type'),
+    cornersDotColor: document.getElementById('form-corners-dot-color'),
+    backgroundColor: document.getElementById('form-background-color'),
+    imageFile: document.getElementById('form-image-file'),
+    hideBackgroundDots: document.getElementById('form-hide-background-dots'),
+    saveAsBlob: document.getElementById('form-save-as-blob'),
+    imageSize: document.getElementById('form-image-size'),
+    imageMargin: document.getElementById('form-image-margin'),
+    qrTypeNumber: document.getElementById(
+      'form-qr-type-number'
+    ),
+    qrErrorCorrectionLevel: document.getElementById(
+      'form-qr-error-correction-level'
+    ),
+    anniversaryLogo: document.getElementById('anniversary_logo'),
   };
 
-  // --- 2. Define QR Code Styling from your JSON template ---
-  const qrConfig = {
-    width: parseInt(formWidth.value),
-    height: parseInt(formHeight.value),
-    margin: parseInt(formMargin.value),
-    qrOptions: {
-      typeNumber: parseInt(formQrTypeNumber.value),
-      mode: "Byte",
-      errorCorrectionLevel: formQrErrorCorrectionLevel.value,
-    },
-    image: "./Stand_Logo_Block-RGB_Red.svg", // Default image
-    imageOptions: {
-      hideBackgroundDots: formHideBackgroundDots.checked,
-      imageSize: parseFloat(formImageSize.value),
-      margin: parseInt(formImageMargin.value),
-      saveAsBlob: formSaveAsBlob.checked,
-    },
-    dotsOptions: {
-      type: formDotsType.value,
-      color: formDotsColor.value,
-      roundSize: formRoundSize.checked,
-    },
-    backgroundOptions: {
-      color: formBackgroundColor.value,
-    },
-    cornersSquareOptions: {
-      type: formCornersSquareType.value,
-      color: formCornersSquareColor.value,
-    },
-    cornersDotOptions: {
-      type: formCornersDotType.value,
-      color: formCornersDotColor.value,
-    },
+  // --- 2. Initialize QR Code instance ---
+  const qrCode = new QRCodeStyling({
+    width: parseInt(formControls.width.value),
+    height: parseInt(formControls.height.value),
+    margin: parseInt(formControls.margin.value),
+    image: STAND_LOGO_RED,
+  });
+  qrCode.append(document.getElementById('canvas'));
+
+  // --- 3. Core Functions ---
+
+  const getFormControlValues = () => {
+    const values = {};
+    for (const key in formControls) {
+      const element = formControls[key];
+      if (element) {
+        if (element.type === 'checkbox') {
+          values[key] = element.checked;
+        } else if (element.type === 'file') {
+          // File input values cannot be directly set/get this way
+          // We'll handle image separately in updateQRCode
+          continue;
+        } else {
+          values[key] = element.value;
+        }
+      }
+    }
+    return values;
   };
 
-  // --- 3. Initialize QR Code instance ---
-  const qrCode = new QRCodeStyling(qrConfig);
-  qrCode.append(document.getElementById("canvas"));
-
-  // Helper to read file as Data URL
-  const readFileAsDataURL = (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        resolve(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    });
+  const setFormControlValues = (values) => {
+    for (const key in values) {
+      const element = formControls[key];
+      if (element) {
+        if (element.type === 'checkbox') {
+          element.checked = values[key];
+        } else if (element.type === 'file') {
+          // File input values cannot be directly set/get this way
+          continue;
+        } else {
+          element.value = values[key];
+        }
+      }
+    }
   };
 
-  // --- 4. Core Update Functions ---
+  const getEffectiveDefaultValue = (key, type, mode) => {
+    if (type === 'formField') {
+      return defaultFormFields[key];
+    } else if (type === 'advancedOption') {
+      if (
+        tabSpecificDefaults[mode] &&
+        tabSpecificDefaults[mode][key] !== undefined
+      ) {
+        return tabSpecificDefaults[mode][key];
+      }
+      return defaultAdvancedOptions[key];
+    }
+    return undefined;
+  };
+
+  const getActiveFormFields = () => {
+    const activeFields = {};
+    if (currentMode === 'vcard') {
+      for (const key in formFields) {
+        if (formFields[key] && formFields[key].closest('#vcard-form')) {
+          activeFields[key] = formFields[key];
+        }
+      }
+    } else if (currentMode === 'link') {
+      activeFields.linkUrl = formFields.linkUrl;
+    } else if (currentMode === 'wifi') {
+      activeFields.wifiSsid = formFields.wifiSsid;
+      activeFields.wifiPassword = formFields.wifiPassword;
+      activeFields.wifiEncryption = formFields.wifiEncryption;
+      activeFields.wifiHidden = formFields.wifiHidden;
+    }
+    return activeFields;
+  };
+
+  // Initialize tabStates with default values
+  for (const mode in tabStates) {
+    tabStates[mode] = { ...defaultAdvancedOptions };
+    if (tabSpecificDefaults[mode]) {
+      Object.assign(tabStates[mode], tabSpecificDefaults[mode]);
+    }
+  }
+
+  const switchTab = (newMode, isInitialLoad = false) => {
+    // Save current tab's state before switching
+    if (!isInitialLoad) {
+      tabStates[currentMode] = getFormControlValues();
+    }
+
+    currentMode = newMode;
+
+    // Update tab links
+    for (const key in tabLinks) {
+      tabLinks[key].classList.toggle('active', key === newMode);
+    }
+
+    // Update form visibility
+    for (const key in formContainers) {
+      formContainers[key].classList.toggle('active', key === newMode);
+      formContainers[key].classList.toggle('hidden', key !== newMode);
+    }
+
+    // Update UI elements based on mode
+    downloadVCardButton.style.display = newMode === 'vcard' ? 'block' : 'none';
+    const anniversaryLogoContainer = document.getElementById(
+      'anniversary-logo-checkbox-container'
+    );
+
+    if (newMode === 'vcard') {
+      subHeading.textContent =
+        "Enter or edit your details below to generate your QR Code. Delete any fields you don't want to include.";
+      anniversaryLogoContainer.style.display = 'flex';
+    } else if (newMode === 'link') {
+      subHeading.textContent = 'Enter a URL to generate a QR code.';
+      anniversaryLogoContainer.style.display = 'flex';
+    } else if (newMode === 'wifi') {
+      subHeading.textContent =
+        'Enter your WiFi details to generate a QR code for network access.';
+      anniversaryLogoContainer.style.display = 'none';
+    }
+
+    // Load new tab's state
+    setFormControlValues(tabStates[newMode]);
+
+    if (!isInitialLoad) {
+      updateQRCode();
+      updateUrlParameters();
+    }
+  };
+
+  const getQRCodeData = () => {
+    if (currentMode === 'vcard') {
+      const vcardLines = [
+        'BEGIN:VCARD',
+        'VERSION:3.0',
+        `N:${formFields.lastName.value || ''};${
+          formFields.firstName.value || ''
+        }`,
+        `FN:${
+          (formFields.firstName.value || '') +
+          ' ' +
+          (formFields.lastName.value || '')
+        }`.trim(),
+        formFields.org.value ? `ORG:${formFields.org.value}` : '',
+        formFields.title.value ? `TITLE:${formFields.title.value}` : '',
+        formFields.email.value ? `EMAIL:${formFields.email.value}` : '',
+        formFields.workPhone.value
+          ? `TEL;TYPE=WORK:${formFields.workPhone.value}`
+          : '',
+        formFields.cellPhone.value
+          ? `TEL;TYPE=CELL:${formFields.cellPhone.value}`
+          : '',
+        formFields.website.value ? `URL:${formFields.website.value}` : '',
+        formFields.linkedin.value ? `URL:${formFields.linkedin.value}` : '',
+        'END:VCARD',
+      ];
+      return vcardLines.filter((line) => line).join('\n');
+    } else if (currentMode === 'link') {
+      return formFields.linkUrl.value || 'https://stand.earth';
+    } else if (currentMode === 'wifi') {
+      const ssid = formFields.wifiSsid.value || '';
+      const password = formFields.wifiPassword.value || '';
+      const encryption = formFields.wifiEncryption.value || 'WPA';
+      const hidden = formFields.wifiHidden.checked ? 'true' : 'false';
+
+      // Format for WIFI QR code (ZXing standard)
+      // WIFI:S:<SSID>;T:<ENCRYPTION>;P:<PASSWORD>;H:<HIDDEN>;;
+      return `WIFI:S:${ssid};T:${encryption};P:${password};H:${hidden};;`;
+    }
+    return '';
+  };
+
   const updateQRCode = async () => {
-    const vcardLines = [
-      `BEGIN:VCARD`,
-      `VERSION:3.0`,
-      `N:${formFields.lastName.value || ""};${
-        formFields.firstName.value || ""
-      }`,
-      `FN:${
-        (formFields.firstName.value || "") +
-        " " +
-        (formFields.lastName.value || "")
-      }`.trim(),
-      formFields.org.value ? `ORG:${formFields.org.value}` : "",
-      formFields.title.value ? `TITLE:${formFields.title.value}` : "",
-      formFields.email.value ? `EMAIL:${formFields.email.value}` : "",
-      formFields.workPhone.value
-        ? `TEL;TYPE=WORK:${formFields.workPhone.value}`
-        : "",
-      formFields.cellPhone.value
-        ? `TEL;TYPE=CELL:${formFields.cellPhone.value}`
-        : "",
-      formFields.website.value ? `URL:${formFields.website.value}` : "",
-      `END:VCARD`,
-    ];
-
-    // Filter out empty lines that are not BEGIN/VERSION/END
-    const vcard = vcardLines
-      .filter((line) => {
-        const trimmedLine = line.trim();
-        return (
-          trimmedLine.length > 0 ||
-          trimmedLine.startsWith("BEGIN:") ||
-          trimmedLine.startsWith("VERSION:") ||
-          trimmedLine.startsWith("END:")
-        );
-      })
-      .join("\n");
+    const data = getQRCodeData();
 
     const newQrConfig = {
-      data: vcard,
-      width: parseInt(formWidth.value),
-      height: parseInt(formHeight.value),
-      margin: parseInt(formMargin.value),
+      data: data,
+      width: parseInt(tabStates[currentMode].width),
+      height: parseInt(tabStates[currentMode].height),
+      margin: parseInt(tabStates[currentMode].margin),
       qrOptions: {
-        typeNumber: parseInt(formQrTypeNumber.value),
-        mode: "Byte",
-        errorCorrectionLevel: formQrErrorCorrectionLevel.value,
+        typeNumber: parseInt(tabStates[currentMode].qrTypeNumber),
+        mode: 'Byte',
+        errorCorrectionLevel: tabStates[currentMode].qrErrorCorrectionLevel,
       },
       imageOptions: {
-        hideBackgroundDots: formHideBackgroundDots.checked,
-        imageSize: parseFloat(formImageSize.value),
-        margin: parseInt(formImageMargin.value),
-        saveAsBlob: formSaveAsBlob.checked,
+        hideBackgroundDots: tabStates[currentMode].hideBackgroundDots,
+        imageSize: parseFloat(tabStates[currentMode].imageSize),
+        margin: parseInt(tabStates[currentMode].imageMargin),
+        saveAsBlob: tabStates[currentMode].saveAsBlob,
       },
       dotsOptions: {
-        type: formDotsType.value,
-        roundSize: formRoundSize.checked,
+        type: tabStates[currentMode].dotsType,
+        color: tabStates[currentMode].dotsColor,
+        roundSize: tabStates[currentMode].roundSize, // Ensure this is read
       },
       backgroundOptions: {
-        color: formBackgroundColor.value,
+        color: tabStates[currentMode].backgroundColor,
       },
       cornersSquareOptions: {
-        type: formCornersSquareType.value,
-        color: formCornersSquareColor.value,
+        type: tabStates[currentMode].cornersSquareType,
+        color: tabStates[currentMode].cornersSquareColor,
       },
       cornersDotOptions: {
-        type: formCornersDotType.value,
-        color: formCornersDotColor.value,
+        type: tabStates[currentMode].cornersDotType,
+        color: tabStates[currentMode].cornersDotColor,
       },
     };
 
-    // Handle image upload
-    if (formImageFile.files.length > 0) {
-      newQrConfig.image = await readFileAsDataURL(formImageFile.files[0]);
-    } else {
-      newQrConfig.image = formFields.anniversaryLogo.checked
-        ? "./Stand.earth_25th-red_logo-teal_accent-RGB.svg"
-        : "./Stand_Logo_Block-RGB_Red.svg";
+    try {
+      if (formControls.imageFile.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          newQrConfig.image = event.target.result;
+          qrCode.update(newQrConfig);
+        };
+        reader.readAsDataURL(formControls.imageFile.files[0]);
+      } else {
+        if (currentMode === 'wifi') {
+          newQrConfig.image = STAND_LOGO_WIFI;
+        } else {
+          newQrConfig.image = tabStates[currentMode].anniversaryLogo
+            ? STAND_LOGO_25
+            : STAND_LOGO_RED;
+        }
+        qrCode.update(newQrConfig);
+      }
+      vcardTextOutput.textContent = data;
+      vcardTextOutput.style.color = ''; // Reset color on success
+      setDownloadButtonVisibility(true);
+    } catch (error) {
+      console.error('QR Code generation error:', error);
+      // Attempt to clear the QR code by updating with empty data
+      qrCode.update({ ...newQrConfig, data: '' });
+      vcardTextOutput.textContent = 'Invalid settings combination.';
+      vcardTextOutput.style.color = 'red'; // Style the error message
+      setDownloadButtonVisibility(false);
     }
-
-    qrCode.update(newQrConfig);
-    vcardTextOutput.textContent = vcard; // Update the vCard text display
-    console.log("Generated vCard:\n", vcard);
     updateUrlParameters();
   };
 
+  const setDownloadButtonVisibility = (visible) => {
+    downloadPngButton.style.display = visible ? 'inline-block' : 'none';
+    downloadJpgButton.style.display = visible ? 'inline-block' : 'none';
+    downloadSvgButton.style.display = visible ? 'inline-block' : 'none';
+    // vCard button visibility is handled by switchTab, but we can hide it here too if needed
+    if (currentMode === 'vcard') {
+      downloadVCardButton.style.display = visible ? 'block' : 'none';
+    }
+  };
+
   const updateUrlParameters = () => {
-    const newUrlParams = new URLSearchParams(window.location.search);
+    const newUrlParams = new URLSearchParams();
 
-    // Basic form fields
-    for (const key in formFields) {
-      const paramKey = key.replace(/([A-Z])/g, "_$1").toLowerCase();
-      let value = formFields[key].value;
-
-      if (formFields[key].type === "checkbox") {
-        value = formFields[key].checked ? "true" : "false";
+    // Handle form fields parameters (QR code data)
+    const activeFormFields = getActiveFormFields();
+    for (const key in activeFormFields) {
+      const element = activeFormFields[key];
+      let value = element.value;
+      if (element.type === 'checkbox') {
+        value = element.checked;
       }
 
-      if (value) {
-        newUrlParams.set(paramKey, value);
+      const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      const defaultValue = getEffectiveDefaultValue(
+        key,
+        'formField',
+        currentMode
+      );
+
+      // Perform type-aware comparison for form fields
+      let valuesMatch = false;
+      if (element.type === 'checkbox') {
+        valuesMatch = value === defaultValue; // Direct comparison of booleans
+      } else if (typeof defaultValue === 'number') {
+        valuesMatch = parseFloat(value) === defaultValue;
+      } else {
+        valuesMatch = value === defaultValue;
+      }
+
+      // Only include if different from default
+      if (!valuesMatch) {
+        newUrlParams.set(paramKey, String(value));
       } else {
         newUrlParams.delete(paramKey);
       }
     }
 
-    // Advanced form fields
-    const advancedControlInputs = {
-      width: formWidth,
-      height: formHeight,
-      margin: formMargin,
-      dots_type: formDotsType,
-      dots_color: formDotsColor,
-      round_size: formRoundSize,
-      corners_square_type: formCornersSquareType,
-      corners_square_color: formCornersSquareColor,
-      corners_dot_type: formCornersDotType,
-      corners_dot_color: formCornersDotColor,
-      background_color: formBackgroundColor,
-      hide_background_dots: formHideBackgroundDots,
-      save_as_blob: formSaveAsBlob,
-      image_size: formImageSize,
-      image_margin: formImageMargin,
-      qr_type_number: formQrTypeNumber,
-      qr_error_correction_level: formQrErrorCorrectionLevel,
-    };
+    // Handle advanced control parameters
+    const currentTabState = tabStates[currentMode];
+    for (const key in formControls) {
+      const element = formControls[key];
+      if (element && element.type !== 'file') {
+        // Skip file input, handled separately
+        let value = currentTabState[key]; // Get value from tabStates, which is already type-correct
 
-    for (const key in advancedControlInputs) {
-      const input = advancedControlInputs[key];
-      let value = input.type === "checkbox" ? input.checked : input.value;
-      const camelCaseKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-      const defaultValue = defaultAdvancedOptions[camelCaseKey];
+        const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        const defaultValue = getEffectiveDefaultValue(
+          key,
+          'advancedOption',
+          currentMode
+        );
 
-      // For checkboxes, convert boolean to string
-      if (input.type === "checkbox") {
-        value = value.toString();
+        // Perform type-aware comparison
+        let valuesMatch = false;
+        if (typeof defaultValue === 'number') {
+          valuesMatch = parseFloat(value) === defaultValue;
+        } else if (typeof defaultValue === 'boolean') {
+          valuesMatch = value === defaultValue; // Direct comparison of booleans
+        } else {
+          valuesMatch = value === defaultValue;
+        }
+
+        // Only include if different from default
+        if (!valuesMatch) {
+          newUrlParams.set(paramKey, String(value));
+        } else {
+          newUrlParams.delete(paramKey);
+        }
       }
+    }
 
-      if (value !== defaultValue.toString()) {
-        newUrlParams.set(key, value);
+    const newUrl = `${
+      window.location.pathname
+    }#/${currentMode}/?${newUrlParams.toString()}`;
+    history.replaceState(null, '', newUrl);
+  };
+
+  const handleRouteChange = () => {
+    const hash = window.location.hash;
+    let mode = 'vcard';
+    if (hash.includes('#/link')) {
+      mode = 'link';
+    } else if (hash.includes('#/wifi')) {
+      mode = 'wifi';
+    }
+    switchTab(mode, true); // Pass true for initial load
+    populateFormFromUrl();
+    // Trigger change event for wifiEncryption to correctly set password field visibility
+    if (currentMode === 'wifi') {
+      formFields.wifiEncryption.dispatchEvent(new Event('change'));
+    }
+    updateQRCode(); // Update QR code after populating form
+  };
+
+  const populateFormFromUrl = () => {
+    const params = new URLSearchParams(
+      window.location.hash.split('?')[1] || ''
+    );
+
+    // Populate form fields based on current mode
+    const activeFormFields = getActiveFormFields();
+    for (const key in activeFormFields) {
+      const element = activeFormFields[key];
+      const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      const paramValue = params.get(paramKey);
+      const defaultValue = getEffectiveDefaultValue(
+        key,
+        'formField',
+        currentMode
+      );
+
+      if (paramValue !== null) {
+        if (element.type === 'checkbox') {
+          element.checked = paramValue === 'true';
+        } else {
+          element.value = paramValue;
+        }
       } else {
-        newUrlParams.delete(key);
+        // If parameter not in URL, set to its effective default
+        if (element.type === 'checkbox') {
+          element.checked = defaultValue;
+        } else {
+          element.value = defaultValue;
+        }
       }
     }
 
-    const newUrl = `${window.location.pathname}?${newUrlParams.toString()}`;
-    history.replaceState(null, "", newUrl);
-  };
+    // Populate advanced control parameters from URL into tabStates
+    const currentTabState = tabStates[currentMode];
+    for (const key in formControls) {
+      const element = formControls[key];
+      if (element && element.type !== 'file') {
+        // Skip file input, handled separately
+        const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        const paramValue = params.get(paramKey);
+        const camelCaseKey = key;
 
-  // --- 5. Populate form from URL and add listeners ---
-  const defaultValues = {
-    org: "Stand.earth",
-    website: "https://stand.earth",
-    workPhone: "",
-    anniversaryLogo: true, // Default for checkbox
-  };
-
-  // Function to apply default advanced options
-  const applyDefaultAdvancedOptions = () => {
-    formWidth.value = defaultAdvancedOptions.width;
-    formHeight.value = defaultAdvancedOptions.height;
-    formMargin.value = defaultAdvancedOptions.margin;
-    formDotsType.value = defaultAdvancedOptions.dotsType;
-    formDotsColor.value = defaultAdvancedOptions.dotsColor;
-    formRoundSize.checked = defaultAdvancedOptions.roundSize;
-    formCornersSquareType.value = defaultAdvancedOptions.cornersSquareType;
-    formCornersSquareColor.value = defaultAdvancedOptions.cornersSquareColor;
-    formCornersDotType.value = defaultAdvancedOptions.cornersDotType;
-    formCornersDotColor.value = defaultAdvancedOptions.cornersDotColor;
-    formBackgroundColor.value = defaultAdvancedOptions.backgroundColor;
-    formHideBackgroundDots.checked = defaultAdvancedOptions.hideBackgroundDots;
-    formSaveAsBlob.checked = defaultAdvancedOptions.saveAsBlob;
-    formImageSize.value = defaultAdvancedOptions.imageSize;
-    formImageMargin.value = defaultAdvancedOptions.imageMargin;
-    formQrTypeNumber.value = defaultAdvancedOptions.qrTypeNumber;
-    formQrErrorCorrectionLevel.value = defaultAdvancedOptions.qrErrorCorrectionLevel;
-    // Manually dispatch events to trigger QR code update
-    formWidth.dispatchEvent(new Event('input'));
-    formHeight.dispatchEvent(new Event('input'));
-    formMargin.dispatchEvent(new Event('input'));
-    formDotsType.dispatchEvent(new Event('change'));
-    formDotsColor.dispatchEvent(new Event('input'));
-    formRoundSize.dispatchEvent(new Event('change'));
-    formCornersSquareType.dispatchEvent(new Event('change'));
-    formCornersSquareColor.dispatchEvent(new Event('input'));
-    formCornersDotType.dispatchEvent(new Event('change'));
-    formCornersDotColor.dispatchEvent(new Event('input'));
-    formBackgroundColor.dispatchEvent(new Event('input'));
-    formHideBackgroundDots.dispatchEvent(new Event('change'));
-    formSaveAsBlob.dispatchEvent(new Event('change'));
-    formImageSize.dispatchEvent(new Event('input'));
-    formImageMargin.dispatchEvent(new Event('input'));
-    formQrTypeNumber.dispatchEvent(new Event('input'));
-    formQrErrorCorrectionLevel.dispatchEvent(new Event('change'));
-    updateQRCode();
-  };
-
-  for (const key in formFields) {
-    const paramKey = key.replace(/([A-Z])/g, "_$1").toLowerCase(); // camelCase to snake_case
-    const paramValue = getParam(paramKey);
-
-    if (formFields[key]) {
-      // Check if the element exists before trying to set its value or add listener
-      if (formFields[key].type === "checkbox") {
-        formFields[key].checked =
-          paramValue === "true" || (paramValue === null && defaultValues[key]);
-      } else if (paramValue) {
-        formFields[key].value = paramValue;
-      } else if (defaultValues[key]) {
-        formFields[key].value = defaultValues[key];
+        if (paramValue !== null) {
+          if (element.type === 'checkbox') {
+            currentTabState[camelCaseKey] = paramValue === 'true';
+          } else {
+            let parsedValue = paramValue;
+            const defaultValue = getEffectiveDefaultValue(
+              camelCaseKey,
+              'advancedOption',
+              currentMode
+            );
+            if (typeof defaultValue === 'number') {
+              parsedValue = parseFloat(paramValue);
+              if (isNaN(parsedValue)) {
+                parsedValue = defaultValue; // Fallback to default if parsing fails
+              }
+            }
+            currentTabState[camelCaseKey] = parsedValue;
+          }
+        } else {
+          // If parameter is not in URL, set to default from tabSpecificDefaults or defaultAdvancedOptions
+          const defaultValue = getEffectiveDefaultValue(
+            camelCaseKey,
+            'advancedOption',
+            currentMode
+          );
+          currentTabState[camelCaseKey] = defaultValue;
+        }
       }
-      // Add event listener to update QR code and URL on any input change
-      formFields[key].addEventListener("input", updateQRCode);
     }
-  }
+    // Apply the loaded state to the form controls
+    setFormControlValues(currentTabState);
+  };
 
-  // --- 6. Initial Generation ---
-  applyDefaultAdvancedOptions(); // Apply default advanced options on initial load
-  updateQRCode();
+  // --- 4. Event Listeners ---
+  Object.values(tabLinks).forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const mode = tab.getAttribute('data-tab');
+      switchTab(mode);
+    });
+  });
 
-  // --- 7. Advanced Controls Toggle ---
-  const toggleAdvancedControlsButton = document.getElementById(
-    "toggle-advanced-controls"
-  );
-  const advancedControlsContainer =
-    document.getElementById("advanced-controls");
-  const resetStylesButton = document.getElementById("reset-styles-button");
+  Object.values(formFields).forEach((field) => {
+    if (field) {
+      field.addEventListener('input', updateQRCode);
+    }
+  });
 
-  toggleAdvancedControlsButton.addEventListener("click", () => {
-    console.log("Toggle button clicked!");
-    advancedControlsContainer.classList.toggle("hidden");
-    if (advancedControlsContainer.classList.contains("hidden")) {
-      toggleAdvancedControlsButton.textContent = "Show Advanced Controls";
+  formFields.wifiEncryption.addEventListener('change', () => {
+    if (formFields.wifiEncryption.value === 'nopass') {
+      formFields.wifiPassword.value = ''; // Clear password
+      formFields.wifiPasswordContainer.style.display = 'none'; // Hide password field
     } else {
-      toggleAdvancedControlsButton.textContent = "Hide Advanced Controls";
+      formFields.wifiPasswordContainer.style.display = 'block'; // Show password field
     }
+    updateQRCode();
   });
 
-  resetStylesButton.addEventListener("click", () => {
-    applyDefaultAdvancedOptions();
-    const newUrlParams = new URLSearchParams(window.location.search);
-    for (const key in defaultAdvancedOptions) {
-      const snakeKey = key.replace(/([A-Z])/g, "_$1").toLowerCase();
-      newUrlParams.delete(snakeKey);
-    }
-    const newUrl = `${window.location.pathname}?${newUrlParams.toString()}`;
-    history.replaceState(null, "", newUrl);
-  });
+  window.addEventListener('hashchange', handleRouteChange);
 
-  // --- 8. Advanced Controls Event Listeners ---
+  // Advanced controls listeners
   const advancedControlInputs = [
-    formWidth,
-    formHeight,
-    formMargin,
-    formDotsType,
-    formDotsColor,
-    formRoundSize,
-    formCornersSquareType,
-    formCornersSquareColor,
-    formCornersDotType,
-    formCornersDotColor,
-    formBackgroundColor,
-    formImageFile,
-    formHideBackgroundDots,
-    formSaveAsBlob,
-    formImageSize,
-    formImageMargin,
-    formQrTypeNumber,
-    formQrErrorCorrectionLevel,
+    formControls.width,
+    formControls.height,
+    formControls.margin,
+    formControls.dotsType,
+    formControls.dotsColor,
+    formControls.roundSize,
+    formControls.cornersSquareType,
+    formControls.cornersSquareColor,
+    formControls.cornersDotType,
+    formControls.cornersDotColor,
+    formControls.backgroundColor,
+    formControls.imageFile,
+    formControls.hideBackgroundDots,
+    formControls.saveAsBlob,
+    formControls.imageSize,
+    formControls.imageMargin,
+    formControls.qrTypeNumber,
+    formControls.qrErrorCorrectionLevel,
+    formControls.anniversaryLogo,
   ];
-
   advancedControlInputs.forEach((input) => {
     if (input) {
-      input.addEventListener("input", updateQRCode);
-      input.addEventListener("change", updateQRCode); // For select, checkbox, file inputs
+      input.addEventListener('input', (event) => {
+        const key = event.target.id
+          .replace('form-', '') // Remove 'form-' prefix
+          .replace(/-([a-z])/g, (g) => g[1].toUpperCase()) // Convert kebab-case to camelCase
+          .replace(/_([a-z])/g, (g) => g[1].toUpperCase()); // Convert snake_case to camelCase
+        let newValue;
+        if (event.target.type === 'checkbox') {
+          newValue = event.target.checked;
+        } else {
+          newValue = event.target.value;
+        }
+        tabStates[currentMode][key] = newValue;
+        updateQRCode();
+      });
     }
   });
 
-  // Specific validation for form-qr-type-number
-  formQrTypeNumber.addEventListener("input", () => {
-    let value = parseInt(formQrTypeNumber.value);
-    if (isNaN(value)) {
-      value = 0; // Default to 0 if input is not a number
-    }
-    formQrTypeNumber.value = Math.max(0, Math.min(40, value));
-  });
+  document
+    .getElementById('toggle-advanced-controls')
+    .addEventListener('click', () => {
+      const advancedControls = document.getElementById('advanced-controls');
+      advancedControls.classList.toggle('hidden');
+      const button = document.getElementById('toggle-advanced-controls');
+      button.textContent = advancedControls.classList.contains('hidden')
+        ? 'Show Advanced Controls'
+        : 'Hide Advanced Controls';
+    });
 
-  // --- 9. Setup Download Buttons ---
-  document.getElementById("download-svg").addEventListener("click", () => {
-    console.log("Attempting to download SVG...");
-    setTimeout(() => {
-      qrCode.download({ name: "vcard", extension: "svg" });
-    }, 100);
-  });
+  document
+    .getElementById('reset-styles-button')
+    .addEventListener('click', () => {
+      // Reset advanced options for the current tab to default
+      tabStates[currentMode] = { ...defaultAdvancedOptions };
+      if (tabSpecificDefaults[currentMode]) {
+        Object.assign(tabStates[currentMode], tabSpecificDefaults[currentMode]);
+      }
+      setFormControlValues(tabStates[currentMode]);
 
-  document.getElementById("download-png").addEventListener("click", () => {
-    console.log("Attempting to download PNG...");
-    setTimeout(() => {
-      qrCode.download({ name: "vcard", extension: "png" });
-    }, 100);
-  });
+      // Update QR code and URL after resetting
+      updateQRCode();
+      updateUrlParameters();
+    });
 
-  document.getElementById("download-jpg").addEventListener("click", () => {
-    console.log("Attempting to download JPG...");
-    setTimeout(() => {
-      qrCode.download({ name: "vcard", extension: "jpeg" });
-    }, 100);
-  });
-
-  document.getElementById("download-vcard").addEventListener("click", () => {
-    console.log("Attempting to download vCard...");
-    const vcardContent = vcardTextOutput.textContent;
-    const blob = new Blob([vcardContent], { type: "text/vcard" });
+  // Download buttons
+  document
+    .getElementById('download-png')
+    .addEventListener('click', () =>
+      qrCode.download({ name: 'qr-code', extension: 'png' })
+    );
+  document
+    .getElementById('download-jpg')
+    .addEventListener('click', () =>
+      qrCode.download({ name: 'qr-code', extension: 'jpeg' })
+    );
+  document
+    .getElementById('download-svg')
+    .addEventListener('click', () =>
+      qrCode.download({ name: 'qr-code', extension: 'svg' })
+    );
+  downloadVCardButton.addEventListener('click', () => {
+    const vcardContent = getQRCodeData();
+    const blob = new Blob([vcardContent], { type: 'text/vcard' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = "vcard.vcf";
+    a.download = 'vcard.vcf';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
+
+  // --- 5. Initial Load ---
+  handleRouteChange();
+
+  // --- Sticky QR Code ---
+  let qrCodeOriginalTop = qrPreviewColumn.offsetTop; // Initial top position of the QR code column
+
+  const handleScroll = () => {
+    const scrollY = window.scrollY;
+    const rootFontSize = parseFloat(
+      getComputedStyle(document.documentElement).fontSize
+    );
+    const stickyOffset = rootFontSize; // 1rem
+
+    // Calculate the point where the sticky element would normally stop sticking
+    // This is when the bottom of its parent container scrolls past the top of the viewport
+    const parentElement = qrPreviewColumn.parentElement; // This should be .main-grid column
+    const parentBottom = parentElement.offsetTop + parentElement.offsetHeight;
+
+    // The QR code column will stick at `stickyOffset` from the top of its parent.
+    // It will stop sticking when the bottom of its parent container
+    // minus the height of the QR code column (plus its sticky offset)
+    // is less than the current scroll position.
+    const stickyEndThreshold =
+      parentBottom - qrPreviewColumn.offsetHeight - stickyOffset;
+
+    if (scrollY >= stickyEndThreshold) {
+      qrPreviewColumn.classList.add('sticky');
+    } else {
+      qrPreviewColumn.classList.remove('sticky');
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('resize', () => {
+    // Recalculate original top position on resize, as layout might change
+    qrCodeOriginalTop = qrPreviewColumn.offsetTop;
+    handleScroll(); // Re-evaluate sticky state on resize
+  });
+
+  // Initial call to set sticky state if page loads scrolled
+  handleScroll();
 });

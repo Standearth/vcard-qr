@@ -719,8 +719,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Advanced controls
     Object.values(dom.advancedControls).forEach((input) => {
       if (input && input.id) {
+        // Use 'input' for real-time feedback on most controls
         input.addEventListener('input', (event) => {
-          // Correctly convert kebab-case and snake_case IDs to camelCase
+          // The file input is handled separately by a 'change' event
+          if (event.target.type === 'file') return;
+
           const key = event.target.id
             .replace('form-', '')
             .replace(/[-_]([a-z])/g, (g) => g[1].toUpperCase());
@@ -735,6 +738,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
     });
+
+    // CORRECTED: Add a dedicated 'change' listener for the file input
+    dom.advancedControls.imageFile.addEventListener('change', updateQRCode);
 
     // Specific field logic
     dom.formFields.extension.addEventListener('input', (event) => {

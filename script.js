@@ -568,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // The URL parameter is removed by the `updateUrlParameters` call
       // inside `updateQRCode`, so we no longer need to do it here.
-    }, 100);
+    }, 2000);
   };
 
   const handleRouteChange = async () => {

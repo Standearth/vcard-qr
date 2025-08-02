@@ -26,6 +26,10 @@ const STAND_LOGO_WIFI = './Stand_WiFi.svg';
 const tabSpecificDefaults = {
   vcard: {
     qrErrorCorrectionLevel: 'Q',
+    width: '376',
+    height: '376',
+    qrTypeNumber: '18',
+    margin: '10',
   },
   link: {
     qrErrorCorrectionLevel: 'H',

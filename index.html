@@ -31,9 +31,18 @@
       <div class="content-wrapper">
         <div class="header-section">
           <h1 class="main-heading">Stand QR Code Generator</h1>
-          <p class="sub-heading">
+          <p class="sub-heading" data-mode="vcard">
             Enter or edit your details below to generate your QR Code. Delete
-            any fields you don't want to include.
+            any fields you don't want to include. Store on your phone, and
+            people can scan to instantly save your contact info.
+          </p>
+          <p class="sub-heading hidden" data-mode="link">
+            Enter a URL to generate a QR code.
+          </p>
+          <p class="sub-heading hidden" data-mode="wifi">
+            Enter your WiFi details to generate a QR code for network access.
+            Please only use for events, or locations where only authorized users
+            will have access.
           </p>
         </div>
 
@@ -178,6 +187,12 @@
                 </button>
                 <div class="button-break"></div>
                 <button
+                  id="send-to-phone-button"
+                  class="button button-secondary"
+                >
+                  <i class="fas fa-mobile-alt"></i> Send to my phone
+                </button>
+                <button
                   id="toggle-advanced-controls"
                   class="button button-special"
                 >
@@ -223,7 +238,7 @@
                   type="number"
                   min="100"
                   max="10000"
-                  value="500"
+                  value="400"
                   class="form-input"
                 />
               </div>
@@ -234,7 +249,7 @@
                   type="number"
                   min="100"
                   max="10000"
-                  value="500"
+                  value="400"
                   class="form-input"
                 />
               </div>
@@ -451,6 +466,18 @@
         >Source Code</a
       >
     </div>
+
+    <!-- Modal for "Send to Phone" -->
+    <div id="send-to-phone-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <button id="modal-close-button" class="modal-close">&times;</button>
+        <div id="modal-qr-code" class="modal-qr-wrapper"></div>
+        <p class="modal-text">
+          Scan this on your phone to download your QR code.
+        </p>
+      </div>
+    </div>
+
     <script src="script.js"></script>
   </body>
 </html>

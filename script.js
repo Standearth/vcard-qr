@@ -122,7 +122,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const downloadPngButton = document.getElementById('download-png');
   const downloadJpgButton = document.getElementById('download-jpg');
   const downloadSvgButton = document.getElementById('download-svg');
-  const subHeading = document.querySelector('.sub-heading');
+  const subHeadings = {
+    vcard: document.querySelector('.sub-heading[data-mode="vcard"]'),
+    link: document.querySelector('.sub-heading[data-mode="link"]'),
+    wifi: document.querySelector('.sub-heading[data-mode="wifi"]'),
+  };
+  // --- Modal Elements ---
+  const sendToPhoneButton = document.getElementById('send-to-phone-button');
+  const sendToPhoneModal = document.getElementById('send-to-phone-modal');
+  const modalCloseButton = document.getElementById('modal-close-button');
+  const modalQrCodeContainer = document.getElementById('modal-qr-code');
 
   // --- Advanced Control Elements ---
   const formControls = {
@@ -157,6 +166,21 @@ document.addEventListener('DOMContentLoaded', () => {
     image: STAND_LOGO_RED,
   });
   qrCode.append(document.getElementById('canvas'));
+
+  const modalQrCode = new QRCodeStyling({
+    width: 300,
+    height: 300,
+    margin: 10,
+    dotsOptions: {
+      type: 'rounded',
+      color: '#000000',
+    },
+    backgroundOptions: {
+      color: '#ffffff',
+    },
+    // No image for this one, as requested
+  });
+  modalQrCode.append(modalQrCodeContainer);
 
   // --- 3. Core Functions ---
 
@@ -262,17 +286,15 @@ document.addEventListener('DOMContentLoaded', () => {
       'anniversary-logo-checkbox-container'
     );
 
-    if (newMode === 'vcard') {
-      subHeading.textContent =
-        "Enter or edit your details below to generate your QR Code. Delete any fields you don't want to include.";
-      anniversaryLogoContainer.style.display = 'flex';
-    } else if (newMode === 'link') {
-      subHeading.textContent = 'Enter a URL to generate a QR code.';
-      anniversaryLogoContainer.style.display = 'flex';
-    } else if (newMode === 'wifi') {
-      subHeading.textContent =
-        'Enter your WiFi details to generate a QR code for network access.';
+    // Show/hide subheadings
+    for (const key in subHeadings) {
+      subHeadings[key].classList.toggle('hidden', key !== newMode);
+    }
+
+    if (newMode === 'wifi') {
       anniversaryLogoContainer.style.display = 'none';
+    } else {
+      anniversaryLogoContainer.style.display = 'flex';
     }
 
     // Load new tab's state
@@ -522,8 +544,38 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState(null, '', newUrl);
   };
 
-  const handleRouteChange = () => {
+  const handleDownloadFromUrl = (downloadType) => {
+    if (!downloadType) return;
+
+    // Use a small timeout to ensure the browser has processed the QR code update
+    // and is ready to handle a download click, especially for programmatic clicks.
+    setTimeout(() => {
+      switch (downloadType.toLowerCase()) {
+        case 'png':
+          downloadPngButton.click();
+          break;
+        case 'jpg':
+          downloadJpgButton.click();
+          break;
+        case 'svg':
+          downloadSvgButton.click();
+          break;
+        case 'vcf':
+          if (currentMode === 'vcard') {
+            downloadVCardButton.click();
+          }
+          break;
+      }
+      // The URL parameter is removed by the `updateUrlParameters` call
+      // inside `updateQRCode`, so we no longer need to do it here.
+    }, 100);
+  };
+
+  const handleRouteChange = async () => {
     const hash = window.location.hash;
+    const params = new URLSearchParams(hash.split('?')[1] || '');
+    const downloadType = params.get('download');
+
     let mode = 'vcard';
     if (hash.includes('#/link')) {
       mode = 'link';
@@ -536,7 +588,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentMode === 'wifi') {
       formFields.wifiEncryption.dispatchEvent(new Event('change'));
     }
-    updateQRCode(); // Update QR code after populating form
+    await updateQRCode(); // Update QR code after populating form
+    handleDownloadFromUrl(downloadType);
   };
 
   const populateFormFromUrl = () => {
@@ -778,6 +831,36 @@ document.addEventListener('DOMContentLoaded', () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  });
+
+  // Modal listeners
+  sendToPhoneButton.addEventListener('click', () => {
+    // The app uses a hash for routing, with parameters inside the hash.
+    // The standard `URL.searchParams` doesn't work on the hash part,
+    // so we need to construct the URL for the QR code manually.
+    const currentUrl = window.location.href;
+    const urlParts = currentUrl.split('?');
+    const baseUrl = urlParts[0];
+    const existingParams = new URLSearchParams(urlParts[1] || '');
+
+    existingParams.set('download', 'png');
+
+    const finalUrl = `${baseUrl}?${existingParams.toString()}`;
+
+    // Update the modal's QR code with the new URL
+    modalQrCode.update({
+      data: finalUrl,
+    });
+
+    // Show the modal
+    sendToPhoneModal.classList.remove('hidden');
+  });
+
+  const closeModal = () => sendToPhoneModal.classList.add('hidden');
+  modalCloseButton.addEventListener('click', closeModal);
+  sendToPhoneModal.addEventListener('click', (event) => {
+    // Close the modal if the user clicks on the overlay (outside the content)
+    if (event.target === sendToPhoneModal) closeModal();
   });
 
   // --- 5. Initial Load ---

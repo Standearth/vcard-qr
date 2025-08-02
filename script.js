@@ -60,9 +60,9 @@ const defaultFormFields = {
 };
 
 const officePhoneAliases = {
-  SF: '415-863-4563',
-  BHAM: '360-734-2951',
-  VAN: '604-331-6201',
+  SF: '+14158634563',
+  BHAM: '+13607342951',
+  VAN: '+16043316201',
 };
 
 document.addEventListener('DOMContentLoaded', () => {

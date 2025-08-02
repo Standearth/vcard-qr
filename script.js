@@ -192,8 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (element.type === 'checkbox') {
           values[key] = element.checked;
         } else if (element.type === 'file') {
-          // File input values cannot be directly set/get this way
-          // We'll handle image separately in updateQRCode
           continue;
         } else {
           values[key] = element.value;
@@ -210,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (element.type === 'checkbox') {
           element.checked = values[key];
         } else if (element.type === 'file') {
-          // File input values cannot be directly set/get this way
           continue;
         } else {
           element.value = values[key];
@@ -388,6 +385,52 @@ document.addEventListener('DOMContentLoaded', () => {
     return '';
   };
 
+  const sanitizeFilename = (name) => {
+    if (!name) return '';
+
+    // Normalize the string to decompose combined characters (like accents)
+    // and then remove the diacritical marks.
+    const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    // Replace spaces and other problematic characters with an underscore,
+    // remove anything that's not a letter, number, underscore, hyphen, or dot.
+    return normalized
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_.-]/g, '')
+      .replace(/__+/g, '_');
+  };
+
+  const generateFilename = () => {
+    let baseName = 'qr-code'; // Fallback name
+
+    if (currentMode === 'vcard') {
+      const firstName = sanitizeFilename(formFields.firstName.value);
+      const lastName = sanitizeFilename(formFields.lastName.value);
+      const namePart = [firstName, lastName].filter(Boolean).join('-');
+      baseName = `Stand-QR-vCard${namePart ? '-' : ''}${namePart}`;
+    } else if (currentMode === 'wifi') {
+      const ssid = sanitizeFilename(formFields.wifiSsid.value);
+      baseName = `Stand-QR-WiFi-${ssid || 'network'}`;
+    } else if (currentMode === 'link') {
+      try {
+        // Ensure protocol is present for URL constructor
+        let urlString = formFields.linkUrl.value;
+        if (!/^(https?|ftp):\/\//i.test(urlString)) {
+          urlString = 'https://' + urlString;
+        }
+        const url = new URL(urlString);
+        const fqdn = url.hostname;
+        const sanitizedFqdn = sanitizeFilename(fqdn);
+        baseName = `Stand-QR-URL-${sanitizedFqdn || 'link'}`;
+      } catch (e) {
+        console.error('Invalid URL for filename generation:', e);
+        baseName = 'Stand-QR-URL-invalid_link';
+      }
+    }
+    return baseName;
+  };
+
   const updateQRCode = async () => {
     const data = getQRCodeData();
 
@@ -410,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dotsOptions: {
         type: tabStates[currentMode].dotsType,
         color: tabStates[currentMode].dotsColor,
-        roundSize: tabStates[currentMode].roundSize, // Ensure this is read
+        roundSize: tabStates[currentMode].roundSize,
       },
       backgroundOptions: {
         color: tabStates[currentMode].backgroundColor,
@@ -425,33 +468,52 @@ document.addEventListener('DOMContentLoaded', () => {
       },
     };
 
-    try {
+    const loadImagePromise = new Promise((resolve, reject) => {
       if (formControls.imageFile.files.length > 0) {
         const reader = new FileReader();
-        reader.onload = (event) => {
-          newQrConfig.image = event.target.result;
-          qrCode.update(newQrConfig);
-        };
+        reader.onload = (event) => resolve(event.target.result);
+        reader.onerror = reject;
         reader.readAsDataURL(formControls.imageFile.files[0]);
       } else {
+        let imageUrl;
         if (currentMode === 'wifi') {
-          newQrConfig.image = STAND_LOGO_WIFI;
+          imageUrl = STAND_LOGO_WIFI;
         } else {
-          newQrConfig.image = tabStates[currentMode].anniversaryLogo
+          imageUrl = tabStates[currentMode].anniversaryLogo
             ? STAND_LOGO_25
             : STAND_LOGO_RED;
         }
-        qrCode.update(newQrConfig);
+
+        fetch(imageUrl)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.blob();
+          })
+          .then((blob) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          })
+          .catch(reject);
       }
+    });
+
+    try {
+      const imageSrc = await loadImagePromise;
+      newQrConfig.image = imageSrc;
+      qrCode.update(newQrConfig);
+
       vcardTextOutput.textContent = data;
-      vcardTextOutput.style.color = ''; // Reset color on success
+      vcardTextOutput.style.color = '';
       setDownloadButtonVisibility(true);
     } catch (error) {
       console.error('QR Code generation error:', error);
-      // Attempt to clear the QR code by updating with empty data
       qrCode.update({ ...newQrConfig, data: '' });
       vcardTextOutput.textContent = 'Invalid settings combination.';
-      vcardTextOutput.style.color = 'red'; // Style the error message
+      vcardTextOutput.style.color = 'red';
       setDownloadButtonVisibility(false);
     }
     updateUrlParameters();
@@ -547,8 +609,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const handleDownloadFromUrl = (downloadType) => {
     if (!downloadType) return;
 
-    // Use a small timeout to ensure the browser has processed the QR code update
-    // and is ready to handle a download click, especially for programmatic clicks.
     setTimeout(() => {
       switch (downloadType.toLowerCase()) {
         case 'png':
@@ -566,9 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           break;
       }
-      // The URL parameter is removed by the `updateUrlParameters` call
-      // inside `updateQRCode`, so we no longer need to do it here.
-    }, 2000);
+    }, 250);
   };
 
   const handleRouteChange = async () => {
@@ -582,13 +640,24 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (hash.includes('#/wifi')) {
       mode = 'wifi';
     }
-    switchTab(mode, true); // Pass true for initial load
+
+    switchTab(mode, true);
     populateFormFromUrl();
-    // Trigger change event for wifiEncryption to correctly set password field visibility
+
     if (currentMode === 'wifi') {
       formFields.wifiEncryption.dispatchEvent(new Event('change'));
     }
-    await updateQRCode(); // Update QR code after populating form
+
+    // Perform the initial update. On mobile browsers, the library
+    // appears to ignore the image on this very first render call.
+    await updateQRCode();
+
+    // By queueing a second update with a zero-delay timeout, we allow the
+    // browser to finish its current tasks and let the library "settle".
+    // This second call then correctly renders the QR code with the image.
+    // This is a workaround for the apparent library initialization bug.
+    setTimeout(() => updateQRCode(), 0);
+
     handleDownloadFromUrl(downloadType);
   };
 
@@ -646,7 +715,6 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const key in formControls) {
       const element = formControls[key];
       if (element && element.type !== 'file') {
-        // Skip file input, handled separately
         const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         const paramValue = params.get(paramKey);
         const camelCaseKey = key;
@@ -805,28 +873,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
   // Download buttons
-  document
-    .getElementById('download-png')
-    .addEventListener('click', () =>
-      qrCode.download({ name: 'qr-code', extension: 'png' })
-    );
-  document
-    .getElementById('download-jpg')
-    .addEventListener('click', () =>
-      qrCode.download({ name: 'qr-code', extension: 'jpeg' })
-    );
-  document
-    .getElementById('download-svg')
-    .addEventListener('click', () =>
-      qrCode.download({ name: 'qr-code', extension: 'svg' })
-    );
+  document.getElementById('download-png').addEventListener('click', () => {
+    const name = generateFilename();
+    qrCode.download({ name, extension: 'png' });
+  });
+  document.getElementById('download-jpg').addEventListener('click', () => {
+    const name = generateFilename();
+    qrCode.download({ name, extension: 'jpg' });
+  });
+  document.getElementById('download-svg').addEventListener('click', () => {
+    const name = generateFilename();
+    qrCode.download({ name, extension: 'svg' });
+  });
   downloadVCardButton.addEventListener('click', () => {
     const vcardContent = getQRCodeData();
     const blob = new Blob([vcardContent], { type: 'text/vcard' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'vcard.vcf';
+    const name = generateFilename();
+    a.download = `${name}.vcf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -865,43 +931,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- 5. Initial Load ---
   handleRouteChange();
-
-  // --- Sticky QR Code ---
-  let qrCodeOriginalTop = qrPreviewColumn.offsetTop; // Initial top position of the QR code column
-
-  const handleScroll = () => {
-    const scrollY = window.scrollY;
-    const rootFontSize = parseFloat(
-      getComputedStyle(document.documentElement).fontSize
-    );
-    const stickyOffset = rootFontSize; // 1rem
-
-    // Calculate the point where the sticky element would normally stop sticking
-    // This is when the bottom of its parent container scrolls past the top of the viewport
-    const parentElement = qrPreviewColumn.parentElement; // This should be .main-grid column
-    const parentBottom = parentElement.offsetTop + parentElement.offsetHeight;
-
-    // The QR code column will stick at `stickyOffset` from the top of its parent.
-    // It will stop sticking when the bottom of its parent container
-    // minus the height of the QR code column (plus its sticky offset)
-    // is less than the current scroll position.
-    const stickyEndThreshold =
-      parentBottom - qrPreviewColumn.offsetHeight - stickyOffset;
-
-    if (scrollY >= stickyEndThreshold) {
-      qrPreviewColumn.classList.add('sticky');
-    } else {
-      qrPreviewColumn.classList.remove('sticky');
-    }
-  };
-
-  window.addEventListener('scroll', handleScroll);
-  window.addEventListener('resize', () => {
-    // Recalculate original top position on resize, as layout might change
-    qrCodeOriginalTop = qrPreviewColumn.offsetTop;
-    handleScroll(); // Re-evaluate sticky state on resize
-  });
-
-  // Initial call to set sticky state if page loads scrolled
-  handleScroll();
 });

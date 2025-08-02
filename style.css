@@ -1,3 +1,6 @@
+/* ==========================================================================
+   1. Root Variables & Global Styles
+   ========================================================================== */
 :root {
   --color-primary-red: #e50b12;
   --color-primary-dark: #101012;
@@ -17,35 +20,96 @@
 body {
   font-family: 'Readex Pro', sans-serif;
   background-color: var(--color-primary-light);
+  margin: 0;
 }
 
+/* ==========================================================================
+   2. Layout Containers & Grid
+   ========================================================================== */
 .main-container {
   margin-left: auto;
   margin-right: auto;
-  padding: 1rem;
-  /* max-width: 90rem; */
-}
-@media (min-width: 40rem) {
-  /* 640px */
-  .main-container {
-    padding: 1.5rem;
-  }
+  padding: 0;
 }
 
 .content-wrapper {
   background-color: var(--color-primary-white);
-  border-radius: 1rem;
+  border-radius: 0;
   box-shadow: 0 0.625rem 0.9375rem -0.1875rem rgba(0, 0, 0, 0.1),
     0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.05);
   padding: 1.5rem;
 }
-@media (min-width: 48rem) {
-  /* 768px */
-  .content-wrapper {
-    padding: 2rem;
-  }
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
+.form-column {
+  display: grid;
+  gap: 1rem;
+}
+
+.qr-preview-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.qr-sticky-container {
+  width: 100%;
+  position: sticky;
+  top: 1.5rem;
+  align-self: start;
+}
+
+/* ==========================================================================
+   3. Components
+   ========================================================================== */
+
+/* --- Typography --- */
+.header-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.main-heading {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--color-primary-red);
+}
+
+.sub-heading {
+  margin-top: 0.5rem;
+  color: var(--color-primary-dark);
+}
+
+.preview-heading {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin-bottom: 1rem;
+}
+
+.credit-link {
+  text-align: center;
+  margin: 1rem 0;
+  font-size: 0.75rem;
+  color: var(--color-primary-dark);
+}
+
+.credit-link a {
+  color: var(--color-secondary-teal);
+  text-decoration: none;
+}
+
+.credit-link a:hover {
+  text-decoration: underline;
+}
+
+/* --- Forms & Inputs --- */
 .form-input {
   width: 100%;
   padding: 0.75rem;
@@ -56,6 +120,7 @@ body {
   outline: none;
   transition: all 0.15s ease-in-out;
 }
+
 .form-input:focus {
   border-color: var(--color-secondary-marigold);
   box-shadow: 0 0 0 0.125rem var(--color-secondary-marigold),
@@ -71,109 +136,74 @@ body {
   margin-top: 0.75rem;
 }
 
-.header-section {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.main-heading {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: var(--color-primary-red);
-}
-@media (min-width: 40rem) {
-  /* 640px */
-  .main-heading {
-    font-size: 2.25rem;
-  }
-}
-
-.sub-heading {
-  margin-top: 0.5rem;
-  color: var(--color-primary-dark);
-}
-
-.main-grid {
+.office-phone-group {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem; /* Matches default .main-container padding */
-  align-items: start;
-}
-
-/* Mobile: QR code first, then form */
-.main-grid > .qr-preview-column {
-  order: -1; /* Puts QR column first on mobile */
-}
-
-@media (min-width: 40rem) {
-  /* 640px */
-  .main-grid {
-    gap: 1.5rem; /* Matches .main-container padding at 40rem */
-  }
-}
-@media (min-width: 48rem) {
-  /* 768px */
-  .main-grid {
-    grid-template-columns: 1fr 1fr; /* Two equal columns for desktop */
-    gap: 1.5rem; /* Still matches .main-container padding at 40rem, as 48rem is > 40rem */
-  }
-  /* Desktop: Form on left, QR on right */
-  .main-grid > .qr-preview-column {
-    order: unset; /* Resets order for desktop */
-  }
-}
-
-.form-column {
-  display: grid;
+  grid-template-columns: 1fr auto;
   gap: 1rem;
+  align-items: end;
 }
 
-.qr-preview-column {
+.office-phone-group > div:first-child {
+  flex-grow: 1;
+}
+
+.office-phone-group > div:last-child {
+  width: 6rem;
+}
+
+/* --- Checkboxes --- */
+.checkbox-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start; /* Align items to the start of the column */
+  align-items: flex-start;
+  margin-top: 1rem;
 }
 
-.qr-sticky-container {
-  width: 100%; /* Ensure it takes full width of its column */
+#anniversary-logo-checkbox-container {
+  justify-content: center;
 }
 
-@media (min-width: 48rem) {
-  .qr-sticky-container {
-    position: sticky;
-    top: 2rem; /* Adjust as needed, considering header/padding */
-    align-self: start; /* Align to the start of the grid cell */
-  }
+.form-checkbox {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0;
+  margin-right: 0.5rem;
+  border: 0.0625rem solid var(--color-primary-dark);
+  border-radius: 0.25rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
 }
 
-.preview-heading {
-  font-size: 1.25rem;
-  font-weight: 600;
+.form-checkbox:checked {
+  background-color: var(--color-secondary-teal);
+  border-color: var(--color-secondary-teal);
+}
+
+.form-checkbox:checked::before {
+  content: '\2713';
+  display: block;
+  color: var(--color-primary-white);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  text-align: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.form-label-checkbox {
+  font-size: 0.875rem;
   color: var(--color-primary-dark);
-  margin-bottom: 1rem;
+  cursor: pointer;
 }
 
-.qr-canvas-wrapper {
-  display: flex;
-  justify-content: center;
-  max-width: 100%;
-}
-
-.qr-canvas-wrapper canvas,
-.qr-canvas-wrapper svg {
-  height: auto;
-  border: 1px solid var(--color-primary-dark); /* Added border */
-}
-
-.download-buttons-container {
-  margin-top: 1.5rem;
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
+/* --- Buttons --- */
 .button {
   color: var(--color-primary-white);
   font-weight: 600;
@@ -193,16 +223,8 @@ body {
   margin: 0.75rem 0 0;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .button:hover {
-    transform: scale(
-      1.05
-    ); /* Apply transform only on hover for fine pointers */
-  }
-}
-
 .button:active {
-  transform: scale(0.95); /* Slightly shrink button when actively pressed */
+  transform: scale(0.95);
 }
 
 .button:focus {
@@ -214,306 +236,24 @@ body {
   background-color: var(--color-secondary-teal);
   --focus-ring-color: var(--color-secondary-teal);
 }
-
-.button-primary:hover {
-  background-color: #006b66;
-}
-
 .button-secondary {
   background-color: var(--color-secondary-marigold);
   --focus-ring-color: var(--color-secondary-marigold);
 }
-
-.button-secondary:hover {
-  background-color: #d78912;
-}
-
 .button-alternate {
   background-color: var(--color-primary-dark);
   --focus-ring-color: var(--color-primary-dark);
 }
-
-.button-alternate:hover {
-  background-color: #0a0a0a;
-}
-
 .button-special {
   background-color: var(--color-secondary-wine);
   --focus-ring-color: var(--color-secondary-wine);
 }
-
-.button-special:hover {
-  background-color: #4a1525;
-}
-
 .button-cancel {
   background-color: var(--color-primary-red);
   --focus-ring-color: var(--color-primary-red);
 }
 
-.button-cancel:hover {
-  background-color: #b8090f;
-}
-
-.qrcode-text-container {
-  margin-top: 2rem; /* Added margin to separate from form fields */
-  width: 100%;
-}
-
-.qrcode-text-heading {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-primary-dark);
-  margin-bottom: 0.5rem;
-}
-
-.qrcode-text-output {
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: monospace;
-  font-size: 0.875rem;
-  color: var(--color-primary-dark);
-  background-color: var(--color-primary-light);
-  padding: 0.75rem;
-  border-radius: 0.5rem; /* Adjusted border-radius for consistency */
-  border: 0.0625rem solid var(--color-primary-light);
-  overflow-y: auto;
-  box-shadow: 0 0.0625rem 0.125rem 0 rgba(0, 0, 0, 0.05); /* Kept shadow on the output box */
-}
-
-.checkbox-container {
-  display: flex;
-  align-items: flex-start; /* Align items to the top */
-  margin-top: 1rem;
-}
-
-#anniversary-logo-checkbox-container {
-  justify-content: center;
-}
-
-.form-checkbox {
-  width: 1rem;
-  height: 1rem;
-  margin-top: 0; /* Align with the first line of text */
-  margin-right: 0.5rem;
-  border: 0.0625rem solid var(--color-primary-dark);
-  border-radius: 0.25rem;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  outline: none;
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.form-checkbox:checked {
-  background-color: var(--color-secondary-teal);
-  border-color: var(--color-secondary-teal);
-}
-
-.form-checkbox:checked::before {
-  content: '\2713'; /* Checkmark character */
-  display: block;
-  color: var(--color-primary-white);
-  font-size: 0.75rem;
-  line-height: 1rem;
-  text-align: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.form-label-checkbox {
-  font-size: 0.875rem;
-  color: var(--color-primary-dark);
-  cursor: pointer;
-}
-
-/* Advanced Controls Styling */
-.buttons-section {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0 0.75rem; /* Gap between buttons */
-  margin-top: 1.5rem;
-  container-type: inline-size;
-}
-
-.button-break {
-  display: none; /* Hidden by default */
-}
-
-@container (min-width: 30rem) {
-  /* Adjust this breakpoint as needed */
-  .button-break {
-    display: block; /* Show the break element */
-    flex-basis: 100%; /* Force a new line */
-    height: 0; /* No visual height */
-    margin: 0; /* No extra margin */
-    padding: 0; /* No extra padding */
-  }
-}
-
-@container (max-width: 30rem) {
-  /* Target narrow screens */
-  .buttons-section .button:nth-child(-n + 4) {
-    /* First 4 buttons (download) */
-    flex-basis: calc(50% - 0.375rem); /* Two buttons per line */
-  }
-
-  .buttons-section .button:nth-child(n + 5) {
-    /* Buttons from 5th onwards (control) */
-    flex-basis: 100%; /* One button per line */
-  }
-}
-
-.advanced-controls-container {
-  margin-top: 1.5rem;
-  border: 0.0625rem solid var(--color-primary-light);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  background-color: var(--color-primary-white);
-  box-shadow: 0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
-    0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
-  display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(250px, 1fr)
-  ); /* Responsive grid for sections */
-  gap: 1rem;
-}
-
-.advanced-controls-container.hidden {
-  display: none;
-}
-
-.advanced-section {
-  position: relative;
-  background-color: var(--color-primary-light);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: inset 0 0 0.25rem rgba(0, 0, 0, 0.05);
-}
-
-.color-swatch-container {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 2rem;
-  height: 2rem;
-  z-index: 10;
-}
-
-.color-swatch {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 100%;
-  border: 1px solid var(--color-primary-dark);
-  border-radius: 50%;
-  cursor: pointer;
-  background-color: transparent;
-  padding: 0;
-}
-.color-swatch::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-.color-swatch::-webkit-color-swatch {
-  border: none;
-  border-radius: 0.5rem;
-}
-.color-swatch::-moz-color-swatch-wrapper {
-  padding: 0;
-}
-.color-swatch::-moz-color-swatch {
-  border: none;
-  border-radius: 0.5rem;
-}
-
-.advanced-section-heading {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-primary-dark);
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 0.0625rem solid rgba(0, 0, 0, 0.1);
-  padding-right: 3.5rem; /* Add padding to prevent overlap with color swatch */
-}
-
-.advanced-grid-3-col {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.advanced-grid-2-col {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.5rem 1rem;
-}
-
-.radio-group {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.radio-group input[type='radio'] {
-  width: auto;
-  margin-right: 0.25rem;
-}
-
-.radio-group label {
-  margin-bottom: 0;
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* Adjustments for specific elements within panels */
-.advanced-section .form-label {
-  margin-top: 0rem;
-}
-
-.advanced-section .form-input {
-  margin-bottom: 0.5rem;
-}
-
-/* Ensure consistent spacing for radio groups */
-.advanced-section .radio-group {
-  margin-bottom: 1rem;
-}
-
-/* Remove margin from the last element in a panel */
-.advanced-section > *:last-child {
-  margin-bottom: 0;
-}
-
-/* Adjustments for the image file input to align with other inputs */
-input[type='file'] {
-  padding: 0.5rem; /* Adjust padding to match other inputs visually */
-  height: auto; /* Allow height to adjust based on content */
-  background-color: transparent;
-  border: 1px solid var(--color-primary-dark);
-}
-
-/* Adjustments for checkbox within panel */
-.advanced-section .checkbox-container {
-  margin-top: 0.5rem; /* Reduce top margin for checkboxes within panels */
-  margin-bottom: 1rem; /* Add some bottom margin for spacing */
-}
-
-.advanced-section .checkbox-container:last-child {
-  margin-bottom: 0;
-}
-
-/* Tab styling */
+/* --- Tabs --- */
 .tabs {
   display: flex;
   margin-bottom: 1.5rem;
@@ -550,85 +290,183 @@ input[type='file'] {
   display: block;
 }
 
-/* Specific adjustments for link and wifi forms */
-#link-form .form-input,
-#wifi-form .form-input {
-  margin-bottom: 0; /* Remove extra margin from inputs within these forms */
+/* --- QR Code & Output --- */
+.qr-canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
 }
 
-#link-form > div,
-#wifi-form > div {
-  margin-bottom: 1rem; /* Add consistent spacing between form groups */
-}
-
-#link-form > div:last-child,
-#wifi-form > div:last-child {
-  margin-bottom: 0;
-}
-
-/* Ensure the QR code canvas itself is responsive */
-#canvas canvas {
+.qr-canvas-wrapper canvas,
+.qr-canvas-wrapper svg {
   max-width: 100%;
   height: auto;
-  display: block; /* Remove extra space below canvas */
+  border: none;
 }
 
-.credit-link {
-  text-align: center;
-  margin: 0 0 1rem;
-  font-size: 0.75rem;
+.qrcode-text-container {
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.qrcode-text-heading {
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--color-primary-dark);
+  margin-bottom: 0.5rem;
 }
 
-.credit-link a {
-  color: var(--color-secondary-teal);
-  text-decoration: none;
+.qrcode-text-output {
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: var(--color-primary-dark);
+  background-color: var(--color-primary-light);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 0.0625rem solid var(--color-primary-light);
+  overflow-y: auto;
+  box-shadow: 0 0.0625rem 0.125rem 0 rgba(0, 0, 0, 0.05);
 }
 
-.credit-link a:hover {
-  text-decoration: underline;
-}
-
-.office-phone-group {
+/* --- Advanced Controls --- */
+.advanced-controls-container {
+  margin-top: 1.5rem;
+  background-color: var(--color-primary-white);
   display: grid;
-  grid-template-columns: 1fr auto; /* Office phone takes remaining space, extension is auto */
-  gap: 1rem; /* Gap between the two fields */
-  align-items: end; /* Align items to the bottom */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
 }
 
-.office-phone-group > div:first-child {
-  flex-grow: 1;
-}
-
-.office-phone-group > div:last-child {
-  width: 6rem; /* Fixed width for extension field */
-}
-
-/* Send to Phone Button - hidden on mobile */
-#send-to-phone-button {
+.advanced-controls-container.hidden {
   display: none;
 }
 
-@media (min-width: 48rem) {
-  /* 768px */
-  #send-to-phone-button {
-    display: inline-flex;
-  }
+.advanced-section {
+  position: relative;
+  background-color: var(--color-primary-light);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: inset 0 0 0.25rem rgba(0, 0, 0, 0.05);
 }
 
-/* Modal Styles */
+.advanced-section-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 0.0625rem solid rgba(0, 0, 0, 0.1);
+  padding-right: 3.5rem;
+}
+
+/* RESTORED styles for color swatches and other advanced inputs */
+.color-swatch-container {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  z-index: 10;
+}
+
+.color-swatch {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--color-primary-dark);
+  border-radius: 50%;
+  cursor: pointer;
+  background-color: transparent;
+  padding: 0;
+}
+.color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.color-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.5rem;
+}
+.color-swatch::-moz-color-swatch-wrapper {
+  padding: 0;
+}
+.color-swatch::-moz-color-swatch {
+  border: none;
+  border-radius: 0.5rem;
+}
+
+.advanced-grid-3-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.advanced-grid-2-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.radio-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.radio-group input[type='radio'] {
+  width: auto;
+  margin-right: 0.25rem;
+}
+
+.radio-group label {
+  margin-bottom: 0;
+}
+
+.advanced-section .form-label {
+  margin-top: 0rem;
+}
+
+.advanced-section .form-input {
+  margin-bottom: 0.5rem;
+}
+
+.advanced-section .radio-group {
+  margin-bottom: 1rem;
+}
+
+.advanced-section > *:last-child {
+  margin-bottom: 0;
+}
+
+input[type='file'] {
+  padding: 0.5rem;
+  height: auto;
+  background-color: transparent;
+  border: 1px solid var(--color-primary-dark);
+}
+
+.advanced-section .checkbox-container {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.advanced-section .checkbox-container:last-child {
+  margin-bottom: 0;
+}
+/* END RESTORED styles */
+
+/* --- Modal --- */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(
-    16,
-    16,
-    18,
-    0.8
-  ); /* var(--color-primary-dark) with opacity */
+  background-color: rgba(16, 16, 18, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -643,7 +481,7 @@ input[type='file'] {
   border-radius: 1rem;
   box-shadow: 0 0.625rem 0.9375rem -0.1875rem rgba(0, 0, 0, 0.2),
     0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.1);
-  max-width: 25rem; /* 400px */
+  max-width: 25rem;
   width: 100%;
   text-align: center;
 }
@@ -661,12 +499,127 @@ input[type='file'] {
   line-height: 1;
 }
 
-.modal-qr-wrapper {
-  margin-bottom: 1.5rem;
+/* --- Utilities --- */
+.hidden {
+  display: none !important;
 }
 
-.modal-text {
-  font-size: 1rem;
-  color: var(--color-primary-dark);
-  font-weight: 500;
+/* --- Container Queries (Component-specific responsiveness) --- */
+.buttons-section {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.75rem;
+  margin-top: 1.5rem;
+  container-type: inline-size;
+}
+
+.button-break {
+  display: none;
+}
+
+@container (min-width: 30rem) {
+  .button-break {
+    display: block;
+    flex-basis: 100%;
+    height: 0;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@container (max-width: 30rem) {
+  .buttons-section .button:nth-child(-n + 4) {
+    flex-basis: calc(50% - 0.375rem);
+  }
+
+  .buttons-section .button:nth-child(n + 5) {
+    flex-basis: 100%;
+  }
+}
+
+/* ==========================================================================
+   4. Hover States
+   ========================================================================== */
+@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+    transform: scale(1.05);
+  }
+  .button-primary:hover {
+    background-color: #006b66;
+  }
+  .button-secondary:hover {
+    background-color: #d78912;
+  }
+  .button-alternate:hover {
+    background-color: #0a0a0a;
+  }
+  .button-special:hover {
+    background-color: #4a1525;
+  }
+  .button-cancel:hover {
+    background-color: #b8090f;
+  }
+}
+
+/* ==========================================================================
+   5. Responsive Styles (Global Breakpoints)
+   ========================================================================== */
+
+/* --- Medium screens and up (640px) --- */
+@media (min-width: 40rem) {
+  .main-heading {
+    font-size: 2.25rem;
+  }
+  .main-grid {
+    gap: 1.5rem;
+  }
+}
+
+/* --- Large screens and up (768px) --- */
+@media (min-width: 48rem) {
+  .main-container {
+    padding: 1.5rem;
+  }
+
+  .content-wrapper {
+    padding: 2rem;
+    border-radius: 1rem;
+  }
+
+  .main-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .form-column {
+    grid-column: 1;
+    grid-row: 1; /* Explicitly set the row to prevent wrapping */
+  }
+
+  #qr-preview-column {
+    grid-column: 2;
+    grid-row: 1; /* Explicitly set the row to prevent wrapping */
+  }
+
+  .qr-sticky-container {
+    top: 2rem;
+  }
+
+  .qr-canvas-wrapper canvas,
+  .qr-canvas-wrapper svg {
+    border: 1px solid var(--color-primary-dark);
+  }
+
+  #send-to-phone-button {
+    display: inline-flex;
+  }
+
+  .advanced-controls-container {
+    border: 0.0625rem solid var(--color-primary-light);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
+      0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
+  }
 }

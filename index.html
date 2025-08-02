@@ -53,6 +53,55 @@
         </div>
 
         <div class="main-grid">
+          <div id="qr-preview-column">
+            <div class="qr-sticky-container">
+              <div id="canvas" class="qr-canvas-wrapper"></div>
+              <div class="buttons-section">
+                <button id="download-png" class="button button-primary">
+                  <i class="fas fa-download"></i> PNG
+                </button>
+                <button id="download-jpg" class="button button-primary">
+                  <i class="fas fa-download"></i> JPG
+                </button>
+                <button id="download-svg" class="button button-primary">
+                  <i class="fas fa-download"></i> SVG
+                </button>
+                <button id="download-vcard" class="button button-alternate">
+                  <i class="fas fa-download"></i> vCard
+                </button>
+                <div class="button-break"></div>
+                <button
+                  id="send-to-phone-button"
+                  class="button button-secondary"
+                >
+                  <i class="fas fa-mobile-alt"></i> Send to my phone
+                </button>
+                <button
+                  id="toggle-advanced-controls"
+                  class="button button-special"
+                >
+                  Show Advanced Controls
+                </button>
+                <button id="reset-styles-button" class="button button-cancel">
+                  Reset Style
+                </button>
+              </div>
+              <div
+                class="checkbox-container"
+                id="anniversary-logo-checkbox-container"
+              >
+                <input
+                  type="checkbox"
+                  id="anniversary_logo"
+                  class="form-checkbox"
+                  checked
+                />
+                <label for="anniversary_logo" class="form-label-checkbox"
+                  >Use 25th Anniversary Logo</label
+                >
+              </div>
+            </div>
+          </div>
           <div class="form-column">
             <div id="vcard-form" class="tab-content active">
               <div>
@@ -165,55 +214,6 @@
                 <input type="checkbox" id="wifi_hidden" class="form-checkbox" />
                 <label for="wifi_hidden" class="form-label-checkbox"
                   >Hidden Network</label
-                >
-              </div>
-            </div>
-          </div>
-          <div id="qr-preview-column">
-            <div class="qr-sticky-container">
-              <div id="canvas" class="qr-canvas-wrapper"></div>
-              <div class="buttons-section">
-                <button id="download-png" class="button button-primary">
-                  <i class="fas fa-download"></i> PNG
-                </button>
-                <button id="download-jpg" class="button button-primary">
-                  <i class="fas fa-download"></i> JPG
-                </button>
-                <button id="download-svg" class="button button-primary">
-                  <i class="fas fa-download"></i> SVG
-                </button>
-                <button id="download-vcard" class="button button-alternate">
-                  <i class="fas fa-download"></i> vCard
-                </button>
-                <div class="button-break"></div>
-                <button
-                  id="send-to-phone-button"
-                  class="button button-secondary"
-                >
-                  <i class="fas fa-mobile-alt"></i> Send to my phone
-                </button>
-                <button
-                  id="toggle-advanced-controls"
-                  class="button button-special"
-                >
-                  Show Advanced Controls
-                </button>
-                <button id="reset-styles-button" class="button button-cancel">
-                  Reset Style
-                </button>
-              </div>
-              <div
-                class="checkbox-container"
-                id="anniversary-logo-checkbox-container"
-              >
-                <input
-                  type="checkbox"
-                  id="anniversary_logo"
-                  class="form-checkbox"
-                  checked
-                />
-                <label for="anniversary_logo" class="form-label-checkbox"
-                  >Use 25th Anniversary Logo</label
                 >
               </div>
             </div>
@@ -467,13 +467,12 @@
       >
     </div>
 
-    <!-- Modal for "Send to Phone" -->
     <div id="send-to-phone-modal" class="modal-overlay hidden">
       <div class="modal-content">
         <button id="modal-close-button" class="modal-close">&times;</button>
         <div id="modal-qr-code" class="modal-qr-wrapper"></div>
         <p class="modal-text">
-          Scan this on your phone to download your QR code.
+          <i class="fas fa-mobile-alt"></i> Scan to download your QR code.
         </p>
       </div>
     </div>

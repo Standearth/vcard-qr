@@ -1,494 +1,324 @@
-const defaultAdvancedOptions = {
-  width: 500,
-  height: 500,
-  margin: 5,
-  dotsType: 'rounded',
-  dotsColor: '#000000',
-  roundSize: true,
-  cornersSquareType: '',
-  cornersSquareColor: '#000000',
-  cornersDotType: '',
-  cornersDotColor: '#e50b12',
-  backgroundColor: '#ffffff',
-  hideBackgroundDots: true,
-  saveAsBlob: true,
-  imageSize: 0.4,
-  imageMargin: 5,
-  qrTypeNumber: 0,
-  qrErrorCorrectionLevel: 'Q',
-  anniversaryLogo: true,
-};
-
-const STAND_LOGO_RED = './Stand_Logo_Block-RGB_Red.svg';
-const STAND_LOGO_25 = './Stand.earth_25th-red_logo-teal_accent-RGB.svg';
-const STAND_LOGO_WIFI = './Stand_WiFi.svg';
-
-const tabSpecificDefaults = {
-  vcard: {
-    qrErrorCorrectionLevel: 'Q',
-    width: '376',
-    height: '376',
-    qrTypeNumber: '18',
-    margin: '10',
-  },
-  link: {
-    qrErrorCorrectionLevel: 'H',
-  },
-  wifi: {
-    qrErrorCorrectionLevel: 'H',
-    wifiEncryption: 'WPA',
-  },
-};
-
-const defaultFormFields = {
-  firstName: '',
-  lastName: '',
-  org: 'Stand.earth',
-  title: '',
-  email: '',
-  officePhone: '',
-  extension: '',
-  workPhone: '',
-  cellPhone: '',
-  website: 'https://stand.earth',
-  linkedin: '',
-  linkUrl: 'https://stand.earth',
-  wifiSsid: '',
-  wifiPassword: '',
-  wifiEncryption: 'WPA',
-  wifiHidden: false,
-};
-
-const officePhoneAliases = {
-  SF: '+14158634563',
-  BHAM: '+13607342951',
-  VAN: '+16043316201',
-};
-
 document.addEventListener('DOMContentLoaded', () => {
-  // --- 1. Get DOM Elements and URL parameters ---
-  let currentMode = 'vcard'; // Default mode
+  // ==========================================================================
+  // 1. CONFIGURATION & CONSTANTS
+  // ==========================================================================
 
-  // Object to store advanced control states for each tab
-  const tabStates = {
-    vcard: {},
-    link: {},
-    wifi: {},
+  const MODES = {
+    VCARD: 'vcard',
+    LINK: 'link',
+    WIFI: 'wifi',
   };
 
-  // --- Form and Tab Elements ---
-  const tabLinks = {
-    vcard: document.querySelector('.tab-link[data-tab="vcard"]'),
-    link: document.querySelector('.tab-link[data-tab="link"]'),
-    wifi: document.querySelector('.tab-link[data-tab="wifi"]'),
+  const DESKTOP_BREAKPOINT_PX = 768; // Corresponds to 48rem
+
+  const LOGO_URLS = {
+    RED: './Stand_Logo_Block-RGB_Red.svg',
+    ANNIVERSARY: './Stand.earth_25th-red_logo-teal_accent-RGB.svg',
+    WIFI: './Stand_WiFi.svg',
   };
 
-  const formContainers = {
-    vcard: document.getElementById('vcard-form'),
-    link: document.getElementById('link-form'),
-    wifi: document.getElementById('wifi-form'),
+  const OFFICE_PHONE_ALIASES = {
+    SF: '+14158634563',
+    BHAM: '+13607342951',
+    VAN: '+16043316201',
   };
 
-  const formColumn = document.querySelector('.form-column');
-  const qrPreviewColumn = document.getElementById('qr-preview-column');
-
-  const formFields = {
-    // vCard fields
-    firstName: document.getElementById('first_name'),
-    lastName: document.getElementById('last_name'),
-    org: document.getElementById('org'),
-    title: document.getElementById('title'),
-    email: document.getElementById('email'),
-    officePhone: document.getElementById('office_phone'),
-    extension: document.getElementById('extension'),
-    workPhone: document.getElementById('work_phone'),
-    cellPhone: document.getElementById('cell_phone'),
-    website: document.getElementById('website'),
-    linkedin: document.getElementById('linkedin'),
-    // WiFi fields
-    wifiSsid: document.getElementById('wifi_ssid'),
-    wifiPassword: document.getElementById('wifi_password'),
-    wifiEncryption: document.getElementById('wifi_encryption'),
-    wifiHidden: document.getElementById('wifi_hidden'),
-    wifiPasswordContainer: document.getElementById('wifi-password-container'),
-    // Link fields
-    linkUrl: document.getElementById('link_url'),
+  const DEFAULT_ADVANCED_OPTIONS = {
+    width: 500,
+    height: 500,
+    margin: 5,
+    dotsType: 'rounded',
+    dotsColor: '#000000',
+    roundSize: true,
+    cornersSquareType: '',
+    cornersSquareColor: '#000000',
+    cornersDotType: '',
+    cornersDotColor: '#e50b12',
+    backgroundColor: '#ffffff',
+    hideBackgroundDots: true,
+    saveAsBlob: true,
+    imageSize: 0.4,
+    imageMargin: 5,
+    qrTypeNumber: 0,
+    qrErrorCorrectionLevel: 'Q',
+    anniversaryLogo: true,
   };
 
-  const qrcodeTextContainer = document.querySelector('.qrcode-text-container');
-  const contentWrapper = document.querySelector('.content-wrapper');
-  const vcardTextOutput = document.getElementById('qrcode-text-output');
-  const downloadVCardButton = document.getElementById('download-vcard');
-  const downloadPngButton = document.getElementById('download-png');
-  const downloadJpgButton = document.getElementById('download-jpg');
-  const downloadSvgButton = document.getElementById('download-svg');
-  const subHeadings = {
-    vcard: document.querySelector('.sub-heading[data-mode="vcard"]'),
-    link: document.querySelector('.sub-heading[data-mode="link"]'),
-    wifi: document.querySelector('.sub-heading[data-mode="wifi"]'),
+  const TAB_SPECIFIC_DEFAULTS = {
+    [MODES.VCARD]: {
+      qrErrorCorrectionLevel: 'Q',
+      width: '376',
+      height: '376',
+      qrTypeNumber: '18',
+      margin: '10',
+    },
+    [MODES.LINK]: {
+      qrErrorCorrectionLevel: 'H',
+    },
+    [MODES.WIFI]: {
+      qrErrorCorrectionLevel: 'H',
+      wifiEncryption: 'WPA',
+    },
   };
-  // --- Modal Elements ---
-  const sendToPhoneButton = document.getElementById('send-to-phone-button');
-  const sendToPhoneModal = document.getElementById('send-to-phone-modal');
-  const modalCloseButton = document.getElementById('modal-close-button');
-  const modalQrCodeContainer = document.getElementById('modal-qr-code');
 
-  // --- Advanced Control Elements ---
-  const formControls = {
-    width: document.getElementById('form-width'),
-    height: document.getElementById('form-height'),
-    margin: document.getElementById('form-margin'),
-    dotsType: document.getElementById('form-dots-type'),
-    dotsColor: document.getElementById('form-dots-color'),
-    roundSize: document.getElementById('form-round-size'),
-    cornersSquareType: document.getElementById('form-corners-square-type'),
-    cornersSquareColor: document.getElementById('form-corners-square-color'),
-    cornersDotType: document.getElementById('form-corners-dot-type'),
-    cornersDotColor: document.getElementById('form-corners-dot-color'),
-    backgroundColor: document.getElementById('form-background-color'),
-    imageFile: document.getElementById('form-image-file'),
-    hideBackgroundDots: document.getElementById('form-hide-background-dots'),
-    saveAsBlob: document.getElementById('form-save-as-blob'),
-    imageSize: document.getElementById('form-image-size'),
-    imageMargin: document.getElementById('form-image-margin'),
-    qrTypeNumber: document.getElementById('form-qr-type-number'),
-    qrErrorCorrectionLevel: document.getElementById(
-      'form-qr-error-correction-level'
+  const DEFAULT_FORM_FIELDS = {
+    firstName: '',
+    lastName: '',
+    org: 'Stand.earth',
+    title: '',
+    email: '',
+    officePhone: '',
+    extension: '',
+    workPhone: '',
+    cellPhone: '',
+    website: 'https://stand.earth',
+    linkedin: '',
+    linkUrl: 'https://stand.earth',
+    wifiSsid: '',
+    wifiPassword: '',
+    wifiEncryption: 'WPA',
+    wifiHidden: false,
+  };
+
+  // ==========================================================================
+  // 2. DOM ELEMENT SELECTION
+  // ==========================================================================
+
+  const dom = {
+    contentWrapper: document.querySelector('.content-wrapper'),
+    formColumn: document.querySelector('.form-column'),
+    qrPreviewColumn: document.getElementById('qr-preview-column'),
+    qrcodeTextContainer: document.querySelector('.qrcode-text-container'),
+    vcardTextOutput: document.getElementById('qrcode-text-output'),
+    anniversaryLogoContainer: document.getElementById(
+      'anniversary-logo-checkbox-container'
     ),
-    anniversaryLogo: document.getElementById('anniversary_logo'),
-  };
-
-  // --- 2. Initialize QR Code instance ---
-  const qrCode = new QRCodeStyling({
-    width: parseInt(formControls.width.value),
-    height: parseInt(formControls.height.value),
-    margin: parseInt(formControls.margin.value),
-    image: STAND_LOGO_RED,
-  });
-  qrCode.append(document.getElementById('canvas'));
-
-  const modalQrCode = new QRCodeStyling({
-    width: 300,
-    height: 300,
-    margin: 10,
-    dotsOptions: {
-      type: 'rounded',
-      color: '#000000',
+    tabLinks: {
+      vcard: document.querySelector('.tab-link[data-tab="vcard"]'),
+      link: document.querySelector('.tab-link[data-tab="link"]'),
+      wifi: document.querySelector('.tab-link[data-tab="wifi"]'),
     },
-    backgroundOptions: {
-      color: '#ffffff',
+    formContainers: {
+      vcard: document.getElementById('vcard-form'),
+      link: document.getElementById('link-form'),
+      wifi: document.getElementById('wifi-form'),
     },
-    // No image for this one, as requested
-  });
-  modalQrCode.append(modalQrCodeContainer);
-
-  // --- 3. Core Functions ---
-
-  const getFormControlValues = () => {
-    const values = {};
-    for (const key in formControls) {
-      const element = formControls[key];
-      if (element) {
-        if (element.type === 'checkbox') {
-          values[key] = element.checked;
-        } else if (element.type === 'file') {
-          continue;
-        } else {
-          values[key] = element.value;
-        }
-      }
-    }
-    return values;
+    formFields: {
+      firstName: document.getElementById('first_name'),
+      lastName: document.getElementById('last_name'),
+      org: document.getElementById('org'),
+      title: document.getElementById('title'),
+      email: document.getElementById('email'),
+      officePhone: document.getElementById('office_phone'),
+      extension: document.getElementById('extension'),
+      workPhone: document.getElementById('work_phone'),
+      cellPhone: document.getElementById('cell_phone'),
+      website: document.getElementById('website'),
+      linkedin: document.getElementById('linkedin'),
+      wifiSsid: document.getElementById('wifi_ssid'),
+      wifiPassword: document.getElementById('wifi_password'),
+      wifiEncryption: document.getElementById('wifi_encryption'),
+      wifiHidden: document.getElementById('wifi_hidden'),
+      wifiPasswordContainer: document.getElementById('wifi-password-container'),
+      linkUrl: document.getElementById('link_url'),
+    },
+    subHeadings: {
+      vcard: document.querySelector('.sub-heading[data-mode="vcard"]'),
+      link: document.querySelector('.sub-heading[data-mode="link"]'),
+      wifi: document.querySelector('.sub-heading[data-mode="wifi"]'),
+    },
+    buttons: {
+      downloadVCard: document.getElementById('download-vcard'),
+      downloadPng: document.getElementById('download-png'),
+      downloadJpg: document.getElementById('download-jpg'),
+      downloadSvg: document.getElementById('download-svg'),
+      sendToPhone: document.getElementById('send-to-phone-button'),
+      toggleAdvanced: document.getElementById('toggle-advanced-controls'),
+      resetStyles: document.getElementById('reset-styles-button'),
+    },
+    modal: {
+      overlay: document.getElementById('send-to-phone-modal'),
+      closeButton: document.getElementById('modal-close-button'),
+      qrCodeContainer: document.getElementById('modal-qr-code'),
+    },
+    advancedControls: {
+      width: document.getElementById('form-width'),
+      height: document.getElementById('form-height'),
+      margin: document.getElementById('form-margin'),
+      dotsType: document.getElementById('form-dots-type'),
+      dotsColor: document.getElementById('form-dots-color'),
+      roundSize: document.getElementById('form-round-size'),
+      cornersSquareType: document.getElementById('form-corners-square-type'),
+      cornersSquareColor: document.getElementById('form-corners-square-color'),
+      cornersDotType: document.getElementById('form-corners-dot-type'),
+      cornersDotColor: document.getElementById('form-corners-dot-color'),
+      backgroundColor: document.getElementById('form-background-color'),
+      imageFile: document.getElementById('form-image-file'),
+      hideBackgroundDots: document.getElementById('form-hide-background-dots'),
+      saveAsBlob: document.getElementById('form-save-as-blob'),
+      imageSize: document.getElementById('form-image-size'),
+      imageMargin: document.getElementById('form-image-margin'),
+      qrTypeNumber: document.getElementById('form-qr-type-number'),
+      qrErrorCorrectionLevel: document.getElementById(
+        'form-qr-error-correction-level'
+      ),
+      anniversaryLogo: document.getElementById('anniversary_logo'),
+      container: document.getElementById('advanced-controls'),
+    },
   };
 
-  const setFormControlValues = (values) => {
-    for (const key in values) {
-      const element = formControls[key];
-      if (element) {
-        if (element.type === 'checkbox') {
-          element.checked = values[key];
-        } else if (element.type === 'file') {
-          continue;
-        } else {
-          element.value = values[key];
-        }
-      }
-    }
-  };
+  // ==========================================================================
+  // 3. STATE MANAGEMENT
+  // ==========================================================================
 
-  const getEffectiveDefaultValue = (key, type, mode) => {
-    if (type === 'formField') {
-      return defaultFormFields[key];
-    } else if (type === 'advancedOption') {
-      if (
-        tabSpecificDefaults[mode] &&
-        tabSpecificDefaults[mode][key] !== undefined
-      ) {
-        return tabSpecificDefaults[mode][key];
-      }
-      return defaultAdvancedOptions[key];
-    }
-    return undefined;
-  };
+  let currentMode = MODES.VCARD;
+  const tabStates = {};
 
-  const getActiveFormFields = () => {
-    const activeFields = {};
-    if (currentMode === 'vcard') {
-      for (const key in formFields) {
-        if (formFields[key] && formFields[key].closest('#vcard-form')) {
-          activeFields[key] = formFields[key];
-        }
-      }
-    } else if (currentMode === 'link') {
-      activeFields.linkUrl = formFields.linkUrl;
-    } else if (currentMode === 'wifi') {
-      activeFields.wifiSsid = formFields.wifiSsid;
-      activeFields.wifiPassword = formFields.wifiPassword;
-      activeFields.wifiEncryption = formFields.wifiEncryption;
-      activeFields.wifiHidden = formFields.wifiHidden;
-    }
-    return activeFields;
-  };
-
-  // Initialize tabStates with default values
-  for (const mode in tabStates) {
-    tabStates[mode] = { ...defaultAdvancedOptions };
-    if (tabSpecificDefaults[mode]) {
-      Object.assign(tabStates[mode], tabSpecificDefaults[mode]);
-    }
+  // Initialize state for each tab by merging defaults
+  for (const mode in MODES) {
+    const key = MODES[mode];
+    tabStates[key] = {
+      ...DEFAULT_ADVANCED_OPTIONS,
+      ...(TAB_SPECIFIC_DEFAULTS[key] || {}),
+    };
   }
 
-  const switchTab = (newMode, isInitialLoad = false) => {
-    // Save current tab's state before switching
-    if (!isInitialLoad) {
-      tabStates[currentMode] = getFormControlValues();
-    }
+  // ==========================================================================
+  // 4. CORE FUNCTIONS
+  // ==========================================================================
 
-    currentMode = newMode;
-
-    // Update tab links
-    for (const key in tabLinks) {
-      tabLinks[key].classList.toggle('active', key === newMode);
-    }
-
-    // Update form visibility
-    for (const key in formContainers) {
-      formContainers[key].classList.toggle('active', key === newMode);
-      formContainers[key].classList.toggle('hidden', key !== newMode);
-    }
-
-    // Update UI elements based on mode
-    downloadVCardButton.style.display = newMode === 'vcard' ? 'block' : 'none';
-    const anniversaryLogoContainer = document.getElementById(
-      'anniversary-logo-checkbox-container'
-    );
-
-    // Show/hide subheadings
-    for (const key in subHeadings) {
-      subHeadings[key].classList.toggle('hidden', key !== newMode);
-    }
-
-    if (newMode === 'wifi') {
-      anniversaryLogoContainer.style.display = 'none';
-    } else {
-      anniversaryLogoContainer.style.display = 'flex';
-    }
-
-    // Load new tab's state
-    setFormControlValues(tabStates[newMode]);
-
-    if (!isInitialLoad) {
-      updateQRCode();
-      updateUrlParameters();
-    }
-    handleQrTextContainerPlacement();
-  };
-
-  const isTwoColumnLayoutActive = () => {
-    return window.innerWidth >= 768; // Corresponds to 48rem
-  };
-
-  const handleQrTextContainerPlacement = () => {
-    if (
-      (currentMode === 'link' || currentMode === 'wifi') &&
-      isTwoColumnLayoutActive()
-    ) {
-      formColumn.appendChild(qrcodeTextContainer);
-    } else {
-      // Ensure it's in its original place if not link/wifi or not two-column
-      contentWrapper.appendChild(qrcodeTextContainer);
-    }
-  };
-
+  /**
+   * Builds the data string for the QR code based on the current mode.
+   */
   const getQRCodeData = () => {
     const formatPhoneNumberForVCard = (phoneNumber) => {
       if (!phoneNumber) return '';
-      // Remove all characters other than 0-9, comma ',' and the plus sign '+'
       let cleanedNumber = phoneNumber.replace(/[^0-9,+]/g, '');
-
-      // If the resulting number is only 10 digits and nothing else, add '+1' to the start
       if (/^\d{10}$/.test(cleanedNumber)) {
-        cleanedNumber = '+1' + cleanedNumber;
+        cleanedNumber = `+1${cleanedNumber}`;
       }
       return cleanedNumber;
     };
 
-    if (currentMode === 'vcard') {
-      const vcardLines = [
-        'BEGIN:VCARD',
-        'VERSION:3.0',
-        `N:${formFields.lastName.value || ''};${
-          formFields.firstName.value || ''
-        }`,
-        `FN:${
-          (formFields.firstName.value || '') +
-          ' ' +
-          (formFields.lastName.value || '')
-        }`.trim(),
-        formFields.org.value ? `ORG:${formFields.org.value}` : '',
-        formFields.title.value ? `TITLE:${formFields.title.value}` : '',
-        formFields.email.value ? `EMAIL:${formFields.email.value}` : '',
-        formFields.officePhone.value
-          ? `TEL;TYPE=WORK,VOICE:${formFields.officePhone.value}${
-              formFields.extension.value
-                ? ';x=' + formFields.extension.value
-                : ''
-            }`
-          : '',
-        formFields.workPhone.value
-          ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumberForVCard(
-              formFields.workPhone.value
-            )}`
-          : '',
-        formFields.cellPhone.value
-          ? `TEL;TYPE=CELL:${formatPhoneNumberForVCard(
-              formFields.cellPhone.value
-            )}`
-          : '',
-        formFields.website.value ? `URL:${formFields.website.value}` : '',
-        formFields.linkedin.value ? `URL:${formFields.linkedin.value}` : '',
-        'END:VCARD',
-      ];
-      return vcardLines.filter((line) => line).join('\n');
-    } else if (currentMode === 'link') {
-      return formFields.linkUrl.value || 'https://stand.earth';
-    } else if (currentMode === 'wifi') {
-      const ssid = formFields.wifiSsid.value || '';
-      const password = formFields.wifiPassword.value || '';
-      const encryption = formFields.wifiEncryption.value || 'WPA';
-      const hidden = formFields.wifiHidden.checked ? 'true' : 'false';
-
-      // Format for WIFI QR code (ZXing standard)
-      // WIFI:S:<SSID>;T:<ENCRYPTION>;P:<PASSWORD>;H:<HIDDEN>;;
-      return `WIFI:S:${ssid};T:${encryption};P:${password};H:${hidden};;`;
-    }
-    return '';
-  };
-
-  const sanitizeFilename = (name) => {
-    if (!name) return '';
-
-    // Normalize the string to decompose combined characters (like accents)
-    // and then remove the diacritical marks.
-    const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-    // Replace spaces and other problematic characters with an underscore,
-    // remove anything that's not a letter, number, underscore, hyphen, or dot.
-    return normalized
-      .trim()
-      .replace(/\s+/g, '_')
-      .replace(/[^a-zA-Z0-9_.-]/g, '')
-      .replace(/__+/g, '_');
-  };
-
-  const generateFilename = () => {
-    let baseName = 'qr-code'; // Fallback name
-
-    if (currentMode === 'vcard') {
-      const firstName = sanitizeFilename(formFields.firstName.value);
-      const lastName = sanitizeFilename(formFields.lastName.value);
-      const namePart = [firstName, lastName].filter(Boolean).join('-');
-      baseName = `Stand-QR-vCard${namePart ? '-' : ''}${namePart}`;
-    } else if (currentMode === 'wifi') {
-      const ssid = sanitizeFilename(formFields.wifiSsid.value);
-      baseName = `Stand-QR-WiFi-${ssid || 'network'}`;
-    } else if (currentMode === 'link') {
-      try {
-        // Ensure protocol is present for URL constructor
-        let urlString = formFields.linkUrl.value;
-        if (!/^(https?|ftp):\/\//i.test(urlString)) {
-          urlString = 'https://' + urlString;
-        }
-        const url = new URL(urlString);
-        const fqdn = url.hostname;
-        const sanitizedFqdn = sanitizeFilename(fqdn);
-        baseName = `Stand-QR-URL-${sanitizedFqdn || 'link'}`;
-      } catch (e) {
-        console.error('Invalid URL for filename generation:', e);
-        baseName = 'Stand-QR-URL-invalid_link';
-      }
-    }
-    return baseName;
-  };
-
-  const updateQRCode = async () => {
-    const data = getQRCodeData();
-
-    const newQrConfig = {
-      data: data,
-      width: parseInt(tabStates[currentMode].width),
-      height: parseInt(tabStates[currentMode].height),
-      margin: parseInt(tabStates[currentMode].margin),
-      qrOptions: {
-        typeNumber: parseInt(tabStates[currentMode].qrTypeNumber),
-        mode: 'Byte',
-        errorCorrectionLevel: tabStates[currentMode].qrErrorCorrectionLevel,
+    const generators = {
+      [MODES.VCARD]: () => {
+        const {
+          firstName,
+          lastName,
+          org,
+          title,
+          email,
+          officePhone,
+          extension,
+          workPhone,
+          cellPhone,
+          website,
+          linkedin,
+        } = dom.formFields;
+        const vcardLines = [
+          'BEGIN:VCARD',
+          'VERSION:3.0',
+          `N:${lastName.value || ''};${firstName.value || ''}`,
+          `FN:${`${firstName.value || ''} ${lastName.value || ''}`.trim()}`,
+          org.value ? `ORG:${org.value}` : '',
+          title.value ? `TITLE:${title.value}` : '',
+          email.value ? `EMAIL:${email.value}` : '',
+          officePhone.value
+            ? `TEL;TYPE=WORK,VOICE:${officePhone.value}${
+                extension.value ? `;x=${extension.value}` : ''
+              }`
+            : '',
+          workPhone.value
+            ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumberForVCard(
+                workPhone.value
+              )}`
+            : '',
+          cellPhone.value
+            ? `TEL;TYPE=CELL:${formatPhoneNumberForVCard(cellPhone.value)}`
+            : '',
+          website.value ? `URL:${website.value}` : '',
+          linkedin.value ? `URL:${linkedin.value}` : '',
+          'END:VCARD',
+        ];
+        return vcardLines.filter(Boolean).join('\n');
       },
-      imageOptions: {
-        hideBackgroundDots: tabStates[currentMode].hideBackgroundDots,
-        imageSize: parseFloat(tabStates[currentMode].imageSize),
-        margin: parseInt(tabStates[currentMode].imageMargin),
-        saveAsBlob: tabStates[currentMode].saveAsBlob,
-      },
-      dotsOptions: {
-        type: tabStates[currentMode].dotsType,
-        color: tabStates[currentMode].dotsColor,
-        roundSize: tabStates[currentMode].roundSize,
-      },
-      backgroundOptions: {
-        color: tabStates[currentMode].backgroundColor,
-      },
-      cornersSquareOptions: {
-        type: tabStates[currentMode].cornersSquareType,
-        color: tabStates[currentMode].cornersSquareColor,
-      },
-      cornersDotOptions: {
-        type: tabStates[currentMode].cornersDotType,
-        color: tabStates[currentMode].cornersDotColor,
+      [MODES.LINK]: () => dom.formFields.linkUrl.value || 'https://stand.earth',
+      [MODES.WIFI]: () => {
+        const { wifiSsid, wifiPassword, wifiEncryption, wifiHidden } =
+          dom.formFields;
+        return `WIFI:S:${wifiSsid.value || ''};T:${
+          wifiEncryption.value || 'WPA'
+        };P:${wifiPassword.value || ''};H:${
+          wifiHidden.checked ? 'true' : 'false'
+        };;`;
       },
     };
 
-    const loadImagePromise = new Promise((resolve, reject) => {
-      if (formControls.imageFile.files.length > 0) {
+    return generators[currentMode] ? generators[currentMode]() : '';
+  };
+
+  /**
+   * Prepares the configuration object for the QRCodeStyling library.
+   */
+  const buildQrConfig = (data) => {
+    const state = tabStates[currentMode];
+    return {
+      data,
+      width: parseInt(state.width),
+      height: parseInt(state.height),
+      margin: parseInt(state.margin),
+      qrOptions: {
+        typeNumber: parseInt(state.qrTypeNumber),
+        mode: 'Byte',
+        errorCorrectionLevel: state.qrErrorCorrectionLevel,
+      },
+      imageOptions: {
+        hideBackgroundDots: state.hideBackgroundDots,
+        imageSize: parseFloat(state.imageSize),
+        margin: parseInt(state.imageMargin),
+        saveAsBlob: state.saveAsBlob,
+      },
+      dotsOptions: {
+        type: state.dotsType,
+        color: state.dotsColor,
+      },
+      backgroundOptions: {
+        color: state.backgroundColor,
+      },
+      cornersSquareOptions: {
+        type: state.cornersSquareType,
+        color: state.cornersSquareColor,
+      },
+      cornersDotOptions: {
+        type: state.cornersDotType,
+        color: state.cornersDotColor,
+      },
+    };
+  };
+
+  /**
+   * Loads the appropriate logo/image for the QR code asynchronously.
+   */
+  const loadImageAsync = () => {
+    return new Promise((resolve, reject) => {
+      if (dom.advancedControls.imageFile.files.length > 0) {
         const reader = new FileReader();
         reader.onload = (event) => resolve(event.target.result);
         reader.onerror = reject;
-        reader.readAsDataURL(formControls.imageFile.files[0]);
+        reader.readAsDataURL(dom.advancedControls.imageFile.files[0]);
       } else {
         let imageUrl;
-        if (currentMode === 'wifi') {
-          imageUrl = STAND_LOGO_WIFI;
+        if (currentMode === MODES.WIFI) {
+          imageUrl = LOGO_URLS.WIFI;
         } else {
           imageUrl = tabStates[currentMode].anniversaryLogo
-            ? STAND_LOGO_25
-            : STAND_LOGO_RED;
+            ? LOGO_URLS.ANNIVERSARY
+            : LOGO_URLS.RED;
         }
-
         fetch(imageUrl)
           .then((response) => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
+            if (!response.ok)
+              throw new Error('Logo network response was not ok');
             return response.blob();
           })
           .then((blob) => {
@@ -500,103 +330,103 @@ document.addEventListener('DOMContentLoaded', () => {
           .catch(reject);
       }
     });
+  };
+
+  /**
+   * Main function to generate and render the QR code.
+   */
+  const updateQRCode = async () => {
+    const data = getQRCodeData();
+    const config = buildQrConfig(data);
 
     try {
-      const imageSrc = await loadImagePromise;
-      newQrConfig.image = imageSrc;
-      qrCode.update(newQrConfig);
-
-      vcardTextOutput.textContent = data;
-      vcardTextOutput.style.color = '';
+      const imageSrc = await loadImageAsync();
+      config.image = imageSrc;
+      qrCode.update(config);
+      dom.vcardTextOutput.textContent = data;
+      dom.vcardTextOutput.style.color = '';
       setDownloadButtonVisibility(true);
     } catch (error) {
       console.error('QR Code generation error:', error);
-      qrCode.update({ ...newQrConfig, data: '' });
-      vcardTextOutput.textContent = 'Invalid settings combination.';
-      vcardTextOutput.style.color = 'red';
+      qrCode.update({ ...config, data: '' });
+      dom.vcardTextOutput.textContent =
+        'Invalid settings combination. Could not generate QR Code.';
+      dom.vcardTextOutput.style.color = 'red';
       setDownloadButtonVisibility(false);
     }
     updateUrlParameters();
   };
 
-  const setDownloadButtonVisibility = (visible) => {
-    downloadPngButton.style.display = visible ? 'inline-block' : 'none';
-    downloadJpgButton.style.display = visible ? 'inline-block' : 'none';
-    downloadSvgButton.style.display = visible ? 'inline-block' : 'none';
-    // vCard button visibility is handled by switchTab, but we can hide it here too if needed
-    if (currentMode === 'vcard') {
-      downloadVCardButton.style.display = visible ? 'block' : 'none';
+  /**
+   * Switches the active tab and form.
+   */
+  const switchTab = (newMode, isInitialLoad = false) => {
+    if (!isInitialLoad) {
+      tabStates[currentMode] = getFormControlValues();
     }
+    currentMode = newMode;
+
+    Object.keys(dom.tabLinks).forEach((key) => {
+      dom.tabLinks[key].classList.toggle('active', key === newMode);
+      dom.formContainers[key].classList.toggle('active', key === newMode);
+      dom.formContainers[key].classList.toggle('hidden', key !== newMode);
+      dom.subHeadings[key].classList.toggle('hidden', key !== newMode);
+    });
+
+    dom.buttons.downloadVCard.style.display =
+      newMode === MODES.VCARD ? 'block' : 'none';
+    dom.anniversaryLogoContainer.style.display =
+      newMode === MODES.WIFI ? 'none' : 'flex';
+
+    setFormControlValues(tabStates[newMode]);
+
+    if (!isInitialLoad) {
+      updateQRCode();
+    }
+    handleQrTextContainerPlacement();
   };
 
+  /**
+   * Updates the URL hash with the current form parameters.
+   */
   const updateUrlParameters = () => {
     const newUrlParams = new URLSearchParams();
 
-    // Handle form fields parameters (QR code data)
+    // Handle form fields
     const activeFormFields = getActiveFormFields();
     for (const key in activeFormFields) {
       const element = activeFormFields[key];
-      let value = element.value;
-      if (element.type === 'checkbox') {
-        value = element.checked;
-      }
-
-      const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      const value =
+        element.type === 'checkbox' ? element.checked : element.value;
       const defaultValue = getEffectiveDefaultValue(
         key,
         'formField',
         currentMode
       );
 
-      // Perform type-aware comparison for form fields
-      let valuesMatch = false;
-      if (element.type === 'checkbox') {
-        valuesMatch = value === defaultValue; // Direct comparison of booleans
-      } else if (typeof defaultValue === 'number') {
-        valuesMatch = parseFloat(value) === defaultValue;
-      } else {
-        valuesMatch = value === defaultValue;
-      }
-
-      // Only include if different from default
-      if (!valuesMatch) {
+      if (String(value) !== String(defaultValue)) {
+        const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         newUrlParams.set(paramKey, String(value));
-      } else {
-        newUrlParams.delete(paramKey);
       }
     }
 
-    // Handle advanced control parameters
+    // Handle advanced controls
     const currentTabState = tabStates[currentMode];
-    for (const key in formControls) {
-      const element = formControls[key];
-      if (element && element.type !== 'file') {
-        // Skip file input, handled separately
-        let value = currentTabState[key]; // Get value from tabStates, which is already type-correct
-
+    for (const key in dom.advancedControls) {
+      if (
+        dom.advancedControls[key]?.type === 'file' ||
+        !dom.advancedControls.hasOwnProperty(key)
+      )
+        continue;
+      const value = currentTabState[key];
+      const defaultValue = getEffectiveDefaultValue(
+        key,
+        'advancedOption',
+        currentMode
+      );
+      if (String(value) !== String(defaultValue)) {
         const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-        const defaultValue = getEffectiveDefaultValue(
-          key,
-          'advancedOption',
-          currentMode
-        );
-
-        // Perform type-aware comparison
-        let valuesMatch = false;
-        if (typeof defaultValue === 'number') {
-          valuesMatch = parseFloat(value) === defaultValue;
-        } else if (typeof defaultValue === 'boolean') {
-          valuesMatch = value === defaultValue; // Direct comparison of booleans
-        } else {
-          valuesMatch = value === defaultValue;
-        }
-
-        // Only include if different from default
-        if (!valuesMatch) {
-          newUrlParams.set(paramKey, String(value));
-        } else {
-          newUrlParams.delete(paramKey);
-        }
+        newUrlParams.set(paramKey, String(value));
       }
     }
 
@@ -606,67 +436,15 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState(null, '', newUrl);
   };
 
-  const handleDownloadFromUrl = (downloadType) => {
-    if (!downloadType) return;
-
-    setTimeout(() => {
-      switch (downloadType.toLowerCase()) {
-        case 'png':
-          downloadPngButton.click();
-          break;
-        case 'jpg':
-          downloadJpgButton.click();
-          break;
-        case 'svg':
-          downloadSvgButton.click();
-          break;
-        case 'vcf':
-          if (currentMode === 'vcard') {
-            downloadVCardButton.click();
-          }
-          break;
-      }
-    }, 250);
-  };
-
-  const handleRouteChange = async () => {
-    const hash = window.location.hash;
-    const params = new URLSearchParams(hash.split('?')[1] || '');
-    const downloadType = params.get('download');
-
-    let mode = 'vcard';
-    if (hash.includes('#/link')) {
-      mode = 'link';
-    } else if (hash.includes('#/wifi')) {
-      mode = 'wifi';
-    }
-
-    switchTab(mode, true);
-    populateFormFromUrl();
-
-    if (currentMode === 'wifi') {
-      formFields.wifiEncryption.dispatchEvent(new Event('change'));
-    }
-
-    // Perform the initial update. On mobile browsers, the library
-    // appears to ignore the image on this very first render call.
-    await updateQRCode();
-
-    // By queueing a second update with a zero-delay timeout, we allow the
-    // browser to finish its current tasks and let the library "settle".
-    // This second call then correctly renders the QR code with the image.
-    // This is a workaround for the apparent library initialization bug.
-    setTimeout(() => updateQRCode(), 0);
-
-    handleDownloadFromUrl(downloadType);
-  };
-
+  /**
+   * Reads parameters from the URL hash and populates the form.
+   */
   const populateFormFromUrl = () => {
     const params = new URLSearchParams(
       window.location.hash.split('?')[1] || ''
     );
 
-    // Populate form fields based on current mode
+    // Populate form fields
     const activeFormFields = getActiveFormFields();
     for (const key in activeFormFields) {
       const element = activeFormFields[key];
@@ -683,14 +461,13 @@ document.addEventListener('DOMContentLoaded', () => {
           element.checked = paramValue === 'true';
         } else if (
           key === 'officePhone' &&
-          officePhoneAliases[paramValue.toUpperCase()]
+          OFFICE_PHONE_ALIASES[paramValue.toUpperCase()]
         ) {
-          element.value = officePhoneAliases[paramValue.toUpperCase()];
+          element.value = OFFICE_PHONE_ALIASES[paramValue.toUpperCase()];
         } else {
           element.value = paramValue;
         }
       } else {
-        // If parameter not in URL, set to its effective default
         if (element.type === 'checkbox') {
           element.checked = defaultValue;
         } else {
@@ -699,236 +476,342 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Special handling for officePhone and extension
-    if (formFields.extension.value && !formFields.officePhone.value) {
-      // If extension is present but officePhone is not selected, default to the first option
-      const firstOfficePhoneOption = formFields.officePhone.querySelector(
-        'option:not([value=""])'
-      );
-      if (firstOfficePhoneOption) {
-        formFields.officePhone.value = firstOfficePhoneOption.value;
-      }
-    }
-
-    // Populate advanced control parameters from URL into tabStates
+    // Populate advanced controls state
     const currentTabState = tabStates[currentMode];
-    for (const key in formControls) {
-      const element = formControls[key];
-      if (element && element.type !== 'file') {
+    for (const key in dom.advancedControls) {
+      const element = dom.advancedControls[key];
+      if (
+        element &&
+        element.type !== 'file' &&
+        dom.advancedControls.hasOwnProperty(key)
+      ) {
         const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         const paramValue = params.get(paramKey);
-        const camelCaseKey = key;
+        const defaultValue = getEffectiveDefaultValue(
+          key,
+          'advancedOption',
+          currentMode
+        );
 
         if (paramValue !== null) {
-          if (element.type === 'checkbox') {
-            currentTabState[camelCaseKey] = paramValue === 'true';
+          if (typeof defaultValue === 'boolean') {
+            currentTabState[key] = paramValue === 'true';
+          } else if (typeof defaultValue === 'number') {
+            currentTabState[key] = parseFloat(paramValue) || defaultValue;
           } else {
-            let parsedValue = paramValue;
-            const defaultValue = getEffectiveDefaultValue(
-              camelCaseKey,
-              'advancedOption',
-              currentMode
-            );
-            if (typeof defaultValue === 'number') {
-              parsedValue = parseFloat(paramValue);
-              if (isNaN(parsedValue)) {
-                parsedValue = defaultValue; // Fallback to default if parsing fails
-              }
-            }
-            currentTabState[camelCaseKey] = parsedValue;
+            currentTabState[key] = paramValue;
           }
         } else {
-          // If parameter is not in URL, set to default from tabSpecificDefaults or defaultAdvancedOptions
-          const defaultValue = getEffectiveDefaultValue(
-            camelCaseKey,
-            'advancedOption',
-            currentMode
-          );
-          currentTabState[camelCaseKey] = defaultValue;
+          currentTabState[key] = defaultValue;
         }
       }
     }
-    // Apply the loaded state to the form controls
     setFormControlValues(currentTabState);
   };
 
-  // --- 4. Event Listeners ---
-  Object.values(tabLinks).forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const mode = tab.getAttribute('data-tab');
-      switchTab(mode);
-    });
-  });
+  /**
+   * Handles the initial page load and subsequent hash changes.
+   */
+  const handleRouteChange = async () => {
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.split('?')[1] || '');
+    const downloadType = params.get('download');
 
-  Object.values(formFields).forEach((field) => {
-    if (field) {
-      field.addEventListener('input', updateQRCode);
+    let newMode = MODES.VCARD;
+    if (hash.includes(`#/${MODES.LINK}`)) newMode = MODES.LINK;
+    if (hash.includes(`#/${MODES.WIFI}`)) newMode = MODES.WIFI;
+
+    switchTab(newMode, true);
+    populateFormFromUrl();
+
+    if (currentMode === MODES.WIFI) {
+      dom.formFields.wifiEncryption.dispatchEvent(new Event('change'));
     }
-  });
 
-  // Add input filtering for the extension field
-  if (formFields.extension) {
-    formFields.extension.addEventListener('input', (event) => {
-      event.target.value = event.target.value.replace(/[^0-9]/g, '');
-      // If extension is present but officePhone is not selected, default to the first option
-      if (event.target.value && !formFields.officePhone.value) {
-        const firstOfficePhoneOption = formFields.officePhone.querySelector(
-          'option:not([value=""])'
-        );
-        if (firstOfficePhoneOption) {
-          formFields.officePhone.value = firstOfficePhoneOption.value;
-        }
+    // Workaround for a library bug on some mobile browsers
+    await updateQRCode();
+    setTimeout(() => updateQRCode(), 0);
+
+    handleDownloadFromUrl(downloadType);
+  };
+
+  // --- Helper & Utility Functions ---
+
+  const getFormControlValues = () => {
+    const values = {};
+    for (const key in dom.advancedControls) {
+      const element = dom.advancedControls[key];
+      if (element && dom.advancedControls.hasOwnProperty(key)) {
+        if (element.type === 'checkbox') values[key] = element.checked;
+        else if (element.type !== 'file') values[key] = element.value;
       }
+    }
+    return values;
+  };
+
+  const setFormControlValues = (values) => {
+    for (const key in values) {
+      const element = dom.advancedControls[key];
+      if (element && dom.advancedControls.hasOwnProperty(key)) {
+        if (element.type === 'checkbox') element.checked = values[key];
+        else if (element.type !== 'file') element.value = values[key];
+      }
+    }
+  };
+
+  const getEffectiveDefaultValue = (key, type, mode) => {
+    if (type === 'formField') {
+      return DEFAULT_FORM_FIELDS[key];
+    } else if (type === 'advancedOption') {
+      return (
+        TAB_SPECIFIC_DEFAULTS[mode]?.[key] ?? DEFAULT_ADVANCED_OPTIONS[key]
+      );
+    }
+  };
+
+  /**
+   * CORRECTED: Returns an object containing only the DOM elements for the currently active tab.
+   * This prevents state leakage between tabs.
+   */
+  const getActiveFormFields = () => {
+    const { formFields } = dom;
+    if (currentMode === MODES.LINK) {
+      return { linkUrl: formFields.linkUrl };
+    }
+    if (currentMode === MODES.WIFI) {
+      return {
+        wifiSsid: formFields.wifiSsid,
+        wifiPassword: formFields.wifiPassword,
+        wifiEncryption: formFields.wifiEncryption,
+        wifiHidden: formFields.wifiHidden,
+      };
+    }
+    if (currentMode === MODES.VCARD) {
+      return {
+        firstName: formFields.firstName,
+        lastName: formFields.lastName,
+        org: formFields.org,
+        title: formFields.title,
+        email: formFields.email,
+        officePhone: formFields.officePhone,
+        extension: formFields.extension,
+        workPhone: formFields.workPhone,
+        cellPhone: formFields.cellPhone,
+        website: formFields.website,
+        linkedin: formFields.linkedin,
+      };
+    }
+    return {};
+  };
+
+  const isTwoColumnLayoutActive = () =>
+    window.innerWidth >= DESKTOP_BREAKPOINT_PX;
+
+  const handleQrTextContainerPlacement = () => {
+    const shouldMove =
+      (currentMode === MODES.LINK || currentMode === MODES.WIFI) &&
+      isTwoColumnLayoutActive();
+    if (shouldMove) {
+      dom.formColumn.appendChild(dom.qrcodeTextContainer);
+    } else {
+      dom.contentWrapper.appendChild(dom.qrcodeTextContainer);
+    }
+  };
+
+  const sanitizeFilename = (name) => {
+    if (!name) return '';
+    return name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_.-]/g, '')
+      .replace(/__+/g, '_');
+  };
+
+  const generateFilename = () => {
+    if (currentMode === MODES.VCARD) {
+      const namePart = [
+        dom.formFields.firstName.value,
+        dom.formFields.lastName.value,
+      ]
+        .map(sanitizeFilename)
+        .filter(Boolean)
+        .join('-');
+      return `Stand-QR-vCard${namePart ? `-${namePart}` : ''}`;
+    }
+    if (currentMode === MODES.WIFI) {
+      const ssid = sanitizeFilename(dom.formFields.wifiSsid.value);
+      return `Stand-QR-WiFi-${ssid || 'network'}`;
+    }
+    if (currentMode === MODES.LINK) {
+      try {
+        let urlString = dom.formFields.linkUrl.value;
+        if (!/^(https?|ftp):\/\//i.test(urlString))
+          urlString = `https://${urlString}`;
+        const fqdn = new URL(urlString).hostname;
+        return `Stand-QR-URL-${sanitizeFilename(fqdn) || 'link'}`;
+      } catch (e) {
+        return 'Stand-QR-URL-invalid_link';
+      }
+    }
+    return 'qr-code';
+  };
+
+  const setDownloadButtonVisibility = (visible) => {
+    const display = visible ? 'inline-block' : 'none';
+    dom.buttons.downloadPng.style.display = display;
+    dom.buttons.downloadJpg.style.display = display;
+    dom.buttons.downloadSvg.style.display = display;
+    if (currentMode === MODES.VCARD) {
+      dom.buttons.downloadVCard.style.display = visible ? 'block' : 'none';
+    }
+  };
+
+  const handleDownloadFromUrl = (downloadType) => {
+    if (!downloadType) return;
+    setTimeout(() => {
+      const type = downloadType.toLowerCase();
+      if (type === 'png') dom.buttons.downloadPng.click();
+      if (type === 'jpg') dom.buttons.downloadJpg.click();
+      if (type === 'svg') dom.buttons.downloadSvg.click();
+      if (type === 'vcf' && currentMode === MODES.VCARD)
+        dom.buttons.downloadVCard.click();
+    }, 250);
+  };
+
+  const closeModal = () => dom.modal.overlay.classList.add('hidden');
+
+  // ==========================================================================
+  // 5. QR CODE INSTANCES
+  // ==========================================================================
+
+  const qrCode = new QRCodeStyling({
+    ...DEFAULT_ADVANCED_OPTIONS,
+    image: LOGO_URLS.RED,
+  });
+  qrCode.append(document.getElementById('canvas'));
+
+  const modalQrCode = new QRCodeStyling({
+    width: 400,
+    height: 400,
+    margin: 10,
+  });
+  modalQrCode.append(dom.modal.qrCodeContainer);
+
+  // ==========================================================================
+  // 6. EVENT LISTENERS
+  // ==========================================================================
+
+  function setupEventListeners() {
+    window.addEventListener('hashchange', handleRouteChange);
+
+    // Tab switching
+    Object.values(dom.tabLinks).forEach((tab) => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    // Form inputs
+    Object.values(dom.formFields).forEach((field) => {
+      if (field) field.addEventListener('input', updateQRCode);
+    });
+
+    // Advanced controls
+    Object.values(dom.advancedControls).forEach((input) => {
+      if (input && input.id) {
+        input.addEventListener('input', (event) => {
+          // Correctly convert kebab-case and snake_case IDs to camelCase
+          const key = event.target.id
+            .replace('form-', '')
+            .replace(/[-_]([a-z])/g, (g) => g[1].toUpperCase());
+
+          if (key in tabStates[currentMode]) {
+            tabStates[currentMode][key] =
+              event.target.type === 'checkbox'
+                ? event.target.checked
+                : event.target.value;
+            updateQRCode();
+          }
+        });
+      }
+    });
+
+    // Specific field logic
+    dom.formFields.extension.addEventListener('input', (event) => {
+      event.target.value = event.target.value.replace(/[^0-9]/g, '');
+    });
+
+    dom.formFields.wifiEncryption.addEventListener('change', () => {
+      const isPasswordless = dom.formFields.wifiEncryption.value === 'nopass';
+      dom.formFields.wifiPasswordContainer.style.display = isPasswordless
+        ? 'none'
+        : 'block';
+      if (isPasswordless) dom.formFields.wifiPassword.value = '';
       updateQRCode();
     });
-  }
 
-  formFields.wifiEncryption.addEventListener('change', () => {
-    if (formFields.wifiEncryption.value === 'nopass') {
-      formFields.wifiPassword.value = ''; // Clear password
-      formFields.wifiPasswordContainer.style.display = 'none'; // Hide password field
-    } else {
-      formFields.wifiPasswordContainer.style.display = 'block'; // Show password field
-    }
-    updateQRCode();
-  });
+    // Button actions
+    dom.buttons.downloadPng.addEventListener('click', () =>
+      qrCode.download({ name: generateFilename(), extension: 'png' })
+    );
+    dom.buttons.downloadJpg.addEventListener('click', () =>
+      qrCode.download({ name: generateFilename(), extension: 'jpg' })
+    );
+    dom.buttons.downloadSvg.addEventListener('click', () =>
+      qrCode.download({ name: generateFilename(), extension: 'svg' })
+    );
 
-  // Clear extension if officePhone is blank
-  if (formFields.officePhone) {
-    formFields.officePhone.addEventListener('change', (event) => {
-      if (event.target.value === '') {
-        formFields.extension.value = '';
-        updateQRCode();
-      }
+    dom.buttons.downloadVCard.addEventListener('click', () => {
+      const blob = new Blob([getQRCodeData()], { type: 'text/vcard' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${generateFilename()}.vcf`;
+      a.click();
+      URL.revokeObjectURL(url);
     });
-  }
 
-  window.addEventListener('hashchange', handleRouteChange);
-
-  // Advanced controls listeners
-  const advancedControlInputs = [
-    formControls.width,
-    formControls.height,
-    formControls.margin,
-    formControls.dotsType,
-    formControls.dotsColor,
-    formControls.roundSize,
-    formControls.cornersSquareType,
-    formControls.cornersSquareColor,
-    formControls.cornersDotType,
-    formControls.cornersDotColor,
-    formControls.backgroundColor,
-    formControls.imageFile,
-    formControls.hideBackgroundDots,
-    formControls.saveAsBlob,
-    formControls.imageSize,
-    formControls.imageMargin,
-    formControls.qrTypeNumber,
-    formControls.qrErrorCorrectionLevel,
-    formControls.anniversaryLogo,
-  ];
-  advancedControlInputs.forEach((input) => {
-    if (input) {
-      input.addEventListener('input', (event) => {
-        const key = event.target.id
-          .replace('form-', '') // Remove 'form-' prefix
-          .replace(/-([a-z])/g, (g) => g[1].toUpperCase()) // Convert kebab-case to camelCase
-          .replace(/_([a-z])/g, (g) => g[1].toUpperCase()); // Convert snake_case to camelCase
-        let newValue;
-        if (event.target.type === 'checkbox') {
-          newValue = event.target.checked;
-        } else {
-          newValue = event.target.value;
-        }
-        tabStates[currentMode][key] = newValue;
-        updateQRCode();
-      });
-    }
-  });
-
-  document
-    .getElementById('toggle-advanced-controls')
-    .addEventListener('click', () => {
-      const advancedControls = document.getElementById('advanced-controls');
-      advancedControls.classList.toggle('hidden');
-      const button = document.getElementById('toggle-advanced-controls');
-      button.textContent = advancedControls.classList.contains('hidden')
+    dom.buttons.toggleAdvanced.addEventListener('click', () => {
+      const isHidden =
+        dom.advancedControls.container.classList.toggle('hidden');
+      dom.buttons.toggleAdvanced.textContent = isHidden
         ? 'Show Advanced Controls'
         : 'Hide Advanced Controls';
     });
 
-  document
-    .getElementById('reset-styles-button')
-    .addEventListener('click', () => {
-      // Reset advanced options for the current tab to default
-      tabStates[currentMode] = { ...defaultAdvancedOptions };
-      if (tabSpecificDefaults[currentMode]) {
-        Object.assign(tabStates[currentMode], tabSpecificDefaults[currentMode]);
-      }
+    dom.buttons.resetStyles.addEventListener('click', () => {
+      tabStates[currentMode] = {
+        ...DEFAULT_ADVANCED_OPTIONS,
+        ...(TAB_SPECIFIC_DEFAULTS[currentMode] || {}),
+      };
       setFormControlValues(tabStates[currentMode]);
-
-      // Update QR code and URL after resetting
       updateQRCode();
-      updateUrlParameters();
     });
 
-  // Download buttons
-  document.getElementById('download-png').addEventListener('click', () => {
-    const name = generateFilename();
-    qrCode.download({ name, extension: 'png' });
-  });
-  document.getElementById('download-jpg').addEventListener('click', () => {
-    const name = generateFilename();
-    qrCode.download({ name, extension: 'jpg' });
-  });
-  document.getElementById('download-svg').addEventListener('click', () => {
-    const name = generateFilename();
-    qrCode.download({ name, extension: 'svg' });
-  });
-  downloadVCardButton.addEventListener('click', () => {
-    const vcardContent = getQRCodeData();
-    const blob = new Blob([vcardContent], { type: 'text/vcard' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const name = generateFilename();
-    a.download = `${name}.vcf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
-
-  // Modal listeners
-  sendToPhoneButton.addEventListener('click', () => {
-    // The app uses a hash for routing, with parameters inside the hash.
-    // The standard `URL.searchParams` doesn't work on the hash part,
-    // so we need to construct the URL for the QR code manually.
-    const currentUrl = window.location.href;
-    const urlParts = currentUrl.split('?');
-    const baseUrl = urlParts[0];
-    const existingParams = new URLSearchParams(urlParts[1] || '');
-
-    existingParams.set('download', 'png');
-
-    const finalUrl = `${baseUrl}?${existingParams.toString()}`;
-
-    // Update the modal's QR code with the new URL
-    modalQrCode.update({
-      data: finalUrl,
+    // Modal
+    dom.buttons.sendToPhone.addEventListener('click', () => {
+      let finalUrl = window.location.href;
+      // To ensure the download parameter is added correctly to the hash URL
+      if (finalUrl.includes('?')) {
+        finalUrl += '&download=png';
+      } else {
+        // Handles case where there are no params in the hash yet
+        finalUrl += '?download=png';
+      }
+      modalQrCode.update({ data: finalUrl });
+      dom.modal.overlay.classList.remove('hidden');
     });
 
-    // Show the modal
-    sendToPhoneModal.classList.remove('hidden');
-  });
+    dom.modal.closeButton.addEventListener('click', closeModal);
+    dom.modal.overlay.addEventListener('click', (event) => {
+      if (event.target === dom.modal.overlay) closeModal();
+    });
+  }
 
-  const closeModal = () => sendToPhoneModal.classList.add('hidden');
-  modalCloseButton.addEventListener('click', closeModal);
-  sendToPhoneModal.addEventListener('click', (event) => {
-    // Close the modal if the user clicks on the overlay (outside the content)
-    if (event.target === sendToPhoneModal) closeModal();
-  });
+  // ==========================================================================
+  // 7. INITIALIZATION
+  // ==========================================================================
 
-  // --- 5. Initial Load ---
+  setupEventListeners();
   handleRouteChange();
 });

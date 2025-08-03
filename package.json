@@ -1,0 +1,23 @@
+{
+  "name": "qr-code-generator",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "prettier --write \"src/**/*.{ts,css}\" \"*.{html,json,md}\" \"**/*.yml\""
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.5.2",
+    "@fortawesome/free-solid-svg-icons": "^6.5.2",
+    "qr-code-styling": "^1.9.2"
+  },
+  "devDependencies": {
+    "@fontsource/readex-pro": "^5.0.18",
+    "prettier": "^3.2.5",
+    "typescript": "^5.2.2",
+    "vite": "^7.0.6"
+  }
+}

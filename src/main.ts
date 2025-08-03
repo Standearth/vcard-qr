@@ -271,18 +271,46 @@ class QRCodeApp {
   private initializeState(): void {
     for (const key in MODES) {
       const mode = MODES[key as keyof typeof MODES];
+      const defaults = DEFAULT_ADVANCED_OPTIONS;
+      const specifics = TAB_SPECIFIC_DEFAULTS[mode] || {};
+
+      // By manually merging each nested object, we ensure that the
+      // specific tab defaults (e.g., a new errorCorrectionLevel) are applied
+      // without losing other default values (e.g., typeNumber) in that same object.
       this.tabStates[mode] = {
-        ...DEFAULT_ADVANCED_OPTIONS,
-        ...(TAB_SPECIFIC_DEFAULTS[mode] || {}),
+        ...defaults,
+        ...specifics,
+        // Perform a "deep merge" for all nested option objects
+        qrOptions: {
+          ...defaults.qrOptions,
+          ...(specifics.qrOptions || {}),
+        },
+        dotsOptions: {
+          ...defaults.dotsOptions,
+          ...(specifics.dotsOptions || {}),
+        },
+        cornersSquareOptions: {
+          ...defaults.cornersSquareOptions,
+          ...(specifics.cornersSquareOptions || {}),
+        },
+        cornersDotOptions: {
+          ...defaults.cornersDotOptions,
+          ...(specifics.cornersDotOptions || {}),
+        },
+        backgroundOptions: {
+          ...defaults.backgroundOptions,
+          ...(specifics.backgroundOptions || {}),
+        },
+        imageOptions: {
+          ...defaults.imageOptions,
+          ...(specifics.imageOptions || {}),
+        },
       } as TabState;
     }
   }
 
   private initializeIcons(): void {
-    // Add the specific icons you use to the library
     library.add(faDownload, faMobileAlt, faCog, faUndo);
-
-    // Tell Font Awesome to watch the DOM and replace the <i> tags with SVG icons
     faDom.watch();
   }
 
@@ -439,6 +467,7 @@ class QRCodeApp {
 
     this.switchTab(newMode, true);
     this.populateFormFromUrl();
+    this.tabStates[this.currentMode] = this.getFormControlValues();
 
     if (this.currentMode === MODES.WIFI) {
       dom.formFields.wifiEncryption.dispatchEvent(new Event('change'));
@@ -536,33 +565,21 @@ class QRCodeApp {
       }
     }
 
-    const currentTabState = this.tabStates[this.currentMode];
-    for (const key in dom.advancedControls) {
-      if (key === 'container') continue;
-      const controlKey = key as keyof Omit<
-        typeof dom.advancedControls,
-        'container'
-      >;
-      const paramKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      const paramValue = params.get(paramKey);
-      const defaultValue =
-        (TAB_SPECIFIC_DEFAULTS[this.currentMode] as any)[controlKey] ??
-        (DEFAULT_ADVANCED_OPTIONS as any)[controlKey];
-
-      if (paramValue !== null) {
-        if (typeof defaultValue === 'boolean') {
-          (currentTabState as any)[controlKey] = paramValue === 'true';
-        } else if (typeof defaultValue === 'number') {
-          (currentTabState as any)[controlKey] =
-            parseFloat(paramValue) || defaultValue;
-        } else {
-          (currentTabState as any)[controlKey] = paramValue;
+    params.forEach((value, key) => {
+      const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+      if (
+        Object.prototype.hasOwnProperty.call(dom.advancedControls, camelKey)
+      ) {
+        const element = (dom.advancedControls as any)[camelKey] as
+          | HTMLInputElement
+          | HTMLSelectElement;
+        if (element && element.type === 'checkbox') {
+          (element as HTMLInputElement).checked = value === 'true';
+        } else if (element) {
+          element.value = value;
         }
-      } else {
-        (currentTabState as any)[controlKey] = defaultValue;
       }
-    }
-    this.setFormControlValues(currentTabState);
+    });
   };
 
   private switchTab = (newMode: Mode, isInitialLoad = false): void => {
@@ -793,6 +810,11 @@ class QRCodeApp {
 
   private closeModal = () => dom.modal.overlay.classList.add('hidden');
 
+  private handleAdvancedControlsChange = (): void => {
+    this.tabStates[this.currentMode] = this.getFormControlValues();
+    this.updateQRCode();
+  };
+
   private setupEventListeners = (): void => {
     window.addEventListener('hashchange', this.handleRouteChange.bind(this));
 
@@ -802,13 +824,18 @@ class QRCodeApp {
       );
     });
 
-    const allFormFields = [
-      ...Object.values(dom.formFields),
-      ...Object.values(dom.advancedControls),
-    ];
-    allFormFields.forEach((field) => {
+    Object.values(dom.formFields).forEach((field) => {
       if (field instanceof HTMLElement) {
         field.addEventListener('input', this.updateQRCode.bind(this));
+      }
+    });
+
+    Object.values(dom.advancedControls).forEach((field) => {
+      if (field instanceof HTMLElement && field.id !== 'advanced-controls') {
+        field.addEventListener(
+          'input',
+          this.handleAdvancedControlsChange.bind(this)
+        );
       }
     });
 
@@ -877,11 +904,4 @@ class QRCodeApp {
 
 document.addEventListener('DOMContentLoaded', () => {
   new QRCodeApp();
-
-  // Use requestAnimationFrame to ensure styles are applied before showing the body.
-  // This prevents the Flash of Unstyled Content (FOUC).
-  requestAnimationFrame(() => {
-    document.body.classList.remove('js-loading');
-    document.body.classList.add('js-loaded');
-  });
 });

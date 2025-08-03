@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QR Code Generator</title>
 
-    <link rel="stylesheet" href="/src/styles/main.css" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link
       rel="icon"
@@ -69,8 +68,10 @@
                   id="toggle-advanced-controls"
                   class="button button-special"
                 >
-                  <i class="fas fa-cog" aria-hidden="true"></i> Show Advanced
-                  Controls
+                  <i class="fas fa-cog" aria-hidden="true"></i
+                  ><span id="toggle-advanced-text">
+                    Show Advanced Controls</span
+                  >
                 </button>
                 <button id="reset-styles-button" class="button button-cancel">
                   <i class="fas fa-undo" aria-hidden="true"></i> Reset Style
@@ -90,6 +91,10 @@
                   >Use 25th Anniversary Logo</label
                 >
               </div>
+            </div>
+            <div class="qrcode-text-container">
+              <h3 class="qrcode-text-heading">QR Code Contents</h3>
+              <pre id="qrcode-text-output" class="qrcode-text-output"></pre>
             </div>
           </div>
           <div class="form-column">
@@ -209,236 +214,239 @@
             </form>
           </div>
         </div>
-        <section
-          id="advanced-controls"
-          class="advanced-controls-container hidden"
-        >
-          <div class="advanced-section">
-            <h3 class="advanced-section-heading">Background</h3>
-            <div class="color-swatch-container">
-              <input
-                id="form-background-color"
-                type="color"
-                value="#ffffff"
-                class="color-swatch"
-              />
+        <div id="bottom-content-container" class="bottom-content-grid">
+          <section
+            id="advanced-controls"
+            class="advanced-controls-container hidden"
+          >
+            <div class="advanced-section">
+              <h3 class="advanced-section-heading">Background</h3>
+              <div class="color-swatch-container">
+                <input
+                  id="form-background-color"
+                  type="color"
+                  value="#ffffff"
+                  class="color-swatch"
+                />
+              </div>
+              <div class="advanced-grid-3-col">
+                <div>
+                  <label for="form-width" class="form-label">Width</label>
+                  <input
+                    id="form-width"
+                    type="number"
+                    min="100"
+                    max="10000"
+                    value="400"
+                    class="form-input"
+                  />
+                </div>
+                <div>
+                  <label for="form-height" class="form-label">Height</label>
+                  <input
+                    id="form-height"
+                    type="number"
+                    min="100"
+                    max="10000"
+                    value="400"
+                    class="form-input"
+                  />
+                </div>
+                <div>
+                  <label for="form-margin" class="form-label">Margin</label>
+                  <input
+                    id="form-margin"
+                    type="number"
+                    min="0"
+                    max="10000"
+                    value="10"
+                    class="form-input"
+                  />
+                </div>
+              </div>
             </div>
-            <div class="advanced-grid-3-col">
-              <div>
-                <label for="form-width" class="form-label">Width</label>
-                <input
-                  id="form-width"
-                  type="number"
-                  min="100"
-                  max="10000"
-                  value="400"
-                  class="form-input"
-                />
-              </div>
-              <div>
-                <label for="form-height" class="form-label">Height</label>
-                <input
-                  id="form-height"
-                  type="number"
-                  min="100"
-                  max="10000"
-                  value="400"
-                  class="form-input"
-                />
-              </div>
-              <div>
-                <label for="form-margin" class="form-label">Margin</label>
-                <input
-                  id="form-margin"
-                  type="number"
-                  min="0"
-                  max="10000"
-                  value="10"
-                  class="form-input"
-                />
-              </div>
-            </div>
-          </div>
 
-          <div class="advanced-section">
-            <h3 class="advanced-section-heading">Dots</h3>
-            <div class="color-swatch-container">
-              <input
-                id="form-dots-color"
-                type="color"
-                value="#000000"
-                class="color-swatch"
-              />
-            </div>
-            <div class="advanced-grid-2-col">
-              <div>
-                <select id="form-dots-type" class="form-input">
-                  <option value="square" selected>Square</option>
-                  <option value="dots">Dots</option>
-                  <option value="rounded">Rounded</option>
-                  <option value="extra-rounded">Extra rounded</option>
-                  <option value="classy">Classy</option>
-                  <option value="classy-rounded">Classy rounded</option>
-                </select>
-              </div>
-              <div class="checkbox-container">
+            <div class="advanced-section">
+              <h3 class="advanced-section-heading">Dots</h3>
+              <div class="color-swatch-container">
                 <input
-                  id="form-round-size"
-                  type="checkbox"
-                  class="form-checkbox"
-                  checked
+                  id="form-dots-color"
+                  type="color"
+                  value="#000000"
+                  class="color-swatch"
                 />
-                <label for="form-round-size" class="form-label-checkbox"
-                  >Apply Size Rounding</label
-                >
+              </div>
+              <div class="advanced-grid-2-col">
+                <div>
+                  <select id="form-dots-type" class="form-input">
+                    <option value="square" selected>Square</option>
+                    <option value="dots">Dots</option>
+                    <option value="rounded">Rounded</option>
+                    <option value="extra-rounded">Extra rounded</option>
+                    <option value="classy">Classy</option>
+                    <option value="classy-rounded">Classy rounded</option>
+                  </select>
+                </div>
+                <div class="checkbox-container">
+                  <input
+                    id="form-round-size"
+                    type="checkbox"
+                    class="form-checkbox"
+                    checked
+                  />
+                  <label for="form-round-size" class="form-label-checkbox"
+                    >Apply Size Rounding</label
+                  >
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="advanced-section">
-            <h3 class="advanced-section-heading">Corner Squares</h3>
-            <div class="color-swatch-container">
-              <input
-                id="form-corners-square-color"
-                type="color"
-                value="#000000"
-                class="color-swatch"
-              />
-            </div>
-            <div class="advanced-grid-2-col">
-              <div>
-                <select id="form-corners-square-type" class="form-input">
-                  <option value="" selected>Default</option>
-                  <option value="square">Square</option>
-                  <option value="dot">Dot</option>
-                  <option value="extra-rounded">Extra rounded</option>
-                  <option value="rounded">Rounded</option>
-                  <option value="dots">Dots</option>
-                  <option value="classy">Classy</option>
-                  <option value="classy-rounded">Classy rounded</option>
-                </select>
+            <div class="advanced-section">
+              <h3 class="advanced-section-heading">Corner Squares</h3>
+              <div class="color-swatch-container">
+                <input
+                  id="form-corners-square-color"
+                  type="color"
+                  value="#000000"
+                  class="color-swatch"
+                />
+              </div>
+              <div class="advanced-grid-2-col">
+                <div>
+                  <select id="form-corners-square-type" class="form-input">
+                    <option value="" selected>Default</option>
+                    <option value="square">Square</option>
+                    <option value="dot">Dot</option>
+                    <option value="extra-rounded">Extra rounded</option>
+                    <option value="rounded">Rounded</option>
+                    <option value="dots">Dots</option>
+                    <option value="classy">Classy</option>
+                    <option value="classy-rounded">Classy rounded</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="advanced-section">
-            <h3 class="advanced-section-heading">Corners Dots</h3>
-            <div class="color-swatch-container">
-              <input
-                id="form-corners-dot-color"
-                type="color"
-                value="#e50b12"
-                class="color-swatch"
-              />
-            </div>
-            <div class="advanced-grid-2-col">
-              <div>
-                <select id="form-corners-dot-type" class="form-input">
-                  <option value="" selected>Default</option>
-                  <option value="square">Square</option>
-                  <option value="dot">Dot</option>
-                  <option value="rounded">Rounded</option>
-                  <option value="dots">Dots</option>
-                  <option value="classy">Classy</option>
-                  <option value="classy-rounded">Classy rounded</option>
-                  <option value="extra-rounded">Extra rounded</option>
-                </select>
+            <div class="advanced-section">
+              <h3 class="advanced-section-heading">Corners Dots</h3>
+              <div class="color-swatch-container">
+                <input
+                  id="form-corners-dot-color"
+                  type="color"
+                  value="#e50b12"
+                  class="color-swatch"
+                />
+              </div>
+              <div class="advanced-grid-2-col">
+                <div>
+                  <select id="form-corners-dot-type" class="form-input">
+                    <option value="" selected>Default</option>
+                    <option value="square">Square</option>
+                    <option value="dot">Dot</option>
+                    <option value="rounded">Rounded</option>
+                    <option value="dots">Dots</option>
+                    <option value="classy">Classy</option>
+                    <option value="classy-rounded">Classy rounded</option>
+                    <option value="extra-rounded">Extra rounded</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="advanced-section">
-            <h3 class="advanced-section-heading">Logo / Image</h3>
-            <div class="advanced-grid-2-col">
-              <div style="grid-column: span 2">
-                <input id="form-image-file" type="file" class="form-input" />
-              </div>
-              <div>
-                <label for="form-image-size" class="form-label"
-                  >Image Size</label
-                >
-                <input
-                  id="form-image-size"
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value="0.4"
-                  class="form-input"
-                />
-              </div>
-              <div>
-                <label for="form-image-margin" class="form-label">Margin</label>
-                <input
-                  id="form-image-margin"
-                  type="number"
-                  min="0"
-                  max="10000"
-                  value="5"
-                  class="form-input"
-                />
-              </div>
-              <div class="checkbox-container">
-                <input
-                  id="form-hide-background-dots"
-                  type="checkbox"
-                  class="form-checkbox"
-                  checked
-                />
-                <label
-                  for="form-hide-background-dots"
-                  class="form-label-checkbox"
-                  >Hide Dots</label
-                >
-              </div>
-              <div class="checkbox-container">
-                <input
-                  id="form-save-as-blob"
-                  type="checkbox"
-                  class="form-checkbox"
-                  checked
-                />
-                <label for="form-save-as-blob" class="form-label-checkbox"
-                  >Save SVG Blob</label
-                >
-              </div>
-            </div>
-          </div>
-
-          <div class="advanced-section">
-            <h3 class="advanced-section-heading">QR Options</h3>
-            <div class="advanced-grid-2-col">
-              <div>
-                <label for="form-qr-type-number" class="form-label"
-                  >Type Number</label
-                >
-                <input
-                  id="form-qr-type-number"
-                  type="number"
-                  min="0"
-                  max="40"
-                  value="0"
-                  class="form-input"
-                />
-              </div>
-
-              <div>
-                <label for="form-qr-error-correction-level" class="form-label"
-                  >Error Correction</label
-                >
-                <select id="form-qr-error-correction-level" class="form-input">
-                  <option value="L">Low</option>
-                  <option value="M">Medium</option>
-                  <option value="Q" selected>High</option>
-                  <option value="H">Very High</option>
-                </select>
+            <div class="advanced-section">
+              <h3 class="advanced-section-heading">Logo / Image</h3>
+              <div class="advanced-grid-2-col">
+                <div style="grid-column: span 2">
+                  <input id="form-image-file" type="file" class="form-input" />
+                </div>
+                <div>
+                  <label for="form-image-size" class="form-label"
+                    >Image Size</label
+                  >
+                  <input
+                    id="form-image-size"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value="0.4"
+                    class="form-input"
+                  />
+                </div>
+                <div>
+                  <label for="form-image-margin" class="form-label"
+                    >Margin</label
+                  >
+                  <input
+                    id="form-image-margin"
+                    type="number"
+                    min="0"
+                    max="10000"
+                    value="5"
+                    class="form-input"
+                  />
+                </div>
+                <div class="checkbox-container">
+                  <input
+                    id="form-hide-background-dots"
+                    type="checkbox"
+                    class="form-checkbox"
+                    checked
+                  />
+                  <label
+                    for="form-hide-background-dots"
+                    class="form-label-checkbox"
+                    >Hide Dots</label
+                  >
+                </div>
+                <div class="checkbox-container">
+                  <input
+                    id="form-save-as-blob"
+                    type="checkbox"
+                    class="form-checkbox"
+                    checked
+                  />
+                  <label for="form-save-as-blob" class="form-label-checkbox"
+                    >Save SVG Blob</label
+                  >
+                </div>
               </div>
             </div>
-          </div>
-        </section>
-        <div class="qrcode-text-container">
-          <h3 class="qrcode-text-heading">QR Code Contents</h3>
-          <pre id="qrcode-text-output" class="qrcode-text-output"></pre>
+
+            <div class="advanced-section">
+              <h3 class="advanced-section-heading">QR Options</h3>
+              <div class="advanced-grid-2-col">
+                <div>
+                  <label for="form-qr-type-number" class="form-label"
+                    >Type Number</label
+                  >
+                  <input
+                    id="form-qr-type-number"
+                    type="number"
+                    min="0"
+                    max="40"
+                    value="0"
+                    class="form-input"
+                  />
+                </div>
+
+                <div>
+                  <label for="form-qr-error-correction-level" class="form-label"
+                    >Error Correction</label
+                  >
+                  <select
+                    id="form-qr-error-correction-level"
+                    class="form-input"
+                  >
+                    <option value="L">Low</option>
+                    <option value="M">Medium</option>
+                    <option value="Q" selected>High</option>
+                    <option value="H">Very High</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </main>

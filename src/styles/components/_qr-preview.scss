@@ -1,0 +1,54 @@
+.qr-sticky-container {
+  width: 100%;
+
+  @media (min-width: 48rem) {
+    position: sticky;
+    top: 2rem;
+  }
+}
+
+.qr-canvas-wrapper {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+
+  canvas,
+  svg {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--color-primary-dark);
+  }
+
+  // Mobile floating class
+  &.is-stuck-mobile {
+    position: fixed;
+    top: 1rem;
+    z-index: 100;
+    // box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    // border-radius: 1rem;
+    // background: var(--color-primary-white);
+  }
+
+  // Desktop floating class
+  &.is-stuck-desktop {
+    position: fixed;
+    top: 2rem;
+    z-index: 100;
+    background: var(--color-primary-white);
+    // padding: 1rem;
+    // border-radius: 1rem;
+    // box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    // border: 1px solid var(--color-primary-light);
+
+    // The inner canvas should not have a border when it's floating inside the card
+    // canvas,
+    // svg {
+    //   border: none;
+    // }
+  }
+}
+
+.qrcode-text-container {
+  margin-top: 2rem;
+  width: 100%;
+}

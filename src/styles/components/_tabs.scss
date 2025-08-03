@@ -1,0 +1,35 @@
+.tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-primary-light);
+}
+
+.tab-link {
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-secondary-teal);
+  transition: all 0.2s ease-in-out;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+
+  &:hover {
+    color: var(--color-primary-red);
+  }
+
+  &.active {
+    color: var(--color-primary-red);
+    border-bottom-color: var(--color-primary-red);
+  }
+}
+
+.tab-content.hidden {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}

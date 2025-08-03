@@ -1,0 +1,66 @@
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+
+  @media (min-width: 40rem) {
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 48rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.form-column {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+
+  @media (min-width: 48rem) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+
+.qr-preview-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+
+  @media (min-width: 48rem) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+.bottom-content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem; // Use a consistent gap
+
+  @media (min-width: 48rem) {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+
+    // Explicitly place children in the default state
+    > #advanced-controls {
+      grid-column: 1 / -1;
+    }
+
+    > .qrcode-text-container {
+      grid-column: 2 / 3;
+    }
+  }
+
+  // When JS float is active, this class reflows the layout
+  &.is-reflowing {
+    @media (min-width: 48rem) {
+      // Force BOTH children into the first column, where they will stack vertically
+      > * {
+        grid-column: 1 / 2;
+      }
+    }
+  }
+}

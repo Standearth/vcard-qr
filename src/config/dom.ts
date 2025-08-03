@@ -15,6 +15,13 @@ export const dom = {
     'anniversary-logo-checkbox-container'
   ) as HTMLDivElement,
   canvasContainer: document.getElementById('canvas') as HTMLDivElement,
+  tabs: document.querySelector('.tabs') as HTMLDivElement,
+  qrStickyContainer: document.querySelector(
+    '.qr-sticky-container'
+  ) as HTMLDivElement,
+  qrPreviewColumnFooter: document.getElementById(
+    'qr-preview-column-footer'
+  ) as HTMLDivElement,
   bottomContentContainer: document.getElementById(
     'bottom-content-container'
   ) as HTMLDivElement,

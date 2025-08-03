@@ -2,137 +2,170 @@ import { dom } from '../../config/dom';
 import { DESKTOP_BREAKPOINT_PX } from '../../config/constants';
 
 export class StickyManager {
+  private lastScrollY = 0;
+
   constructor() {
     this.setupStickyBehavior();
   }
 
   private setupStickyBehavior(): void {
-    const { qrPreviewColumn, canvasContainer, bottomContentContainer } = dom;
+    const {
+      contentWrapper,
+      canvasContainer,
+      mainGrid,
+      advancedControls,
+      qrPreviewColumn,
+      formColumn,
+      qrcodeTextContainer,
+      qrStickyContainer,
+      qrPreviewColumnFooter,
+    } = dom;
 
-    const stickyContainer = qrPreviewColumn.querySelector(
-      '.qr-sticky-container'
-    ) as HTMLDivElement;
-
-    if (!stickyContainer || !canvasContainer || !bottomContentContainer) return;
-
-    const canvasPlaceholder = document.createElement('div');
-    canvasPlaceholder.className = 'sticky-placeholder';
-    canvasContainer.before(canvasPlaceholder);
-
-    const desktopOffset = 32;
-    const mobileOffset = 16;
-    let lastScrollY = window.scrollY;
-
-    const handleScroll = () => {
+    const handleStickyBehavior = () => {
+      const isMobile = window.innerWidth < DESKTOP_BREAKPOINT_PX;
       const currentScrollY = window.scrollY;
-      const scrollDirection = currentScrollY > lastScrollY ? 'down' : 'up';
-      if (Math.abs(currentScrollY - lastScrollY) > 1) {
-        lastScrollY = currentScrollY;
-      }
+      const isScrollingUp = currentScrollY < this.lastScrollY;
+      const isScrollingDown = !isScrollingUp;
 
-      if (window.innerWidth >= DESKTOP_BREAKPOINT_PX) {
-        // --- DESKTOP LOGIC ---
-        if (canvasContainer.classList.contains('is-stuck-mobile')) {
-          canvasContainer.classList.remove('is-stuck-mobile');
-          canvasContainer.style.left = '';
-          canvasContainer.style.width = '';
-          canvasPlaceholder.style.height = `0px`;
-          canvasPlaceholder.style.width = `0px`;
-        }
-
-        const isStuck = canvasContainer.classList.contains('is-stuck-desktop');
-        const stickyContainerRect = stickyContainer.getBoundingClientRect();
-        const parentColumnRect = qrPreviewColumn.getBoundingClientRect();
-
-        if (!isStuck) {
-          const canvasRect = canvasContainer.getBoundingClientRect();
-          const isBottomedOut =
-            stickyContainerRect.bottom >= parentColumnRect.bottom - 1;
-          const isAtTop = canvasRect.top <= desktopOffset;
-
-          if (isBottomedOut && isAtTop && scrollDirection === 'down') {
-            const { width, height, left } = canvasRect;
-            canvasPlaceholder.style.width = `${width}px`;
-            canvasPlaceholder.style.height = `${height}px`;
-
-            canvasContainer.classList.add('is-stuck-desktop');
-            canvasContainer.style.left = `${left}px`;
-            canvasContainer.style.width = `${width}px`;
-
-            bottomContentContainer.classList.add('is-reflowing');
-          }
-        } else {
-          // Recalculate position and width on resize
-          const placeholderRect = canvasPlaceholder.getBoundingClientRect();
-          canvasContainer.style.left = `${placeholderRect.left}px`;
-          canvasContainer.style.width = `${placeholderRect.width}px`;
-
-          if (
-            canvasPlaceholder.getBoundingClientRect().top >= desktopOffset &&
-            scrollDirection === 'up'
-          ) {
-            canvasContainer.classList.remove('is-stuck-desktop');
-            canvasContainer.style.left = '';
-            canvasContainer.style.width = '';
-            canvasPlaceholder.style.height = '0px';
-            canvasPlaceholder.style.width = `0px`;
-
-            bottomContentContainer.classList.remove('is-reflowing');
-          }
+      if (isMobile) {
+        if (
+          contentWrapper &&
+          canvasContainer &&
+          mainGrid &&
+          canvasContainer.parentNode !== contentWrapper
+        ) {
+          mainGrid.before(canvasContainer);
         }
       } else {
-        // --- MOBILE LOGIC ---
-        if (canvasContainer.classList.contains('is-stuck-desktop')) {
-          canvasContainer.classList.remove('is-stuck-desktop');
-          canvasContainer.style.left = '';
-          canvasContainer.style.width = '';
-          canvasPlaceholder.style.height = '0px';
-          canvasPlaceholder.style.width = `0px`;
-          bottomContentContainer.classList.remove('is-reflowing');
+        if (
+          qrPreviewColumn &&
+          canvasContainer &&
+          !qrPreviewColumn.contains(canvasContainer)
+        ) {
+          qrPreviewColumn.prepend(canvasContainer);
         }
 
-        const isStuck = canvasContainer.classList.contains('is-stuck-mobile');
+        if (
+          qrcodeTextContainer &&
+          formColumn &&
+          advancedControls.container &&
+          qrPreviewColumn
+        ) {
+          const qrcodeTextContainerRect =
+            qrcodeTextContainer.getBoundingClientRect();
+          const qrStickyContainerRect = formColumn.getBoundingClientRect();
 
-        if (!isStuck) {
           if (
-            canvasContainer.getBoundingClientRect().top <= mobileOffset &&
-            scrollDirection === 'down'
+            qrcodeTextContainerRect.bottom >= qrStickyContainerRect.bottom &&
+            isScrollingDown
           ) {
-            const { width, height, left } =
-              canvasContainer.getBoundingClientRect();
-            canvasPlaceholder.style.width = `${width}px`;
-            canvasPlaceholder.style.height = `${height}px`;
-            canvasContainer.classList.add('is-stuck-mobile');
-            canvasContainer.style.width = `${width}px`;
-            canvasContainer.style.left = `${left}px`;
+            advancedControls.container.classList.remove('both-columns');
+            qrPreviewColumn.classList.add('both-rows');
           }
-        } else {
-          const placeholderRect = canvasPlaceholder.getBoundingClientRect();
-          canvasContainer.style.width = `${placeholderRect.width}px`;
-          canvasContainer.style.left = `${placeholderRect.left}px`;
 
-          if (placeholderRect.top >= mobileOffset && scrollDirection === 'up') {
-            canvasContainer.classList.remove('is-stuck-mobile');
-            canvasContainer.style.width = '';
-            canvasContainer.style.left = '';
-            canvasPlaceholder.style.height = '0px';
-            canvasPlaceholder.style.width = `0px`;
+          if (
+            qrcodeTextContainerRect.bottom < qrStickyContainerRect.bottom &&
+            isScrollingUp
+          ) {
+            advancedControls.container.classList.add('both-columns');
+            qrPreviewColumn.classList.remove('both-rows');
           }
         }
+
+        const contentWrapperRect = contentWrapper.getBoundingClientRect();
+        const canvasRect = canvasContainer.getBoundingClientRect();
+        const formColumnRect = formColumn.getBoundingClientRect();
+        const previewColumnRect = qrPreviewColumn.getBoundingClientRect();
+        const previewFooterRect = qrPreviewColumnFooter.getBoundingClientRect();
+        const advancedControlsRect =
+          advancedControls.container.getBoundingClientRect();
+
+        console.clear();
+        console.log('window.scrollY:', window.scrollY);
+        console.log('window.innerHeight', window.innerHeight);
+        console.log('previewColumnRect.top:', previewColumnRect.top);
+        console.log('canvasRect.top:', canvasRect.top);
+        console.log('canvasRect.height:', canvasRect.height);
+        console.log('canvasRect.bottom:', canvasRect.bottom);
+        console.log('formRect.top:', formColumnRect.top);
+        console.log('previewFooterRect.top:', previewFooterRect.top);
+        console.log('previewFooterRect.height:', previewFooterRect.height);
+        console.log('previewFooterRect.bottom:', previewFooterRect.bottom);
+        console.log('isScrollingUp:', isScrollingUp);
+        console.log('contentWrapperRect.bottom:', contentWrapperRect.bottom);
+
+        const calculatedPreviewFooterRectTop =
+          previewColumnRect.top + canvasRect.height;
+
+        const overlap = canvasRect.bottom - calculatedPreviewFooterRectTop;
+        const previewFooterBottomOffset =
+          canvasRect.top +
+          canvasRect.height +
+          previewFooterRect.height -
+          overlap -
+          window.innerHeight;
+
+        const contentWrapperBottomOffset =
+          contentWrapperRect.bottom < window.innerHeight
+            ? window.innerHeight - contentWrapperRect.bottom
+            : 0;
+
+        console.log('contentWrapperBottomOffset:', contentWrapperBottomOffset);
+
+        console.log('overlap:', overlap);
+        console.log('previewFooterBottomOffset:', previewFooterBottomOffset);
+
+        const contentExceedsViewport =
+          canvasRect.height + previewFooterRect.height > window.innerHeight;
+        console.log('contentExceedsViewport:', contentExceedsViewport);
+
+        const formColumnTotalHeight =
+          formColumnRect.height + advancedControlsRect.height;
+        const previewColumnTotalHeight =
+          canvasRect.height + previewFooterRect.height;
+
+        const previewColumnSmaller =
+          previewColumnTotalHeight < formColumnTotalHeight;
+
+        console.log('previewColumnSmaller:', previewColumnSmaller);
+
+        if (contentExceedsViewport) {
+          if (qrPreviewColumnFooter.parentNode === qrStickyContainer) {
+            console.log('Moving qrPreviewColumnFooter to qrPreviewColumn');
+            qrPreviewColumn.appendChild(qrPreviewColumnFooter);
+          }
+        }
+
+        const footerShouldStick =
+          contentExceedsViewport &&
+          previewColumnSmaller &&
+          previewFooterBottomOffset < -32; //2rem to match stuck position
+        console.log('footerShouldStick', footerShouldStick);
+
+        if (footerShouldStick) {
+          const footerStickBottomPosition = contentWrapperBottomOffset + 32;
+          qrPreviewColumnFooter.classList.add('sticky-footer');
+          qrPreviewColumnFooter.style.bottom = `${footerStickBottomPosition}px`;
+        } else {
+          qrPreviewColumnFooter.classList.remove('sticky-footer');
+        }
+
+        // if (
+        //   previewFooterRect.bottom <= window.innerHeight &&
+        //   isScrollingUp
+        // ) {
+        //   if (qrPreviewColumnFooter.parentNode === qrPreviewColumn) {
+        //     console.log('Moving qrPreviewColumnFooter to qrStickyContainer');
+        //     qrStickyContainer.appendChild(qrPreviewColumnFooter);
+        //   }
+        // }
       }
+
+      this.lastScrollY = currentScrollY;
     };
 
-    let ticking = false;
-    const throttledScrollHandler = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    window.addEventListener('scroll', throttledScrollHandler);
-    window.addEventListener('resize', throttledScrollHandler);
+    handleStickyBehavior();
+    window.addEventListener('scroll', handleStickyBehavior);
+    window.addEventListener('resize', handleStickyBehavior);
   }
 }

@@ -1,6 +1,6 @@
 import { dom } from '../../config/dom';
 import { App } from '../App';
-import { UIManager } from './UIManager';
+import { UIManager } from '../UIManager';
 import { generateFilename } from '../../utils/helpers';
 import { updateTabState } from '../state';
 import {

@@ -18,10 +18,17 @@
       <div class="content-wrapper">
         <header class="header-section">
           <h1 class="main-heading">Stand QR Code Generator</h1>
+
+          <div class="tabs">
+            <button class="tab-link active" data-tab="vcard">vCard</button>
+            <button class="tab-link" data-tab="link">Link</button>
+            <button class="tab-link" data-tab="wifi">WiFi</button>
+          </div>
+
           <p class="sub-heading" data-mode="vcard">
             Enter or edit your details below to generate your QR Code. Delete
-            any fields you don't want to include. Store on your phone, and
-            people can scan to instantly save your contact info.
+            any fields you don't want to include. Store the image on your phone,
+            and people can scan it to instantly save your contact info.
           </p>
           <p class="sub-heading hidden" data-mode="link">
             Enter a URL to generate a QR code.
@@ -33,68 +40,64 @@
           </p>
         </header>
 
-        <div class="tabs">
-          <button class="tab-link active" data-tab="vcard">vCard</button>
-          <button class="tab-link" data-tab="link">Link</button>
-          <button class="tab-link" data-tab="wifi">WiFi</button>
-        </div>
-
         <div class="main-grid">
           <div id="qr-preview-column">
             <div class="qr-sticky-container">
               <div id="canvas" class="qr-canvas-wrapper"></div>
-              <div class="buttons-section">
-                <button id="download-png" class="button button-primary">
-                  <i class="fas fa-download" aria-hidden="true"></i> PNG
-                </button>
-                <button id="download-jpg" class="button button-primary">
-                  <i class="fas fa-download" aria-hidden="true"></i> JPG
-                </button>
-                <button id="download-svg" class="button button-primary">
-                  <i class="fas fa-download" aria-hidden="true"></i> SVG
-                </button>
-                <button id="download-vcard" class="button button-alternate">
-                  <i class="fas fa-download" aria-hidden="true"></i> vCard
-                </button>
-                <div class="button-break"></div>
-                <button
-                  id="send-to-phone-button"
-                  class="button button-secondary"
-                >
-                  <i class="fas fa-mobile-alt" aria-hidden="true"></i> Send to
-                  my phone
-                </button>
-                <button
-                  id="toggle-advanced-controls"
-                  class="button button-special"
-                >
-                  <i class="fas fa-cog" aria-hidden="true"></i
-                  ><span id="toggle-advanced-text">
-                    Show Advanced Controls</span
+              <div id="qr-preview-column-footer">
+                <div class="buttons-section">
+                  <button id="download-png" class="button button-primary">
+                    <i class="fas fa-download" aria-hidden="true"></i> PNG
+                  </button>
+                  <button id="download-jpg" class="button button-primary">
+                    <i class="fas fa-download" aria-hidden="true"></i> JPG
+                  </button>
+                  <button id="download-svg" class="button button-primary">
+                    <i class="fas fa-download" aria-hidden="true"></i> SVG
+                  </button>
+                  <button id="download-vcard" class="button button-alternate">
+                    <i class="fas fa-download" aria-hidden="true"></i> vCard
+                  </button>
+                  <div class="button-break"></div>
+                  <button
+                    id="send-to-phone-button"
+                    class="button button-secondary"
                   >
-                </button>
-                <button id="reset-styles-button" class="button button-cancel">
-                  <i class="fas fa-undo" aria-hidden="true"></i> Reset Style
-                </button>
-              </div>
-              <div
-                class="checkbox-container"
-                id="anniversary-logo-checkbox-container"
-              >
-                <input
-                  type="checkbox"
-                  id="anniversary_logo"
-                  class="form-checkbox"
-                  checked
-                />
-                <label for="anniversary_logo" class="form-label-checkbox"
-                  >Use 25th Anniversary Logo</label
+                    <i class="fas fa-mobile-alt" aria-hidden="true"></i> Send to
+                    my phone
+                  </button>
+                  <button
+                    id="toggle-advanced-controls"
+                    class="button button-special"
+                  >
+                    <i class="fas fa-cog" aria-hidden="true"></i
+                    ><span id="toggle-advanced-text">
+                      Show Advanced Controls</span
+                    >
+                  </button>
+                  <button id="reset-styles-button" class="button button-cancel">
+                    <i class="fas fa-undo" aria-hidden="true"></i> Reset Style
+                  </button>
+                </div>
+                <div
+                  class="checkbox-container"
+                  id="anniversary-logo-checkbox-container"
                 >
+                  <input
+                    type="checkbox"
+                    id="anniversary_logo"
+                    class="form-checkbox"
+                    checked
+                  />
+                  <label for="anniversary_logo" class="form-label-checkbox"
+                    >Use 25th Anniversary Logo</label
+                  >
+                </div>
+                <div class="qrcode-text-container">
+                  <h3 class="qrcode-text-heading">QR Code Contents</h3>
+                  <pre id="qrcode-text-output" class="qrcode-text-output"></pre>
+                </div>
               </div>
-            </div>
-            <div class="qrcode-text-container">
-              <h3 class="qrcode-text-heading">QR Code Contents</h3>
-              <pre id="qrcode-text-output" class="qrcode-text-output"></pre>
             </div>
           </div>
           <div class="form-column">
@@ -213,11 +216,9 @@
               </div>
             </form>
           </div>
-        </div>
-        <div id="bottom-content-container" class="bottom-content-grid">
           <section
             id="advanced-controls"
-            class="advanced-controls-container hidden"
+            class="advanced-controls-container both-columns hidden"
           >
             <div class="advanced-section">
               <h3 class="advanced-section-heading">Background</h3>
@@ -412,7 +413,6 @@
                 </div>
               </div>
             </div>
-
             <div class="advanced-section">
               <h3 class="advanced-section-heading">QR Options</h3>
               <div class="advanced-grid-2-col">

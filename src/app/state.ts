@@ -7,6 +7,7 @@ import {
 } from '../config/constants';
 
 const tabStates: { [key in Mode]?: TabState } = {};
+const pixelMultipliers: { [key in Mode]?: number } = {};
 
 export function initializeState(): void {
   for (const key in MODES) {
@@ -39,6 +40,7 @@ export function initializeState(): void {
         ...(specifics.imageOptions || {}),
       },
     } as TabState;
+    pixelMultipliers[mode] = 0;
   }
 }
 
@@ -46,4 +48,10 @@ export const getTabState = (mode: Mode): TabState | undefined =>
   tabStates[mode];
 export const updateTabState = (mode: Mode, newState: TabState) => {
   tabStates[mode] = newState;
+};
+
+export const getPixelMultiplier = (mode: Mode): number =>
+  pixelMultipliers[mode] || 0;
+export const setPixelMultiplier = (mode: Mode, multiplier: number) => {
+  pixelMultipliers[mode] = multiplier;
 };

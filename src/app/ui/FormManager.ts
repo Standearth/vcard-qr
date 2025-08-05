@@ -1,3 +1,5 @@
+// src/app/ui/FormManager.ts
+
 import {
   DotType,
   CornerSquareType,
@@ -52,10 +54,11 @@ export class FormManager {
       height: parseInt(advancedControls.height.value),
       margin: parseInt(advancedControls.margin.value),
       anniversaryLogo: advancedControls.anniversaryLogo.checked,
+      optimizeSize: advancedControls.optimizeSize.checked,
+      roundSize: advancedControls.roundSize.checked,
       dotsOptions: {
         type: advancedControls.dotsType.value as DotType,
         color: advancedControls.dotsColor.value,
-        roundSize: advancedControls.roundSize.checked,
       },
       backgroundOptions: {
         color: advancedControls.backgroundColor.value,
@@ -97,6 +100,10 @@ export class FormManager {
     );
     advancedControls.anniversaryLogo.checked =
       values.anniversaryLogo ?? DEFAULT_ADVANCED_OPTIONS.anniversaryLogo;
+    advancedControls.optimizeSize.checked =
+      values.optimizeSize ?? DEFAULT_ADVANCED_OPTIONS.optimizeSize ?? false;
+    advancedControls.roundSize.checked =
+      values.roundSize ?? DEFAULT_ADVANCED_OPTIONS.roundSize ?? true;
 
     if (values.dotsOptions) {
       advancedControls.dotsType.value =
@@ -107,10 +114,6 @@ export class FormManager {
         values.dotsOptions.color ??
         DEFAULT_ADVANCED_OPTIONS.dotsOptions?.color ??
         '#000000';
-      advancedControls.roundSize.checked =
-        values.dotsOptions.roundSize ??
-        DEFAULT_ADVANCED_OPTIONS.dotsOptions?.roundSize ??
-        true;
     }
 
     if (values.backgroundOptions) {

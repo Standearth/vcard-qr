@@ -1,3 +1,5 @@
+// src/config/constants.ts
+
 import { Options } from 'qr-code-styling';
 
 export const MODES = {
@@ -22,7 +24,11 @@ export const OFFICE_PHONE_ALIASES: { [key: string]: string } = {
   VAN: '+16043316201',
 };
 
-export type TabState = Partial<Options> & { anniversaryLogo: boolean };
+export type TabState = Partial<Options> & {
+  anniversaryLogo: boolean;
+  optimizeSize?: boolean;
+  roundSize?: boolean;
+};
 
 export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   width: 500,
@@ -35,6 +41,8 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 5 },
   qrOptions: { typeNumber: 0, errorCorrectionLevel: 'Q' },
   anniversaryLogo: true,
+  optimizeSize: false,
+  roundSize: true,
 };
 
 export const TAB_SPECIFIC_DEFAULTS: { [key in Mode]: Partial<TabState> } = {

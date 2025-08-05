@@ -17,12 +17,14 @@ import {
   DEFAULT_ADVANCED_OPTIONS,
   DEFAULT_FORM_FIELDS,
   TAB_SPECIFIC_DEFAULTS,
+  TabState,
 } from '../config/constants';
 import { formatPhoneNumberForVCard } from '../utils/helpers';
 
+export let qrCode: AsyncQRCodeStyling;
+
 export class App {
   private ui: UIManager;
-  private qrCode: AsyncQRCodeStyling;
   private modalQrCode: AsyncQRCodeStyling;
 
   constructor() {
@@ -32,8 +34,8 @@ export class App {
 
     const defaultState =
       getTabState(this.ui.getCurrentMode()) || DEFAULT_ADVANCED_OPTIONS;
-    this.qrCode = new AsyncQRCodeStyling(defaultState);
-    this.qrCode.append(dom.canvasContainer);
+    qrCode = new AsyncQRCodeStyling(defaultState);
+    qrCode.append(dom.canvasContainer);
 
     this.modalQrCode = new AsyncQRCodeStyling({
       width: 400,
@@ -45,7 +47,7 @@ export class App {
     this.handleRouteChange();
   }
 
-  getQrCode = (): AsyncQRCodeStyling => this.qrCode;
+  getQrCode = (): AsyncQRCodeStyling => qrCode;
   getModalQrCode = (): AsyncQRCodeStyling => this.modalQrCode;
 
   private initializeIcons(): void {
@@ -166,13 +168,13 @@ export class App {
 
     try {
       config.image = await this.loadImageAsync();
-      await this.qrCode.update(config);
+      await qrCode.update(config);
       dom.vcardTextOutput.textContent = data;
       dom.vcardTextOutput.style.color = '';
       this.ui.setDownloadButtonVisibility(true);
     } catch (error) {
       console.error('QR Code generation error:', error);
-      this.qrCode.update({ ...config, data: '' });
+      qrCode.update({ ...config, data: '' });
       dom.vcardTextOutput.textContent = 'Invalid settings combination.';
       dom.vcardTextOutput.style.color = 'red';
       this.ui.setDownloadButtonVisibility(false);
@@ -216,6 +218,29 @@ export class App {
     }, 250);
   }
 
+  private getFlatState(state: TabState): { [key: string]: any } {
+    return {
+      width: state.width,
+      height: state.height,
+      margin: state.margin,
+      anniversaryLogo: state.anniversaryLogo,
+      optimizeSize: state.optimizeSize,
+      roundSize: state.roundSize,
+      dotsType: state.dotsOptions?.type,
+      dotsColor: state.dotsOptions?.color,
+      cornersSquareType: state.cornersSquareOptions?.type,
+      cornersSquareColor: state.cornersSquareOptions?.color,
+      cornersDotType: state.cornersDotOptions?.type,
+      cornersDotColor: state.cornersDotOptions?.color,
+      backgroundColor: state.backgroundOptions?.color,
+      hideBackgroundDots: state.imageOptions?.hideBackgroundDots,
+      imageSize: state.imageOptions?.imageSize,
+      imageMargin: state.imageOptions?.margin,
+      qrTypeNumber: state.qrOptions?.typeNumber,
+      qrErrorCorrectionLevel: state.qrOptions?.errorCorrectionLevel,
+    };
+  }
+
   private updateUrlParameters(): void {
     const newUrlParams = new URLSearchParams();
     const currentMode = this.ui.getCurrentMode();
@@ -240,20 +265,33 @@ export class App {
     const currentTabState = getTabState(currentMode);
     if (!currentTabState) return;
 
-    for (const key in dom.advancedControls) {
-      if (key === 'container') continue;
-      const controlKey = key as keyof Omit<
-        typeof dom.advancedControls,
-        'container'
-      >;
-      const value = (currentTabState as any)[controlKey];
-      const defaultValue =
-        (TAB_SPECIFIC_DEFAULTS[currentMode] as any)?.[controlKey] ??
-        (DEFAULT_ADVANCED_OPTIONS as any)[controlKey];
-      if (String(value) !== String(defaultValue)) {
+    const defaultTabState = {
+      ...DEFAULT_ADVANCED_OPTIONS,
+      ...(TAB_SPECIFIC_DEFAULTS[currentMode] || {}),
+    };
+
+    const flatCurrentState = this.getFlatState(currentTabState);
+    const flatDefaultState = this.getFlatState(defaultTabState);
+
+    for (const key in flatCurrentState) {
+      if (['container', 'imageFile', 'saveAsBlob'].includes(key)) continue;
+
+      const currentValue = flatCurrentState[key];
+      const defaultValue = flatDefaultState[key];
+
+      const currentString =
+        currentValue === undefined || currentValue === null
+          ? ''
+          : String(currentValue);
+      const defaultString =
+        defaultValue === undefined || defaultValue === null
+          ? ''
+          : String(defaultValue);
+
+      if (currentString !== defaultString) {
         newUrlParams.set(
           key.replace(/([A-Z])/g, '_$1').toLowerCase(),
-          String(value)
+          currentString
         );
       }
     }

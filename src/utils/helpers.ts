@@ -1,5 +1,44 @@
+// src/utils/helpers.ts
+
 import { dom } from '../config/dom';
 import { Mode, MODES } from '../config/constants';
+import AsyncQRCodeStyling from '../lib/AsyncQRCodeStyling';
+import { UIManager } from '../app/UIManager';
+import { getPixelMultiplier, setPixelMultiplier } from '../app/state';
+
+export function calculateAndApplyOptimalQrCodeSize(
+  qrCodeInstance: AsyncQRCodeStyling,
+  uiManager: UIManager,
+  increment = 0
+): void {
+  if (!qrCodeInstance || !qrCodeInstance._qr) {
+    return;
+  }
+
+  const moduleCount = qrCodeInstance._qr.getModuleCount();
+  if (moduleCount === 0) {
+    return;
+  }
+
+  const currentTabState = uiManager.getTabState();
+  if (!currentTabState) return;
+
+  const { width, height, margin } = currentTabState;
+  const startingSize = Math.min(width || 0, height || 0);
+
+  let pixelMultiplier = getPixelMultiplier(uiManager.getCurrentMode());
+
+  if (pixelMultiplier === 0) {
+    pixelMultiplier = Math.round(startingSize / moduleCount);
+  }
+
+  pixelMultiplier += increment;
+
+  const newSize = pixelMultiplier * moduleCount + (margin || 0) * 2;
+
+  setPixelMultiplier(uiManager.getCurrentMode(), pixelMultiplier);
+  uiManager.updateDimensions(newSize, newSize);
+}
 
 export function formatPhoneNumberForVCard(phoneNumber: string): string {
   if (!phoneNumber) return '';

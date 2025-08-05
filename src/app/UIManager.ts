@@ -5,6 +5,8 @@ import { FormManager } from './ui/FormManager';
 import { StickyManager } from './ui/StickyManager';
 import { TabManager } from './ui/TabManager';
 import { UrlHandler } from './ui/UrlHandler';
+import { getTabState, updateTabState } from './state';
+import { dom } from '../config/dom';
 
 export class UIManager {
   private app: App;
@@ -47,4 +49,17 @@ export class UIManager {
   getTabManager = (): TabManager => this.tabManager;
   getFormManager = (): FormManager => this.formManager;
   getUrlHandler = (): UrlHandler => this.urlHandler;
+  getTabState = (): TabState | undefined => getTabState(this.currentMode);
+
+  updateDimensions = (width: number, height: number): void => {
+    const state = this.getTabState();
+    if (state) {
+      state.width = width;
+      state.height = height;
+      dom.advancedControls.width.value = String(width);
+      dom.advancedControls.height.value = String(height);
+      updateTabState(this.currentMode, state);
+      this.app.updateQRCode();
+    }
+  };
 }

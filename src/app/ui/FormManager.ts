@@ -55,6 +55,7 @@ export class FormManager {
       dotsOptions: {
         type: advancedControls.dotsType.value as DotType,
         color: advancedControls.dotsColor.value,
+        roundSize: advancedControls.roundSize.checked,
       },
       backgroundOptions: {
         color: advancedControls.backgroundColor.value,
@@ -106,6 +107,10 @@ export class FormManager {
         values.dotsOptions.color ??
         DEFAULT_ADVANCED_OPTIONS.dotsOptions?.color ??
         '#000000';
+      advancedControls.roundSize.checked =
+        values.dotsOptions.roundSize ??
+        DEFAULT_ADVANCED_OPTIONS.dotsOptions?.roundSize ??
+        true;
     }
 
     if (values.backgroundOptions) {

@@ -126,7 +126,6 @@ export class App {
 
   private loadImageAsync = (): Promise<string | undefined> => {
     const state = getTabState(this.ui.getCurrentMode());
-    console.log('loadImageAsync: state?.showImage =', state?.showImage);
     if (!state?.showImage) {
       return Promise.resolve(undefined);
     }
@@ -178,8 +177,9 @@ export class App {
       if (image) {
         config.image = image;
       } else {
-        delete config.image;
+        config.image = null;
       }
+      
       await qrCode.update(config);
       dom.vcardTextOutput.innerHTML = data.replace(/\n/g, '<br>');
       dom.vcardTextOutput.style.color = '';
@@ -323,7 +323,7 @@ export class App {
     const flatCurrentState = this.getFlatState(currentTabState);
     const flatDefaultState = this.getFlatState(defaultTabState);
 
-    console.log('updateUrlParameters: flatCurrentState.showImage =', flatCurrentState.showImage);
+    
 
     for (const stateKey of Object.keys(flatCurrentState)) {
       if (['container', 'imageFile', 'saveAsBlob'].includes(stateKey)) continue;

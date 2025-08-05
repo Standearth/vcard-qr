@@ -265,9 +265,14 @@ export class App {
     const currentTabState = getTabState(currentMode);
     if (!currentTabState) return;
 
-    const defaultTabState = {
+    const tabSpecifics = TAB_SPECIFIC_DEFAULTS[currentMode] || {};
+    const defaultTabState: TabState = {
       ...DEFAULT_ADVANCED_OPTIONS,
-      ...(TAB_SPECIFIC_DEFAULTS[currentMode] || {}),
+      ...tabSpecifics,
+      qrOptions: {
+        ...DEFAULT_ADVANCED_OPTIONS.qrOptions,
+        ...tabSpecifics.qrOptions,
+      },
     };
 
     const flatCurrentState = this.getFlatState(currentTabState);

@@ -31,12 +31,12 @@ export type TabState = Partial<Options> & {
 };
 
 export const DEFAULT_ADVANCED_OPTIONS: TabState = {
-  width: 500,
-  height: 500,
-  margin: 5,
-  dotsOptions: { type: 'rounded', color: '#000000' },
-  cornersSquareOptions: { type: undefined, color: '#000000' },
-  cornersDotOptions: { type: undefined, color: '#e50b12' },
+  width: 1080,
+  height: 1080,
+  margin: 0,
+  dotsOptions: { type: 'dots', color: '#000000' },
+  cornersSquareOptions: { type: 'rounded', color: '#000000' },
+  cornersDotOptions: { type: 'rounded', color: '#e50b12' },
   backgroundOptions: { color: '#ffffff' },
   imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 5 },
   qrOptions: { typeNumber: 0, errorCorrectionLevel: 'Q' },
@@ -46,14 +46,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
 };
 
 export const TAB_SPECIFIC_DEFAULTS: { [key in Mode]: Partial<TabState> } = {
-  [MODES.VCARD]: {
-    width: 1080,
-    height: 1080,
-    margin: 0,
-    dotsOptions: { type: 'dots' },
-    cornersSquareOptions: { type: 'rounded' },
-    cornersDotOptions: { type: 'rounded' },
-  },
+  [MODES.VCARD]: {},
   [MODES.LINK]: {
     qrOptions: { errorCorrectionLevel: 'H' },
   },
@@ -75,7 +68,7 @@ export const DEFAULT_FORM_FIELDS = {
   cellPhone: '',
   website: 'https://stand.earth',
   linkedin: '',
-  note: '',
+  notes: '',
   linkUrl: 'https://stand.earth',
   wifiSsid: '',
   wifiPassword: '',

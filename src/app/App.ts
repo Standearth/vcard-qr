@@ -71,7 +71,7 @@ export class App {
           cellPhone,
           website,
           linkedin,
-          note,
+          notes,
         } = dom.formFields;
         const vcardLines = [
           'BEGIN:VCARD',
@@ -92,7 +92,7 @@ export class App {
             : '',
           website.value ? `URL:${website.value}` : '',
           linkedin.value ? `URL:${linkedin.value}` : '',
-          note.value ? `NOTE:${note.value.replace(/\n/g, '\\n')}` : '',
+          notes.value ? `NOTE:${notes.value.replace(/\n/g, '\\n')}` : '',
           'END:VCARD',
         ];
         return vcardLines.filter(Boolean).join('\n');

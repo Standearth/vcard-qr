@@ -53,7 +53,7 @@ export const dom = {
     cellPhone: document.getElementById('cell_phone') as HTMLInputElement,
     website: document.getElementById('website') as HTMLInputElement,
     linkedin: document.getElementById('linkedin') as HTMLInputElement,
-    note: document.getElementById('note') as HTMLTextAreaElement,
+    notes: document.getElementById('notes') as HTMLTextAreaElement,
     wifiSsid: document.getElementById('wifi_ssid') as HTMLInputElement,
     wifiPassword: document.getElementById('wifi_password') as HTMLInputElement,
     wifiEncryption: document.getElementById(

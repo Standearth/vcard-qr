@@ -44,7 +44,7 @@ export class FormManager {
       cellPhone: formFields.cellPhone,
       website: formFields.website,
       linkedin: formFields.linkedin,
-      note: formFields.note,
+      notes: formFields.notes,
     };
   }
 

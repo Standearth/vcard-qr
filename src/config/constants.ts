@@ -41,21 +41,21 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 5 },
   qrOptions: { typeNumber: 0, errorCorrectionLevel: 'Q' },
   anniversaryLogo: true,
-  optimizeSize: true,
+  optimizeSize: false,
   roundSize: true,
 };
 
 export const TAB_SPECIFIC_DEFAULTS: { [key in Mode]: Partial<TabState> } = {
   [MODES.VCARD]: {
-    width: 950,
-    height: 950,
-    margin: 30,
-    qrOptions: { typeNumber: 18, errorCorrectionLevel: 'Q' },
-    anniversaryLogo: true,
+    width: 1080,
+    height: 1080,
+    margin: 0,
+    dotsOptions: { type: 'dots' },
+    cornersSquareOptions: { type: 'rounded' },
+    cornersDotOptions: { type: 'rounded' },
   },
   [MODES.LINK]: {
     qrOptions: { errorCorrectionLevel: 'H' },
-    anniversaryLogo: true,
   },
   [MODES.WIFI]: {
     qrOptions: { errorCorrectionLevel: 'H' },

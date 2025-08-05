@@ -5,7 +5,7 @@ import {
   TypeNumber,
 } from 'qr-code-styling';
 import { dom } from '../../config/dom';
-import { UIManager } from './UIManager';
+import { UIManager } from '../UIManager';
 import {
   TabState,
   DEFAULT_ADVANCED_OPTIONS,

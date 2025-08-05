@@ -80,20 +80,6 @@ export class StickyManager {
         const advancedControlsRect =
           advancedControls.container.getBoundingClientRect();
 
-        console.clear();
-        console.log('window.scrollY:', window.scrollY);
-        console.log('window.innerHeight', window.innerHeight);
-        console.log('previewColumnRect.top:', previewColumnRect.top);
-        console.log('canvasRect.top:', canvasRect.top);
-        console.log('canvasRect.height:', canvasRect.height);
-        console.log('canvasRect.bottom:', canvasRect.bottom);
-        console.log('formRect.top:', formColumnRect.top);
-        console.log('previewFooterRect.top:', previewFooterRect.top);
-        console.log('previewFooterRect.height:', previewFooterRect.height);
-        console.log('previewFooterRect.bottom:', previewFooterRect.bottom);
-        console.log('isScrollingUp:', isScrollingUp);
-        console.log('contentWrapperRect.bottom:', contentWrapperRect.bottom);
-
         const calculatedPreviewFooterRectTop =
           previewColumnRect.top + canvasRect.height;
 
@@ -110,14 +96,8 @@ export class StickyManager {
             ? window.innerHeight - contentWrapperRect.bottom
             : 0;
 
-        console.log('contentWrapperBottomOffset:', contentWrapperBottomOffset);
-
-        console.log('overlap:', overlap);
-        console.log('previewFooterBottomOffset:', previewFooterBottomOffset);
-
         const contentExceedsViewport =
           canvasRect.height + previewFooterRect.height > window.innerHeight;
-        console.log('contentExceedsViewport:', contentExceedsViewport);
 
         const formColumnTotalHeight =
           formColumnRect.height + advancedControlsRect.height;
@@ -127,11 +107,8 @@ export class StickyManager {
         const previewColumnSmaller =
           previewColumnTotalHeight < formColumnTotalHeight;
 
-        console.log('previewColumnSmaller:', previewColumnSmaller);
-
         if (contentExceedsViewport) {
           if (qrPreviewColumnFooter.parentNode === qrStickyContainer) {
-            console.log('Moving qrPreviewColumnFooter to qrPreviewColumn');
             qrPreviewColumn.appendChild(qrPreviewColumnFooter);
           }
         }
@@ -140,7 +117,6 @@ export class StickyManager {
           contentExceedsViewport &&
           previewColumnSmaller &&
           previewFooterBottomOffset < -32; //2rem to match stuck position
-        console.log('footerShouldStick', footerShouldStick);
 
         if (footerShouldStick) {
           const footerStickBottomPosition = contentWrapperBottomOffset + 32;
@@ -149,16 +125,6 @@ export class StickyManager {
         } else {
           qrPreviewColumnFooter.classList.remove('sticky-footer');
         }
-
-        // if (
-        //   previewFooterRect.bottom <= window.innerHeight &&
-        //   isScrollingUp
-        // ) {
-        //   if (qrPreviewColumnFooter.parentNode === qrPreviewColumn) {
-        //     console.log('Moving qrPreviewColumnFooter to qrStickyContainer');
-        //     qrStickyContainer.appendChild(qrPreviewColumnFooter);
-        //   }
-        // }
       }
 
       this.lastScrollY = currentScrollY;

@@ -2,7 +2,7 @@ import { dom } from '../../config/dom';
 import { App } from '../App';
 import { Mode, MODES } from '../../config/constants';
 import { getTabState, updateTabState } from '../state';
-import { UIManager } from './UIManager';
+import { UIManager } from '../UIManager';
 
 export class TabManager {
   private app: App;

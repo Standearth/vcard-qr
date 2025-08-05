@@ -3,7 +3,7 @@ import {
   DEFAULT_FORM_FIELDS,
   OFFICE_PHONE_ALIASES,
 } from '../../config/constants';
-import { UIManager } from './UIManager';
+import { UIManager } from '../UIManager';
 
 export class UrlHandler {
   private uiManager: UIManager;

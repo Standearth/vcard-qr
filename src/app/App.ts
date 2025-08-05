@@ -286,7 +286,27 @@ export class App {
       ...tabSpecifics,
       qrOptions: {
         ...DEFAULT_ADVANCED_OPTIONS.qrOptions,
-        ...tabSpecifics.qrOptions,
+        ...(tabSpecifics.qrOptions || {}),
+      },
+      dotsOptions: {
+        ...DEFAULT_ADVANCED_OPTIONS.dotsOptions,
+        ...(tabSpecifics.dotsOptions || {}),
+      },
+      cornersSquareOptions: {
+        ...DEFAULT_ADVANCED_OPTIONS.cornersSquareOptions,
+        ...(tabSpecifics.cornersSquareOptions || {}),
+      },
+      cornersDotOptions: {
+        ...DEFAULT_ADVANCED_OPTIONS.cornersDotOptions,
+        ...(tabSpecifics.cornersDotOptions || {}),
+      },
+      backgroundOptions: {
+        ...DEFAULT_ADVANCED_OPTIONS.backgroundOptions,
+        ...(tabSpecifics.backgroundOptions || {}),
+      },
+      imageOptions: {
+        ...DEFAULT_ADVANCED_OPTIONS.imageOptions,
+        ...(tabSpecifics.imageOptions || {}),
       },
     };
 

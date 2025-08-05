@@ -28,6 +28,7 @@ export type TabState = Partial<Options> & {
   anniversaryLogo: boolean;
   optimizeSize?: boolean;
   roundSize?: boolean;
+  showImage?: boolean;
 };
 
 export const DEFAULT_ADVANCED_OPTIONS: TabState = {
@@ -38,6 +39,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   cornersSquareOptions: { type: 'rounded', color: '#000000' },
   cornersDotOptions: { type: 'rounded', color: '#e50b12' },
   backgroundOptions: { color: '#ffffff' },
+  showImage: true,
   imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 5 },
   qrOptions: { typeNumber: 0, errorCorrectionLevel: 'Q' },
   anniversaryLogo: true,
@@ -45,7 +47,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   roundSize: true,
 };
 
-export const TAB_SPECIFIC_DEFAULTS: { [key in Mode]: Partial<TabState> } = {
+export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
   [MODES.VCARD]: {},
   [MODES.LINK]: {
     qrOptions: { errorCorrectionLevel: 'H' },

@@ -57,7 +57,7 @@ export class App {
 
   getQRCodeData = (): string => {
     const currentMode = this.ui.getCurrentMode();
-    const generators: { [key in Mode]: () => string } = {
+    const generators: Partial<Record<Mode, () => string>> = {
       [MODES.VCARD]: () => {
         const {
           firstName,
@@ -104,7 +104,7 @@ export class App {
         return `WIFI:S:${wifiSsid.value || ''};T:${wifiEncryption.value || 'WPA'};P:${wifiPassword.value || ''};H:${wifiHidden.checked ? 'true' : 'false'};;`;
       },
     };
-    return generators[currentMode]();
+    return generators[currentMode]!();
   };
 
   private buildQrConfig = (data: string): Partial<Options> => {
@@ -124,7 +124,12 @@ export class App {
     };
   };
 
-  private loadImageAsync = (): Promise<string> => {
+  private loadImageAsync = (): Promise<string | undefined> => {
+    const state = getTabState(this.ui.getCurrentMode());
+    console.log('loadImageAsync: state?.showImage =', state?.showImage);
+    if (!state?.showImage) {
+      return Promise.resolve(undefined);
+    }
     return new Promise((resolve, reject) => {
       if (
         dom.advancedControls.imageFile.files &&
@@ -169,9 +174,13 @@ export class App {
     const config = this.buildQrConfig(data);
 
     try {
-      config.image = await this.loadImageAsync();
+      const image = await this.loadImageAsync();
+      if (image) {
+        config.image = image;
+      } else {
+        delete config.image;
+      }
       await qrCode.update(config);
-      // Replace newline characters with <br> and use innerHTML
       dom.vcardTextOutput.innerHTML = data.replace(/\n/g, '<br>');
       dom.vcardTextOutput.style.color = '';
       this.ui.setDownloadButtonVisibility(true);
@@ -239,6 +248,7 @@ export class App {
       anniversaryLogo: state.anniversaryLogo,
       optimizeSize: state.optimizeSize,
       roundSize: state.roundSize,
+      showImage: state.showImage,
       dotsType: state.dotsOptions?.type,
       dotsColor: state.dotsOptions?.color,
       cornersSquareType: state.cornersSquareOptions?.type,
@@ -259,19 +269,19 @@ export class App {
     const currentMode = this.ui.getCurrentMode();
     const activeFormFields = this.ui.getFormManager().getActiveFormFields();
 
-    for (const key in activeFormFields) {
-      const fieldKey = key as keyof typeof activeFormFields;
+    for (const fieldKey of Object.keys(activeFormFields) as Array<
+      keyof typeof activeFormFields
+    >) {
       const element = activeFormFields[fieldKey];
       if (!element) continue;
       const value =
         element instanceof HTMLInputElement && element.type === 'checkbox'
           ? element.checked
           : element.value;
-      const defaultValue =
-        DEFAULT_FORM_FIELDS[fieldKey as keyof typeof DEFAULT_FORM_FIELDS];
+      const defaultValue = DEFAULT_FORM_FIELDS[fieldKey];
       if (String(value) !== String(defaultValue)) {
         newUrlParams.set(
-          key.replace(/([A-Z])/g, '_$1').toLowerCase(),
+          fieldKey.replace(/([A-Z])/g, '_$1').toLowerCase(),
           String(value)
         );
       }
@@ -313,11 +323,13 @@ export class App {
     const flatCurrentState = this.getFlatState(currentTabState);
     const flatDefaultState = this.getFlatState(defaultTabState);
 
-    for (const key in flatCurrentState) {
-      if (['container', 'imageFile', 'saveAsBlob'].includes(key)) continue;
+    console.log('updateUrlParameters: flatCurrentState.showImage =', flatCurrentState.showImage);
 
-      const currentValue = flatCurrentState[key];
-      const defaultValue = flatDefaultState[key];
+    for (const stateKey of Object.keys(flatCurrentState)) {
+      if (['container', 'imageFile', 'saveAsBlob'].includes(stateKey)) continue;
+
+      const currentValue = flatCurrentState[stateKey];
+      const defaultValue = flatDefaultState[stateKey];
 
       const currentString =
         currentValue === undefined || currentValue === null
@@ -330,7 +342,7 @@ export class App {
 
       if (currentString !== defaultString) {
         newUrlParams.set(
-          key.replace(/([A-Z])/g, '_$1').toLowerCase(),
+          stateKey.replace(/([A-Z])/g, '_$1').toLowerCase(),
           currentString
         );
       }

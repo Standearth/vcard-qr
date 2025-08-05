@@ -82,7 +82,7 @@ export function generateFilename(currentMode: Mode): string {
         urlString = `https://${urlString}`;
       const fqdn = new URL(urlString).hostname;
       return `Stand-QR-URL-${sanitizeFilename(fqdn) || 'link'}`;
-    } catch (e) {
+    } catch {
       return 'Stand-QR-URL-invalid_link';
     }
   }

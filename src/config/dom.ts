@@ -145,6 +145,7 @@ export const dom = {
     qrErrorCorrectionLevel: document.getElementById(
       'form-qr-error-correction-level'
     ) as HTMLSelectElement,
+    showImage: document.getElementById('form-show-image') as HTMLInputElement,
     anniversaryLogo: document.getElementById(
       'anniversary_logo'
     ) as HTMLInputElement,

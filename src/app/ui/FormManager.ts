@@ -55,6 +55,7 @@ export class FormManager {
     return {
       width: parseInt(advancedControls.width.value),
       height: parseInt(advancedControls.height.value),
+      showImage: advancedControls.showImage.checked,
       margin: parseInt(advancedControls.margin.value),
       anniversaryLogo: advancedControls.anniversaryLogo.checked,
       optimizeSize: advancedControls.optimizeSize.checked,
@@ -109,6 +110,8 @@ export class FormManager {
       values.optimizeSize ?? DEFAULT_ADVANCED_OPTIONS.optimizeSize ?? false;
     advancedControls.roundSize.checked =
       values.roundSize ?? DEFAULT_ADVANCED_OPTIONS.roundSize ?? true;
+    advancedControls.showImage.checked =
+      values.showImage ?? DEFAULT_ADVANCED_OPTIONS.showImage ?? true;
 
     if (values.dotsOptions) {
       advancedControls.dotsType.value =
@@ -169,7 +172,6 @@ export class FormManager {
         values.qrOptions.errorCorrectionLevel ?? 'Q';
     }
   }
-
   setDownloadButtonVisibility(visible: boolean): void {
     const display = visible ? 'inline-flex' : 'none';
     dom.buttons.downloadPng.style.display = display;

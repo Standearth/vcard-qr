@@ -6,12 +6,11 @@ import {
   TAB_SPECIFIC_DEFAULTS,
 } from '../config/constants';
 
-const tabStates: { [key in Mode]?: TabState } = {};
-const pixelMultipliers: { [key in Mode]?: number } = {};
+const tabStates: Partial<Record<Mode, TabState>> = {};
+const pixelMultipliers: Partial<Record<Mode, number>> = {};
 
 export function initializeState(): void {
-  for (const key in MODES) {
-    const mode = MODES[key as keyof typeof MODES];
+  for (const mode of Object.values(MODES)) {
     const defaults = DEFAULT_ADVANCED_OPTIONS;
     const specifics = TAB_SPECIFIC_DEFAULTS[mode] || {};
 
@@ -39,6 +38,7 @@ export function initializeState(): void {
         ...defaults.imageOptions,
         ...(specifics.imageOptions || {}),
       },
+      showImage: defaults.showImage,
     } as TabState;
     pixelMultipliers[mode] = 0;
   }

@@ -202,6 +202,7 @@ export class EventManager {
                 this.isOptimizing = false;
                 await this.handleOptimization(0);
               } else {
+                advancedControls.imageFile.value = '';
                 genericUpdate();
               }
               break;

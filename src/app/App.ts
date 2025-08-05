@@ -115,7 +115,7 @@ export class App {
       margin: state.margin,
       qrOptions: state.qrOptions,
       imageOptions: state.imageOptions,
-      dotsOptions: state.dotsOptions,
+      dotsOptions: { ...state.dotsOptions, roundSize: state.roundSize },
       backgroundOptions: state.backgroundOptions,
       cornersSquareOptions: state.cornersSquareOptions,
       cornersDotOptions: state.cornersDotOptions,

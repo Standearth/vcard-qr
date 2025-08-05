@@ -129,11 +129,6 @@ export class EventManager {
     }
   };
 
-  /**
-   * REFACTOR: All advanced controls are now handled by a single, unified event listener.
-   * This ensures that every change correctly triggers either the optimization logic
-   * or a generic state/URL update, preventing synchronization issues.
-   */
   private setupAdvancedControlsListeners(): void {
     const { advancedControls } = dom;
 
@@ -147,6 +142,17 @@ export class EventManager {
       this.app.updateQRCode();
     };
 
+    const isPerfectlySized = (size: number): boolean => {
+      const qr = (this.app.getQrCode() as any)._qr;
+      if (!qr) return true; // Failsafe
+      const moduleCount = qr.getModuleCount();
+      const state = this.uiManager.getTabState();
+      const margin = state?.margin ?? 0;
+      if (moduleCount === 0) return true; // Failsafe
+
+      return (size - margin * 2) % moduleCount === 0;
+    };
+
     Object.values(advancedControls).forEach((field) => {
       if (field instanceof HTMLElement) {
         field.addEventListener('input', async (event) => {
@@ -155,12 +161,10 @@ export class EventManager {
 
           // --- Main Logic Switch ---
           switch (target.id) {
-            // Activation for the main optimization checkbox
             case 'form-optimize-size':
               if (advancedControls.optimizeSize.checked) {
                 this.isOptimizing = true;
                 advancedControls.roundSize.checked = true;
-                advancedControls.qrTypeNumber.value = '0';
                 updateTabState(
                   this.uiManager.getCurrentMode(),
                   this.uiManager.getFormControlValues()
@@ -173,7 +177,6 @@ export class EventManager {
               }
               break;
 
-            // Deactivation triggers
             case 'form-round-size':
               if (!advancedControls.roundSize.checked) {
                 advancedControls.optimizeSize.checked = false;
@@ -182,17 +185,28 @@ export class EventManager {
               break;
 
             case 'form-qr-type-number':
-              if (advancedControls.qrTypeNumber.value !== '0') {
-                advancedControls.optimizeSize.checked = false;
+              if (isOptimized) {
+                this.isOptimizing = true;
+                updateTabState(
+                  this.uiManager.getCurrentMode(),
+                  this.uiManager.getFormControlValues()
+                );
+                await this.app.updateQRCode();
+                this.isOptimizing = false;
+                await this.handleOptimization(0);
+              } else {
+                genericUpdate();
               }
-              genericUpdate();
               break;
 
-            // Controls that re-run optimization if it's active
             case 'form-width':
             case 'form-height':
-              if (isOptimized && !this.isOptimizing) {
+              if (isOptimized) {
                 const newValue = parseInt(target.value) || 0;
+                if (isPerfectlySized(newValue)) {
+                  this.previousWidth = newValue;
+                  return;
+                }
                 const increment = newValue > this.previousWidth ? 1 : -1;
                 await this.handleOptimization(increment);
               } else {
@@ -202,13 +216,16 @@ export class EventManager {
 
             case 'form-margin':
               if (isOptimized) {
+                updateTabState(
+                  this.uiManager.getCurrentMode(),
+                  this.uiManager.getFormControlValues()
+                );
                 await this.handleOptimization(0);
               } else {
                 genericUpdate();
               }
               break;
 
-            // All other controls fall through to the default generic update
             default:
               genericUpdate();
               break;

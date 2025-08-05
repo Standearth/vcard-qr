@@ -1,3 +1,5 @@
+// src/app/UIManager.ts
+
 import { App } from './App';
 import { Mode, MODES, TabState } from '../config/constants';
 import { EventManager } from './ui/EventManager';
@@ -49,6 +51,7 @@ export class UIManager {
   getTabManager = (): TabManager => this.tabManager;
   getFormManager = (): FormManager => this.formManager;
   getUrlHandler = (): UrlHandler => this.urlHandler;
+  getStickyManager = (): StickyManager => this.stickyManager;
   getTabState = (): TabState | undefined => getTabState(this.currentMode);
 
   updateDimensions = (width: number, height: number): void => {

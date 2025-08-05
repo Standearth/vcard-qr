@@ -18,7 +18,7 @@ import {
 export class EventManager {
   private app: App;
   private uiManager: UIManager;
-  private isOptimizing = false; // <<< FIX: Declare the missing property
+  private isOptimizing = false;
   private previousWidth = 0;
 
   constructor(app: App, uiManager: UIManager) {
@@ -80,6 +80,10 @@ export class EventManager {
       dom.toggleAdvancedText.textContent = isHidden
         ? 'Show Advanced Controls'
         : 'Hide Advanced Controls';
+
+      setTimeout(() => {
+        this.uiManager.getStickyManager().handleStickyBehavior();
+      }, 0);
     });
 
     dom.buttons.resetStyles.addEventListener('click', () => {
@@ -125,11 +129,17 @@ export class EventManager {
     }
   };
 
+  /**
+   * REFACTOR: All advanced controls are now handled by a single, unified event listener.
+   * This ensures that every change correctly triggers either the optimization logic
+   * or a generic state/URL update, preventing synchronization issues.
+   */
   private setupAdvancedControlsListeners(): void {
     const { advancedControls } = dom;
 
     const genericUpdate = () => {
       if (this.isOptimizing) return;
+      this.previousWidth = parseInt(advancedControls.width.value) || 0;
       updateTabState(
         this.uiManager.getCurrentMode(),
         this.uiManager.getFormControlValues()
@@ -137,76 +147,73 @@ export class EventManager {
       this.app.updateQRCode();
     };
 
-    advancedControls.optimizeSize.addEventListener('input', async () => {
-      if (advancedControls.optimizeSize.checked) {
-        this.isOptimizing = true;
-        advancedControls.roundSize.checked = true;
-        advancedControls.qrTypeNumber.value = '0';
-        updateTabState(
-          this.uiManager.getCurrentMode(),
-          this.uiManager.getFormControlValues()
-        );
-        await this.app.updateQRCode();
-        this.isOptimizing = false;
-        await this.handleOptimization(0);
-      }
-    });
-
-    advancedControls.width.addEventListener('input', () => {
-      if (advancedControls.optimizeSize.checked && !this.isOptimizing) {
-        const newWidth = parseInt(advancedControls.width.value) || 0;
-        const increment = newWidth > this.previousWidth ? 1 : -1;
-        this.handleOptimization(increment);
-      } else {
-        this.previousWidth = parseInt(advancedControls.width.value) || 0;
-        genericUpdate();
-      }
-    });
-
-    advancedControls.height.addEventListener('input', () => {
-      if (advancedControls.optimizeSize.checked && !this.isOptimizing) {
-        const newHeight = parseInt(advancedControls.height.value) || 0;
-        const increment = newHeight > this.previousWidth ? 1 : -1;
-        this.handleOptimization(increment);
-      } else {
-        genericUpdate();
-      }
-    });
-
-    advancedControls.margin.addEventListener('input', () => {
-      if (advancedControls.optimizeSize.checked) {
-        this.handleOptimization(0);
-      } else {
-        genericUpdate();
-      }
-    });
-
-    advancedControls.roundSize.addEventListener('input', () => {
-      if (!advancedControls.roundSize.checked) {
-        advancedControls.optimizeSize.checked = false;
-      }
-      genericUpdate();
-    });
-
-    advancedControls.qrTypeNumber.addEventListener('input', () => {
-      if (advancedControls.qrTypeNumber.value !== '0') {
-        advancedControls.optimizeSize.checked = false;
-      }
-      genericUpdate();
-    });
-
-    const handledIds = new Set([
-      'form-optimize-size',
-      'form-width',
-      'form-height',
-      'form-margin',
-      'form-round-size',
-      'form-qr-type-number',
-    ]);
-
     Object.values(advancedControls).forEach((field) => {
-      if (field instanceof HTMLElement && !handledIds.has(field.id)) {
-        field.addEventListener('input', genericUpdate);
+      if (field instanceof HTMLElement) {
+        field.addEventListener('input', async (event) => {
+          const target = event.target as HTMLInputElement | HTMLSelectElement;
+          const isOptimized = advancedControls.optimizeSize.checked;
+
+          // --- Main Logic Switch ---
+          switch (target.id) {
+            // Activation for the main optimization checkbox
+            case 'form-optimize-size':
+              if (advancedControls.optimizeSize.checked) {
+                this.isOptimizing = true;
+                advancedControls.roundSize.checked = true;
+                advancedControls.qrTypeNumber.value = '0';
+                updateTabState(
+                  this.uiManager.getCurrentMode(),
+                  this.uiManager.getFormControlValues()
+                );
+                await this.app.updateQRCode();
+                this.isOptimizing = false;
+                await this.handleOptimization(0);
+              } else {
+                genericUpdate();
+              }
+              break;
+
+            // Deactivation triggers
+            case 'form-round-size':
+              if (!advancedControls.roundSize.checked) {
+                advancedControls.optimizeSize.checked = false;
+              }
+              genericUpdate();
+              break;
+
+            case 'form-qr-type-number':
+              if (advancedControls.qrTypeNumber.value !== '0') {
+                advancedControls.optimizeSize.checked = false;
+              }
+              genericUpdate();
+              break;
+
+            // Controls that re-run optimization if it's active
+            case 'form-width':
+            case 'form-height':
+              if (isOptimized && !this.isOptimizing) {
+                const newValue = parseInt(target.value) || 0;
+                const increment = newValue > this.previousWidth ? 1 : -1;
+                await this.handleOptimization(increment);
+              } else {
+                genericUpdate();
+              }
+              break;
+
+            case 'form-margin':
+              if (isOptimized) {
+                await this.handleOptimization(0);
+              } else {
+                genericUpdate();
+              }
+              break;
+
+            // All other controls fall through to the default generic update
+            default:
+              genericUpdate();
+              break;
+          }
+        });
       }
     });
   }

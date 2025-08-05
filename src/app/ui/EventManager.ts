@@ -31,6 +31,13 @@ export class EventManager {
     this.previousWidth = parseInt(dom.advancedControls.width.value);
     window.addEventListener('hashchange', this.app.handleRouteChange);
 
+    // Prevent default form submission which causes a page reload
+    Object.values(dom.formContainers).forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+      });
+    });
+
     Object.values(dom.tabLinks).forEach((tab) => {
       tab.addEventListener('click', () =>
         this.uiManager.getTabManager().switchTab(tab.dataset.tab as Mode)

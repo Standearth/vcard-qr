@@ -49,6 +49,8 @@ export class FormManager {
 
   getFormControlValues(): TabState {
     const { advancedControls } = dom;
+    const typeNumberValue = parseInt(advancedControls.qrTypeNumber.value);
+
     return {
       width: parseInt(advancedControls.width.value),
       height: parseInt(advancedControls.height.value),
@@ -77,7 +79,9 @@ export class FormManager {
         margin: parseInt(advancedControls.imageMargin.value),
       },
       qrOptions: {
-        typeNumber: parseInt(advancedControls.qrTypeNumber.value) as TypeNumber,
+        typeNumber: (isNaN(typeNumberValue)
+          ? 0
+          : typeNumberValue) as TypeNumber,
         errorCorrectionLevel: advancedControls.qrErrorCorrectionLevel.value as
           | 'L'
           | 'M'

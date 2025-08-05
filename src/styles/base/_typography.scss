@@ -45,9 +45,9 @@
 }
 
 .qrcode-text-output {
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
+  overflow-wrap: break-word; /* Keep this for long unbreakable strings */
   font-family: monospace;
+  word-break: break-word;
   font-size: 0.875rem;
   color: var(--color-primary-dark);
   background-color: var(--color-primary-light);
@@ -56,4 +56,5 @@
   border: 0.0625rem solid var(--color-primary-light);
   overflow-y: auto;
   box-shadow: 0 0.0625rem 0.125rem 0 rgba(0, 0, 0, 0.05);
+  max-width: 100%;
 }

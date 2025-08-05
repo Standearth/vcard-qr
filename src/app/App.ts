@@ -169,13 +169,24 @@ export class App {
     try {
       config.image = await this.loadImageAsync();
       await qrCode.update(config);
-      dom.vcardTextOutput.textContent = data;
+      // Replace newline characters with <br> and use innerHTML
+      dom.vcardTextOutput.innerHTML = data.replace(/\n/g, '<br>');
       dom.vcardTextOutput.style.color = '';
       this.ui.setDownloadButtonVisibility(true);
     } catch (error) {
       console.error('QR Code generation error:', error);
       qrCode.update({ ...config, data: '' });
-      dom.vcardTextOutput.textContent = 'Invalid settings combination.';
+      if (error.startsWith('code length overflow')) {
+        dom.vcardTextOutput.innerHTML = dom.vcardTextOutput.innerHTML =
+          data.replace(/\n/g, '<br>') +
+          '<br><br>' +
+          'Invalid settings combination. The contents are too long for the selected QR code type and error correction level.';
+      } else {
+        dom.vcardTextOutput.innerHTML = dom.vcardTextOutput.innerHTML =
+          data.replace(/\n/g, '<br>') +
+          '<br><br>' +
+          'Invalid settings combination.';
+      }
       dom.vcardTextOutput.style.color = 'red';
       this.ui.setDownloadButtonVisibility(false);
     }

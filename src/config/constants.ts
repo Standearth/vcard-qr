@@ -41,15 +41,15 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 5 },
   qrOptions: { typeNumber: 0, errorCorrectionLevel: 'Q' },
   anniversaryLogo: true,
-  optimizeSize: false,
+  optimizeSize: true,
   roundSize: true,
 };
 
 export const TAB_SPECIFIC_DEFAULTS: { [key in Mode]: Partial<TabState> } = {
   [MODES.VCARD]: {
-    width: 376,
-    height: 376,
-    margin: 10,
+    width: 950,
+    height: 950,
+    margin: 30,
     qrOptions: { typeNumber: 18, errorCorrectionLevel: 'Q' },
     anniversaryLogo: true,
   },

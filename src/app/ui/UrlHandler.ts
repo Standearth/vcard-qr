@@ -29,8 +29,11 @@ export class UrlHandler {
         DEFAULT_FORM_FIELDS[fieldKey as keyof typeof DEFAULT_FORM_FIELDS];
 
       if (paramValue !== null) {
-        if (element.type === 'checkbox') {
-          element.checked = paramValue === 'true';
+        if (
+          element instanceof HTMLInputElement &&
+          element.type === 'checkbox'
+        ) {
+          (element as HTMLInputElement).checked = paramValue === 'true';
         } else if (
           key === 'officePhone' &&
           OFFICE_PHONE_ALIASES[paramValue.toUpperCase()]
@@ -40,8 +43,11 @@ export class UrlHandler {
           element.value = paramValue;
         }
       } else {
-        if (element.type === 'checkbox') {
-          element.checked = defaultValue as boolean;
+        if (
+          element instanceof HTMLInputElement &&
+          element.type === 'checkbox'
+        ) {
+          (element as HTMLInputElement).checked = defaultValue as boolean;
         } else {
           element.value = String(defaultValue);
         }

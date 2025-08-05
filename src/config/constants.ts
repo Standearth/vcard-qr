@@ -75,6 +75,7 @@ export const DEFAULT_FORM_FIELDS = {
   cellPhone: '',
   website: 'https://stand.earth',
   linkedin: '',
+  note: '',
   linkUrl: 'https://stand.earth',
   wifiSsid: '',
   wifiPassword: '',

@@ -71,6 +71,7 @@ export class App {
           cellPhone,
           website,
           linkedin,
+          note,
         } = dom.formFields;
         const vcardLines = [
           'BEGIN:VCARD',
@@ -91,6 +92,7 @@ export class App {
             : '',
           website.value ? `URL:${website.value}` : '',
           linkedin.value ? `URL:${linkedin.value}` : '',
+          note.value ? `NOTE:${note.value.replace(/\n/g, '\\n')}` : '',
           'END:VCARD',
         ];
         return vcardLines.filter(Boolean).join('\n');
@@ -262,7 +264,9 @@ export class App {
       const element = activeFormFields[fieldKey];
       if (!element) continue;
       const value =
-        element.type === 'checkbox' ? element.checked : element.value;
+        element instanceof HTMLInputElement && element.type === 'checkbox'
+          ? element.checked
+          : element.value;
       const defaultValue =
         DEFAULT_FORM_FIELDS[fieldKey as keyof typeof DEFAULT_FORM_FIELDS];
       if (String(value) !== String(defaultValue)) {

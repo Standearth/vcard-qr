@@ -53,6 +53,7 @@ export const dom = {
     cellPhone: document.getElementById('cell_phone') as HTMLInputElement,
     website: document.getElementById('website') as HTMLInputElement,
     linkedin: document.getElementById('linkedin') as HTMLInputElement,
+    note: document.getElementById('note') as HTMLTextAreaElement,
     wifiSsid: document.getElementById('wifi_ssid') as HTMLInputElement,
     wifiPassword: document.getElementById('wifi_password') as HTMLInputElement,
     wifiEncryption: document.getElementById(
@@ -106,7 +107,9 @@ export const dom = {
     width: document.getElementById('form-width') as HTMLInputElement,
     height: document.getElementById('form-height') as HTMLInputElement,
     margin: document.getElementById('form-margin') as HTMLInputElement,
-    optimizeSize: document.getElementById('form-optimize-size') as HTMLInputElement,
+    optimizeSize: document.getElementById(
+      'form-optimize-size'
+    ) as HTMLInputElement,
     dotsType: document.getElementById('form-dots-type') as HTMLSelectElement,
     dotsColor: document.getElementById('form-dots-color') as HTMLInputElement,
     roundSize: document.getElementById('form-round-size') as HTMLInputElement,

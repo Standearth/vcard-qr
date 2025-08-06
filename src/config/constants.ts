@@ -29,6 +29,23 @@ export type TabState = Partial<Options> & {
   optimizeSize?: boolean;
   roundSize?: boolean;
   showImage?: boolean;
+  firstName?: string;
+  lastName?: string;
+  org?: string;
+  title?: string;
+  email?: string;
+  officePhone?: string;
+  extension?: string;
+  workPhone?: string;
+  cellPhone?: string;
+  website?: string;
+  linkedin?: string;
+  notes?: string;
+  linkUrl?: string;
+  wifiSsid?: string;
+  wifiPassword?: string;
+  wifiEncryption?: string;
+  wifiHidden?: boolean;
 };
 
 export const DEFAULT_ADVANCED_OPTIONS: TabState = {

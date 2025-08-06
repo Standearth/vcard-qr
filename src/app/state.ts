@@ -4,6 +4,7 @@ import {
   TabState,
   DEFAULT_ADVANCED_OPTIONS,
   TAB_SPECIFIC_DEFAULTS,
+  DEFAULT_FORM_FIELDS,
 } from '../config/constants';
 
 const tabStates: Partial<Record<Mode, TabState>> = {};
@@ -17,6 +18,7 @@ export function initializeState(): void {
     tabStates[mode] = {
       ...defaults,
       ...specifics,
+      ...DEFAULT_FORM_FIELDS,
       qrOptions: { ...defaults.qrOptions, ...(specifics.qrOptions || {}) },
       dotsOptions: {
         ...defaults.dotsOptions,

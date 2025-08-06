@@ -27,6 +27,14 @@ export class EventManager {
     this.setupEventListeners();
   }
 
+  private handleFormInputChange = (): void => {
+    updateTabState(
+      this.uiManager.getCurrentMode(),
+      this.uiManager.getFormControlValues()
+    );
+    this.app.updateQRCode();
+  };
+
   private setupEventListeners(): void {
     this.previousWidth = parseInt(dom.advancedControls.width.value);
     window.addEventListener('hashchange', this.app.handleRouteChange);
@@ -46,7 +54,7 @@ export class EventManager {
 
     Object.values(dom.formFields).forEach((field) => {
       if (field instanceof HTMLElement) {
-        field.addEventListener('input', this.app.updateQRCode);
+        field.addEventListener('input', this.handleFormInputChange);
       }
     });
 
@@ -80,6 +88,8 @@ export class EventManager {
       a.click();
       URL.revokeObjectURL(url);
     });
+
+    
 
     dom.buttons.toggleAdvanced.addEventListener('click', () => {
       const isHidden =

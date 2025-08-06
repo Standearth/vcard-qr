@@ -2,8 +2,6 @@ import { dom } from '../../config/dom';
 import { UIManager } from '../UIManager';
 import {
   DEFAULT_FORM_FIELDS,
-  DEFAULT_ADVANCED_OPTIONS,
-  OFFICE_PHONE_ALIASES,
   TabState,
 } from '../../config/constants';
 
@@ -14,67 +12,43 @@ export class UrlHandler {
     this.uiManager = uiManager;
   }
 
-  populateFormFromUrl(): void {
+  getStateFromUrl(): Partial<TabState> {
     const params = new URLSearchParams(window.location.hash.split('?')[1]);
-    const { formFields, advancedControls } = dom;
+    const state: Partial<TabState> = {};
 
-    // Populate form fields
-    for (const key in formFields) {
-      const fieldKey = key as keyof typeof formFields;
-      const element = formFields[fieldKey];
-      if (!element) continue;
-
+    // Populate form fields from URL
+    for (const key in DEFAULT_FORM_FIELDS) {
+      const fieldKey = key as keyof typeof DEFAULT_FORM_FIELDS;
       const paramName = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      const value = params.get(paramName);
+      const urlValue = params.get(paramName);
 
-      if (value !== null) {
-        if (
-          element instanceof HTMLInputElement &&
-          element.type === 'checkbox'
-        ) {
-          element.checked = value === 'true';
-        } else if (
-          key === 'officePhone' &&
-          OFFICE_PHONE_ALIASES[value.toUpperCase()]
-        ) {
-          (element as HTMLInputElement | HTMLSelectElement).value =
-            OFFICE_PHONE_ALIASES[value.toUpperCase()];
+      if (urlValue !== null) {
+        if (typeof DEFAULT_FORM_FIELDS[fieldKey] === 'boolean') {
+          (state as any)[fieldKey] = urlValue === 'true';
         } else {
-          (element as HTMLInputElement | HTMLSelectElement).value = value;
-        }
-      } else {
-        const defaultValue =
-          DEFAULT_FORM_FIELDS[fieldKey as keyof typeof DEFAULT_FORM_FIELDS];
-        if (
-          element instanceof HTMLInputElement &&
-          element.type === 'checkbox'
-        ) {
-          element.checked = defaultValue as boolean;
-        } else {
-          (element as HTMLInputElement | HTMLSelectElement).value =
-            defaultValue as string;
+          (state as any)[fieldKey] = urlValue;
         }
       }
     }
 
-    // Populate advanced controls
-    const newTabState: TabState = { ...DEFAULT_ADVANCED_OPTIONS };
-    const keys = Object.keys(advancedControls) as Array<
-      keyof typeof advancedControls
+    // Populate advanced controls from URL
+    const keys = Object.keys(dom.advancedControls) as Array<
+      keyof typeof dom.advancedControls
     >;
     keys.forEach((key) => {
       const paramName = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      const value = params.get(paramName);
-      if (value !== null) {
-        this.updateStateFromParam(newTabState, key, value);
+      const urlValue = params.get(paramName);
+      if (urlValue !== null) {
+        this.updateStateFromParam(state, key, urlValue);
       }
     });
-
-    this.uiManager.getFormManager().setFormControlValues(newTabState);
+    
+    console.log('UrlHandler.getStateFromUrl - state:', state);
+    return state;
   }
 
   private updateStateFromParam(
-    state: TabState,
+    state: Partial<TabState>,
     key: keyof typeof dom.advancedControls,
     value: string
   ): void {
@@ -94,48 +68,40 @@ export class UrlHandler {
         state[key] = boolValue;
         break;
       case 'dotsType':
-        if (state.dotsOptions) state.dotsOptions.type = value as any;
+        state.dotsOptions = { ...state.dotsOptions, type: value as any };
         break;
       case 'dotsColor':
-        if (state.dotsOptions) state.dotsOptions.color = value;
+        state.dotsOptions = { ...state.dotsOptions, color: value };
         break;
       case 'cornersSquareType':
-        if (state.cornersSquareOptions)
-          state.cornersSquareOptions.type = value as any;
+        state.cornersSquareOptions = { ...state.cornersSquareOptions, type: value as any };
         break;
       case 'cornersSquareColor':
-        if (state.cornersSquareOptions)
-          state.cornersSquareOptions.color = value;
+        state.cornersSquareOptions = { ...state.cornersSquareOptions, color: value };
         break;
       case 'cornersDotType':
-        if (state.cornersDotOptions)
-          state.cornersDotOptions.type = value as any;
+        state.cornersDotOptions = { ...state.cornersDotOptions, type: value as any };
         break;
       case 'cornersDotColor':
-        if (state.cornersDotOptions) state.cornersDotOptions.color = value;
+        state.cornersDotOptions = { ...state.cornersDotOptions, color: value };
         break;
       case 'backgroundColor':
-        if (state.backgroundOptions) state.backgroundOptions.color = value;
+        state.backgroundOptions = { ...state.backgroundOptions, color: value };
         break;
-      case 'hideBackgrounddots':
-        if (state.imageOptions)
-          state.imageOptions.hideBackgroundDots = boolValue;
+      case 'hideBackgroundDots':
+        state.imageOptions = { ...state.imageOptions, hideBackgroundDots: boolValue };
         break;
       case 'imageSize':
-        if (state.imageOptions && !isNaN(numValue))
-          state.imageOptions.imageSize = numValue;
+        if (!isNaN(numValue)) state.imageOptions = { ...state.imageOptions, imageSize: numValue };
         break;
       case 'imageMargin':
-        if (state.imageOptions && !isNaN(numValue))
-          state.imageOptions.margin = numValue;
+        if (!isNaN(numValue)) state.imageOptions = { ...state.imageOptions, margin: numValue };
         break;
       case 'qrTypeNumber':
-        if (state.qrOptions && !isNaN(numValue))
-          state.qrOptions.typeNumber = numValue as any;
+        if (!isNaN(numValue)) state.qrOptions = { ...state.qrOptions, typeNumber: numValue as any };
         break;
       case 'qrErrorCorrectionLevel':
-        if (state.qrOptions)
-          state.qrOptions.errorCorrectionLevel = value as any;
+        state.qrOptions = { ...state.qrOptions, errorCorrectionLevel: value as any };
         break;
     }
   }

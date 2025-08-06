@@ -11,6 +11,7 @@ import { UIManager } from '../UIManager';
 import {
   TabState,
   DEFAULT_ADVANCED_OPTIONS,
+  DEFAULT_FORM_FIELDS,
   MODES,
 } from '../../config/constants';
 
@@ -49,7 +50,7 @@ export class FormManager {
   }
 
   getFormControlValues(): TabState {
-    const { advancedControls } = dom;
+    const { advancedControls, formFields } = dom;
     const typeNumberValue = parseInt(advancedControls.qrTypeNumber.value);
 
     return {
@@ -90,11 +91,31 @@ export class FormManager {
           | 'Q'
           | 'H',
       },
+      // vCard fields
+      firstName: formFields.firstName.value,
+      lastName: formFields.lastName.value,
+      org: formFields.org.value,
+      title: formFields.title.value,
+      email: formFields.email.value,
+      officePhone: formFields.officePhone.value,
+      extension: formFields.extension.value,
+      workPhone: formFields.workPhone.value,
+      cellPhone: formFields.cellPhone.value,
+      website: formFields.website.value,
+      linkedin: formFields.linkedin.value,
+      notes: formFields.notes.value,
+      // Link field
+      linkUrl: formFields.linkUrl.value,
+      // WiFi fields
+      wifiSsid: formFields.wifiSsid.value,
+      wifiPassword: formFields.wifiPassword.value,
+      wifiEncryption: formFields.wifiEncryption.value,
+      wifiHidden: formFields.wifiHidden.checked,
     };
   }
 
   setFormControlValues(values: TabState): void {
-    const { advancedControls } = dom;
+    const { advancedControls, formFields } = dom;
     advancedControls.width.value = String(
       values.width ?? DEFAULT_ADVANCED_OPTIONS.width
     );
@@ -171,7 +192,72 @@ export class FormManager {
       advancedControls.qrErrorCorrectionLevel.value =
         values.qrOptions.errorCorrectionLevel ?? 'Q';
     }
+
+    // Set vCard fields
+    console.log('setFormControlValues - values:', values);
+    if (formFields.firstName) {
+      formFields.firstName.value =
+        values.firstName ?? DEFAULT_FORM_FIELDS.firstName;
+    }
+    if (formFields.lastName) {
+      formFields.lastName.value =
+        values.lastName ?? DEFAULT_FORM_FIELDS.lastName;
+    }
+    if (formFields.org) {
+      formFields.org.value = values.org ?? DEFAULT_FORM_FIELDS.org;
+    }
+    if (formFields.title) {
+      formFields.title.value = values.title ?? DEFAULT_FORM_FIELDS.title;
+    }
+    if (formFields.email) {
+      formFields.email.value = values.email ?? DEFAULT_FORM_FIELDS.email;
+    }
+    if (formFields.officePhone) {
+      formFields.officePhone.value =
+        values.officePhone ?? DEFAULT_FORM_FIELDS.officePhone;
+    }
+    if (formFields.extension) {
+      formFields.extension.value =
+        values.extension ?? DEFAULT_FORM_FIELDS.extension;
+    }
+    if (formFields.workPhone) {
+      formFields.workPhone.value =
+        values.workPhone ?? DEFAULT_FORM_FIELDS.workPhone;
+    }
+    if (formFields.cellPhone) {
+      formFields.cellPhone.value =
+        values.cellPhone ?? DEFAULT_FORM_FIELDS.cellPhone;
+    }
+    if (formFields.website) {
+      formFields.website.value = values.website ?? DEFAULT_FORM_FIELDS.website;
+    }
+    if (formFields.linkedin) {
+      formFields.linkedin.value =
+        values.linkedin ?? DEFAULT_FORM_FIELDS.linkedin;
+    }
+    if (formFields.notes) {
+      formFields.notes.value = values.notes ?? DEFAULT_FORM_FIELDS.notes;
+    }
+
+    // Set Link field
+    if (formFields.linkUrl)
+      formFields.linkUrl.value = values.linkUrl ?? DEFAULT_FORM_FIELDS.linkUrl;
+
+    // Set WiFi fields
+    if (formFields.wifiSsid)
+      formFields.wifiSsid.value =
+        values.wifiSsid ?? DEFAULT_FORM_FIELDS.wifiSsid;
+    if (formFields.wifiPassword)
+      formFields.wifiPassword.value =
+        values.wifiPassword ?? DEFAULT_FORM_FIELDS.wifiPassword;
+    if (formFields.wifiEncryption)
+      formFields.wifiEncryption.value =
+        values.wifiEncryption ?? DEFAULT_FORM_FIELDS.wifiEncryption;
+    if (formFields.wifiHidden)
+      formFields.wifiHidden.checked =
+        values.wifiHidden ?? DEFAULT_FORM_FIELDS.wifiHidden;
   }
+
   setDownloadButtonVisibility(visible: boolean): void {
     const display = visible ? 'inline-flex' : 'none';
     dom.buttons.downloadPng.style.display = display;
@@ -182,5 +268,25 @@ export class FormManager {
         ? 'inline-flex'
         : 'none';
     }
+  }
+
+  getVCardData(): { [key: string]: string } {
+    const state = this.uiManager.getTabState();
+    if (!state) return {};
+
+    return {
+      firstName: state.firstName || '',
+      lastName: state.lastName || '',
+      org: state.org || '',
+      title: state.title || '',
+      email: state.email || '',
+      officePhone: state.officePhone || '',
+      extension: state.extension || '',
+      workPhone: state.workPhone || '',
+      cellPhone: state.cellPhone || '',
+      website: state.website || '',
+      linkedin: state.linkedin || '',
+      notes: state.notes || '',
+    };
   }
 }

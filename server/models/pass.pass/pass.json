@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "passTypeIdentifier": "pass.com.example.vcard",
+  "serialNumber": "123456",
+  "teamIdentifier": "_YOUR_TEAM_ID_HERE_",
+  "organizationName": "Your Organization",
+  "description": "vCard",
+  "logoText": "Your Logo",
+  "foregroundColor": "rgb(255, 255, 255)",
+  "backgroundColor": "rgb(0, 0, 0)",
+  "generic": {
+    "primaryFields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "value": "John Doe"
+      }
+    ],
+    "secondaryFields": [
+      {
+        "key": "phone",
+        "label": "Phone",
+        "value": "555-555-5555"
+      }
+    ],
+    "auxiliaryFields": [
+      {
+        "key": "email",
+        "label": "Email",
+        "value": "johndoe@example.com"
+      }
+    ]
+  }
+}

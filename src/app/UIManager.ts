@@ -7,6 +7,7 @@ import { FormManager } from './ui/FormManager';
 import { StickyManager } from './ui/StickyManager';
 import { TabManager } from './ui/TabManager';
 import { UrlHandler } from './ui/UrlHandler';
+import { WalletManager } from './ui/WalletManager';
 import { getTabState, updateTabState } from './state';
 import { dom } from '../config/dom';
 
@@ -19,6 +20,7 @@ export class UIManager {
   private stickyManager: StickyManager;
   private tabManager: TabManager;
   private urlHandler: UrlHandler;
+  private walletManager: WalletManager;
 
   constructor(app: App) {
     this.app = app;
@@ -27,12 +29,11 @@ export class UIManager {
     this.stickyManager = new StickyManager();
     this.tabManager = new TabManager(app, this);
     this.urlHandler = new UrlHandler(this);
+    this.walletManager = new WalletManager(app, this);
 
-    this.urlHandler.populateFormFromUrl();
-  }
+    }
 
   // Delegated methods
-  populateFormFromUrl = (): void => this.urlHandler.populateFormFromUrl();
   switchTab = (newMode: Mode, isInitialLoad = false): void =>
     this.tabManager.switchTab(newMode, isInitialLoad);
   getActiveFormFields = () => this.formManager.getActiveFormFields();
@@ -42,6 +43,7 @@ export class UIManager {
     this.formManager.setFormControlValues(values);
   setDownloadButtonVisibility = (visible: boolean): void =>
     this.formManager.setDownloadButtonVisibility(visible);
+  getVCardData = (): { [key: string]: string } => this.formManager.getVCardData();
 
   // Getters and Setters
   getCurrentMode = (): Mode => this.currentMode;

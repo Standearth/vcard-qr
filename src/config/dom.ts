@@ -95,6 +95,7 @@ export const dom = {
     resetStyles: document.getElementById(
       'reset-styles-button'
     ) as HTMLButtonElement,
+    addToWallet: document.getElementById('add-to-wallet') as HTMLButtonElement,
   },
   modal: {
     overlay: document.getElementById('send-to-phone-modal') as HTMLDivElement,

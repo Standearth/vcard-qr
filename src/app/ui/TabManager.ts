@@ -38,6 +38,8 @@ export class TabManager {
 
     dom.buttons.downloadVCard.style.display =
       newMode === MODES.VCARD ? 'block' : 'none';
+    dom.buttons.addToWallet.style.display =
+      newMode === MODES.VCARD ? 'block' : 'none';
     dom.anniversaryLogoContainer.style.display =
       newMode === MODES.WIFI ? 'none' : 'flex';
 

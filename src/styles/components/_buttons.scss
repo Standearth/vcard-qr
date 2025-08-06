@@ -80,6 +80,17 @@
   }
 }
 
+.button-apple {
+  background-color: #000000;
+  color: #ffffff;
+  --focus-ring-color: #000000;
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: #333333;
+    }
+  }
+}
+
 .buttons-section {
   display: flex;
   flex-wrap: wrap;

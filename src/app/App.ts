@@ -26,9 +26,11 @@ export let qrCode: AsyncQRCodeStyling;
 export class App {
   private ui: UIManager;
   private modalQrCode: AsyncQRCodeStyling;
+  private initialUrlParams: URLSearchParams;
 
   constructor() {
     initializeState();
+    this.initialUrlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
     this.initializeIcons();
     this.ui = new UIManager(this);
 
@@ -47,6 +49,18 @@ export class App {
     this.handleRouteChange();
   }
 
+  getVCardData = (): object => {
+    const state = getTabState(this.ui.getCurrentMode());
+    if (!state) return {};
+
+    return {
+      name: `${state.firstName || ''} ${state.lastName || ''}`.trim(),
+      phone: state.workPhone || state.cellPhone || state.officePhone,
+      email: state.email,
+      organizationName: state.org,
+    };
+  };
+
   getQrCode = (): AsyncQRCodeStyling => qrCode;
   getModalQrCode = (): AsyncQRCodeStyling => this.modalQrCode;
 
@@ -57,51 +71,38 @@ export class App {
 
   getQRCodeData = (): string => {
     const currentMode = this.ui.getCurrentMode();
+    const state = getTabState(currentMode);
+    if (!state) return '';
+
     const generators: Partial<Record<Mode, () => string>> = {
       [MODES.VCARD]: () => {
-        const {
-          firstName,
-          lastName,
-          org,
-          title,
-          email,
-          officePhone,
-          extension,
-          workPhone,
-          cellPhone,
-          website,
-          linkedin,
-          notes,
-        } = dom.formFields;
         const vcardLines = [
           'BEGIN:VCARD',
           'VERSION:3.0',
-          `N:${lastName.value || ''};${firstName.value || ''}`,
-          `FN:${`${firstName.value || ''} ${lastName.value || ''}`.trim()}`,
-          org.value ? `ORG:${org.value}` : '',
-          title.value ? `TITLE:${title.value}` : '',
-          email.value ? `EMAIL:${email.value}` : '',
-          officePhone.value
-            ? `TEL;TYPE=WORK,VOICE:${officePhone.value}${extension.value ? `;x=${extension.value}` : ''}`
+          `N:${state.lastName || ''};${state.firstName || ''}`,
+          `FN:${`${state.firstName || ''} ${state.lastName || ''}`.trim()}`,
+          state.org ? `ORG:${state.org}` : '',
+          state.title ? `TITLE:${state.title}` : '',
+          state.email ? `EMAIL:${state.email}` : '',
+          state.officePhone
+            ? `TEL;TYPE=WORK,VOICE:${state.officePhone}${state.extension ? `;x=${state.extension}` : ''}`
             : '',
-          workPhone.value
-            ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumberForVCard(workPhone.value)}`
+          state.workPhone
+            ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumberForVCard(state.workPhone)}`
             : '',
-          cellPhone.value
-            ? `TEL;TYPE=CELL:${formatPhoneNumberForVCard(cellPhone.value)}`
+          state.cellPhone
+            ? `TEL;TYPE=CELL:${formatPhoneNumberForVCard(state.cellPhone)}`
             : '',
-          website.value ? `URL:${website.value}` : '',
-          linkedin.value ? `URL:${linkedin.value}` : '',
-          notes.value ? `NOTE:${notes.value.replace(/\n/g, '\\n')}` : '',
+          state.website ? `URL:${state.website}` : '',
+          state.linkedin ? `URL:${state.linkedin}` : '',
+          state.notes ? `NOTE:${state.notes.replace(/\n/g, '\n')}` : '',
           'END:VCARD',
         ];
         return vcardLines.filter(Boolean).join('\n');
       },
-      [MODES.LINK]: () => dom.formFields.linkUrl.value || 'https://stand.earth',
+      [MODES.LINK]: () => state.linkUrl || 'https://stand.earth',
       [MODES.WIFI]: () => {
-        const { wifiSsid, wifiPassword, wifiEncryption, wifiHidden } =
-          dom.formFields;
-        return `WIFI:S:${wifiSsid.value || ''};T:${wifiEncryption.value || 'WPA'};P:${wifiPassword.value || ''};H:${wifiHidden.checked ? 'true' : 'false'};;`;
+        return `WIFI:S:${state.wifiSsid || ''};T:${state.wifiEncryption || 'WPA'};P:${state.wifiPassword || ''};H:${state.wifiHidden ? 'true' : 'false'};;`;
       },
     };
     return generators[currentMode]!();
@@ -214,11 +215,16 @@ export class App {
     if (hash.includes(`#/${MODES.WIFI}`)) newMode = MODES.WIFI;
 
     this.ui.getTabManager().switchTab(newMode, true);
-    this.ui.getUrlHandler().populateFormFromUrl();
-    updateTabState(
-      this.ui.getCurrentMode(),
-      this.ui.getFormManager().getFormControlValues()
-    );
+
+    const urlState = this.ui.getUrlHandler().getStateFromUrl();
+    const currentTabState = getTabState(this.ui.getCurrentMode());
+    const mergedState: TabState = {
+      ...currentTabState,
+      ...urlState,
+    };
+
+    this.ui.getFormManager().setFormControlValues(mergedState);
+    updateTabState(this.ui.getCurrentMode(), mergedState);
 
     if (this.ui.getCurrentMode() === MODES.WIFI) {
       dom.formFields.wifiEncryption.dispatchEvent(new Event('change'));
@@ -268,6 +274,7 @@ export class App {
     const newUrlParams = new URLSearchParams();
     const currentMode = this.ui.getCurrentMode();
     const activeFormFields = this.ui.getFormManager().getActiveFormFields();
+    console.log('activeFormFields:', activeFormFields);
 
     for (const fieldKey of Object.keys(activeFormFields) as Array<
       keyof typeof activeFormFields
@@ -279,9 +286,12 @@ export class App {
           ? element.checked
           : element.value;
       const defaultValue = DEFAULT_FORM_FIELDS[fieldKey];
+      const paramName = fieldKey.replace(/([A-Z])/g, '_$1').toLowerCase();
+
+      // Include if different from default
       if (String(value) !== String(defaultValue)) {
         newUrlParams.set(
-          fieldKey.replace(/([A-Z])/g, '_$1').toLowerCase(),
+          paramName,
           String(value)
         );
       }
@@ -294,6 +304,7 @@ export class App {
     const defaultTabState: TabState = {
       ...DEFAULT_ADVANCED_OPTIONS,
       ...tabSpecifics,
+      ...DEFAULT_FORM_FIELDS,
       qrOptions: {
         ...DEFAULT_ADVANCED_OPTIONS.qrOptions,
         ...(tabSpecifics.qrOptions || {}),
@@ -319,17 +330,52 @@ export class App {
         ...(tabSpecifics.imageOptions || {}),
       },
     };
-
-    const flatCurrentState = this.getFlatState(currentTabState);
-    const flatDefaultState = this.getFlatState(defaultTabState);
+    console.log('currentTabState:', currentTabState);
+    console.log('defaultTabState:', defaultTabState);
 
     
 
-    for (const stateKey of Object.keys(flatCurrentState)) {
-      if (['container', 'imageFile', 'saveAsBlob'].includes(stateKey)) continue;
+    
 
-      const currentValue = flatCurrentState[stateKey];
-      const defaultValue = flatDefaultState[stateKey];
+    const getNestedValue = (obj: any, path: string) => {
+      const parts = path.split('.');
+      let current = obj;
+      for (const part of parts) {
+        if (current && typeof current === 'object' && part in current) {
+          current = current[part];
+        } else {
+          return undefined;
+        }
+      }
+      return current;
+    };
+
+    const statePathMap: { [k: string]: string } = {
+      width: 'width',
+      height: 'height',
+      margin: 'margin',
+      anniversaryLogo: 'anniversaryLogo',
+      optimizeSize: 'optimizeSize',
+      roundSize: 'roundSize',
+      showImage: 'showImage',
+      dotsType: 'dotsOptions.type',
+      dotsColor: 'dotsOptions.color',
+      cornersSquareType: 'cornersSquareOptions.type',
+      cornersSquareColor: 'cornersSquareOptions.color',
+      cornersDotType: 'cornersDotOptions.type',
+      cornersDotColor: 'cornersDotOptions.color',
+      backgroundColor: 'backgroundOptions.color',
+      hideBackgroundDots: 'imageOptions.hideBackgroundDots',
+      imageSize: 'imageOptions.imageSize',
+      imageMargin: 'imageOptions.margin',
+      qrTypeNumber: 'qrOptions.typeNumber',
+      qrErrorCorrectionLevel: 'qrOptions.errorCorrectionLevel',
+    };
+
+    for (const key in statePathMap) {
+      const statePath = statePathMap[key];
+      const currentValue = getNestedValue(currentTabState, statePath);
+      const defaultValue = getNestedValue(defaultTabState, statePath);
 
       const currentString =
         currentValue === undefined || currentValue === null
@@ -340,15 +386,17 @@ export class App {
           ? ''
           : String(defaultValue);
 
+      console.log(`  Advanced Control: ${key}, Value: '${currentString}', Default: '${defaultString}', Differs: ${currentString !== defaultString}`);
       if (currentString !== defaultString) {
         newUrlParams.set(
-          stateKey.replace(/([A-Z])/g, '_$1').toLowerCase(),
+          key.replace(/([A-Z])/g, '_$1').toLowerCase(),
           currentString
         );
       }
     }
 
     const newUrl = `${window.location.pathname}#/${currentMode}/?${newUrlParams.toString()}`;
+    console.log('Final newUrlParams:', newUrlParams.toString());
     history.replaceState(null, '', newUrl);
   }
 }

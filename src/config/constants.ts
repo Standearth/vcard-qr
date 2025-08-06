@@ -29,6 +29,10 @@ export type TabState = Partial<Options> & {
   optimizeSize?: boolean;
   roundSize?: boolean;
   showImage?: boolean;
+  isAdvancedControlsVisible?: boolean;
+  isModalVisible?: boolean;
+  qrCodeContent?: string;
+  isQrCodeValid?: boolean;
   firstName?: string;
   lastName?: string;
   org?: string;

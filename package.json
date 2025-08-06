@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .ts --ignore-pattern 'dist/'",
-    "format": "prettier --write \"src/**/*.{ts,css}\" \"*.{html,json,md}\" \"**/*.yml\""
+    "typecheck": "npx tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,scss}\" \"*.{html,json,md}\" \"**/*.yml\""
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.2",

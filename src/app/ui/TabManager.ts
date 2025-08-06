@@ -1,7 +1,8 @@
-import { dom } from '../../config/dom';
+// src/app/ui/TabManager.ts
+
 import { App } from '../App';
-import { Mode, MODES } from '../../config/constants';
-import { getTabState, updateTabState } from '../state';
+import { Mode } from '../../config/constants';
+import { stateService } from '../StateService';
 import { UIManager } from '../UIManager';
 
 export class TabManager {
@@ -15,37 +16,16 @@ export class TabManager {
 
   switchTab(newMode: Mode, isInitialLoad = false): void {
     if (!isInitialLoad) {
-      updateTabState(
-        this.uiManager.getCurrentMode(),
-        this.uiManager.getFormControlValues()
-      );
+      const currentMode = this.uiManager.getCurrentMode();
+      const newValues = this.uiManager.getFormControlValues();
+      stateService.updateState(currentMode, newValues);
     }
+
     this.uiManager.setCurrentMode(newMode);
 
-    Object.keys(dom.tabLinks).forEach((key) => {
-      const modeKey = key as keyof typeof dom.tabLinks;
-      dom.tabLinks[modeKey].classList.toggle('active', modeKey === newMode);
-      dom.formContainers[modeKey].classList.toggle(
-        'active',
-        modeKey === newMode
-      );
-      dom.formContainers[modeKey].classList.toggle(
-        'hidden',
-        modeKey !== newMode
-      );
-      dom.subHeadings[modeKey].classList.toggle('hidden', modeKey !== newMode);
-    });
-
-    dom.buttons.downloadVCard.style.display =
-      newMode === MODES.VCARD ? 'block' : 'none';
-    dom.buttons.addToWallet.style.display =
-      newMode === MODES.VCARD ? 'block' : 'none';
-    dom.anniversaryLogoContainer.style.display =
-      newMode === MODES.WIFI ? 'none' : 'flex';
-
-    const newTabState = getTabState(newMode);
+    const newTabState = stateService.getState(newMode);
     if (newTabState) {
-      this.uiManager.setFormControlValues(newTabState);
+      this.uiManager.renderUIFromState(newTabState);
     }
 
     if (!isInitialLoad) {

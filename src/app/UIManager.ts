@@ -1,6 +1,5 @@
 // src/app/UIManager.ts
 
-import { App } from './App';
 import { Mode, MODES, TabState } from '../config/constants';
 import { EventManager } from './ui/EventManager';
 import { FormManager } from './ui/FormManager';
@@ -8,30 +7,26 @@ import { StickyManager } from './ui/StickyManager';
 import { TabManager } from './ui/TabManager';
 import { UrlHandler } from './ui/UrlHandler';
 import { WalletManager } from './ui/WalletManager';
-import { getTabState, updateTabState } from './state';
+import { stateService } from './StateService';
 import { dom } from '../config/dom';
+import { App } from './App';
 
 export class UIManager {
-  private app: App;
   private currentMode: Mode = MODES.VCARD;
 
-  private eventManager: EventManager;
   private formManager: FormManager;
   private stickyManager: StickyManager;
   private tabManager: TabManager;
   private urlHandler: UrlHandler;
-  private walletManager: WalletManager;
 
   constructor(app: App) {
-    this.app = app;
     this.formManager = new FormManager(this);
-    this.eventManager = new EventManager(app, this);
+    new EventManager(app, this);
     this.stickyManager = new StickyManager();
     this.tabManager = new TabManager(app, this);
     this.urlHandler = new UrlHandler(this);
-    this.walletManager = new WalletManager(app, this);
-
-    }
+    new WalletManager(this);
+  }
 
   // Delegated methods
   switchTab = (newMode: Mode, isInitialLoad = false): void =>
@@ -41,9 +36,8 @@ export class UIManager {
     this.formManager.getFormControlValues();
   setFormControlValues = (values: TabState): void =>
     this.formManager.setFormControlValues(values);
-  setDownloadButtonVisibility = (visible: boolean): void =>
-    this.formManager.setDownloadButtonVisibility(visible);
-  getVCardData = (): { [key: string]: string } => this.formManager.getVCardData();
+  getVCardData = (): { [key: string]: string } =>
+    this.formManager.getVCardData();
 
   // Getters and Setters
   getCurrentMode = (): Mode => this.currentMode;
@@ -54,17 +48,66 @@ export class UIManager {
   getFormManager = (): FormManager => this.formManager;
   getUrlHandler = (): UrlHandler => this.urlHandler;
   getStickyManager = (): StickyManager => this.stickyManager;
-  getTabState = (): TabState | undefined => getTabState(this.currentMode);
+  getTabState = (): TabState | undefined =>
+    stateService.getState(this.currentMode);
+
+  private renderTabsAndButtons(state: TabState): void {
+    const currentMode = this.getCurrentMode();
+
+    Object.keys(dom.tabLinks).forEach((key) => {
+      const modeKey = key as Mode;
+      const isActive = modeKey === currentMode;
+      dom.tabLinks[modeKey].classList.toggle('active', isActive);
+      dom.formContainers[modeKey].classList.toggle('active', isActive);
+      dom.formContainers[modeKey].classList.toggle('hidden', !isActive);
+      dom.subHeadings[modeKey].classList.toggle('hidden', !isActive);
+    });
+
+    const isVCard = currentMode === MODES.VCARD;
+    const isWifi = currentMode === MODES.WIFI;
+    const areButtonsVisible = state.isQrCodeValid ?? true;
+    const buttonDisplay = areButtonsVisible ? 'inline-flex' : 'none';
+
+    dom.buttons.downloadPng.style.display = buttonDisplay;
+    dom.buttons.downloadJpg.style.display = buttonDisplay;
+    dom.buttons.downloadSvg.style.display = buttonDisplay;
+    dom.buttons.downloadVCard.style.display =
+      isVCard && areButtonsVisible ? 'inline-flex' : 'none';
+    dom.buttons.addToWallet.style.display =
+      isVCard && areButtonsVisible ? 'inline-flex' : 'none';
+    dom.anniversaryLogoContainer.style.display = isWifi ? 'none' : 'flex';
+  }
+
+  renderUIFromState = (state: TabState): void => {
+    this.setFormControlValues(state);
+    this.renderTabsAndButtons(state);
+
+    dom.advancedControls.container.classList.toggle(
+      'hidden',
+      !state.isAdvancedControlsVisible
+    );
+    dom.toggleAdvancedText.textContent = state.isAdvancedControlsVisible
+      ? 'Hide Advanced Controls'
+      : 'Show Advanced Controls';
+
+    dom.modal.overlay.classList.toggle('hidden', !state.isModalVisible);
+
+    if (dom.vcardTextOutput) {
+      dom.vcardTextOutput.innerHTML = (state.qrCodeContent || '').replace(
+        /\n/g,
+        '<br>'
+      );
+      dom.vcardTextOutput.style.color =
+        state.isQrCodeValid === false ? 'red' : '';
+    }
+  };
 
   updateDimensions = (width: number, height: number): void => {
     const state = this.getTabState();
     if (state) {
       state.width = width;
       state.height = height;
-      dom.advancedControls.width.value = String(width);
-      dom.advancedControls.height.value = String(height);
-      updateTabState(this.currentMode, state);
-      this.app.updateQRCode();
+      stateService.updateState(this.currentMode, state);
     }
   };
 }

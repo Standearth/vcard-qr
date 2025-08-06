@@ -50,10 +50,11 @@ export class FormManager {
   }
 
   getFormControlValues(): TabState {
+    const currentState = this.uiManager.getTabState() || {};
     const { advancedControls, formFields } = dom;
     const typeNumberValue = parseInt(advancedControls.qrTypeNumber.value);
 
-    return {
+    const formValues: Partial<TabState> = {
       width: parseInt(advancedControls.width.value),
       height: parseInt(advancedControls.height.value),
       showImage: advancedControls.showImage.checked,
@@ -91,7 +92,6 @@ export class FormManager {
           | 'Q'
           | 'H',
       },
-      // vCard fields
       firstName: formFields.firstName.value,
       lastName: formFields.lastName.value,
       org: formFields.org.value,
@@ -104,13 +104,17 @@ export class FormManager {
       website: formFields.website.value,
       linkedin: formFields.linkedin.value,
       notes: formFields.notes.value,
-      // Link field
       linkUrl: formFields.linkUrl.value,
-      // WiFi fields
       wifiSsid: formFields.wifiSsid.value,
       wifiPassword: formFields.wifiPassword.value,
       wifiEncryption: formFields.wifiEncryption.value,
       wifiHidden: formFields.wifiHidden.checked,
+    };
+
+    return {
+      ...(currentState as TabState),
+      ...formValues,
+      anniversaryLogo: formValues.anniversaryLogo ?? false,
     };
   }
 
@@ -194,7 +198,6 @@ export class FormManager {
     }
 
     // Set vCard fields
-    console.log('setFormControlValues - values:', values);
     if (formFields.firstName) {
       formFields.firstName.value =
         values.firstName ?? DEFAULT_FORM_FIELDS.firstName;
@@ -256,18 +259,6 @@ export class FormManager {
     if (formFields.wifiHidden)
       formFields.wifiHidden.checked =
         values.wifiHidden ?? DEFAULT_FORM_FIELDS.wifiHidden;
-  }
-
-  setDownloadButtonVisibility(visible: boolean): void {
-    const display = visible ? 'inline-flex' : 'none';
-    dom.buttons.downloadPng.style.display = display;
-    dom.buttons.downloadJpg.style.display = display;
-    dom.buttons.downloadSvg.style.display = display;
-    if (this.uiManager.getCurrentMode() === MODES.VCARD) {
-      dom.buttons.downloadVCard.style.display = visible
-        ? 'inline-flex'
-        : 'none';
-    }
   }
 
   getVCardData(): { [key: string]: string } {

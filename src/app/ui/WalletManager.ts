@@ -1,25 +1,25 @@
 import { dom } from '../../config/dom';
-import { App } from '../App';
 import { UIManager } from '../UIManager';
 
 export class WalletManager {
-  private app: App;
   private uiManager: UIManager;
 
-  constructor(app: App, uiManager: UIManager) {
-    this.app = app;
+  constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
     this.setupEventListeners();
   }
 
   private setupEventListeners(): void {
-    console.log('Attempting to set up event listener for Add to Wallet button.', dom.buttons.addToWallet);
+    console.log(
+      'Attempting to set up event listener for Add to Wallet button.',
+      dom.buttons.addToWallet
+    );
     dom.buttons.addToWallet.addEventListener('click', () => this.createPass());
   }
 
   private async createPass(): Promise<void> {
     const vCardData = this.uiManager.getFormManager().getVCardData();
-    
+
     try {
       const response = await fetch('/api/create-pass', {
         method: 'POST',

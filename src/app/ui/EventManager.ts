@@ -7,9 +7,10 @@ import {
   generateFilename,
   calculateAndApplyOptimalQrCodeSize,
 } from '../../utils/helpers';
-import { updateTabState } from '../state';
+import { stateService } from '../StateService';
 import {
   Mode,
+  MODES,
   DEFAULT_ADVANCED_OPTIONS,
   TAB_SPECIFIC_DEFAULTS,
   TabState,
@@ -27,23 +28,22 @@ export class EventManager {
     this.setupEventListeners();
   }
 
-  private handleFormInputChange = (): void => {
-    updateTabState(
-      this.uiManager.getCurrentMode(),
-      this.uiManager.getFormControlValues()
-    );
-    this.app.updateQRCode();
+  private handleStateUpdate = async (): Promise<void> => {
+    const currentMode = this.uiManager.getCurrentMode();
+    const newValues = this.uiManager.getFormControlValues();
+    stateService.updateState(currentMode, newValues);
+    await this.app.updateQRCode();
+    this.uiManager
+      .getUrlHandler()
+      .updateUrlFromState(stateService.getState(currentMode)!);
   };
 
   private setupEventListeners(): void {
     this.previousWidth = parseInt(dom.advancedControls.width.value);
     window.addEventListener('hashchange', this.app.handleRouteChange);
 
-    // Prevent default form submission which causes a page reload
     Object.values(dom.formContainers).forEach((form) => {
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-      });
+      form.addEventListener('submit', (event) => event.preventDefault());
     });
 
     Object.values(dom.tabLinks).forEach((tab) => {
@@ -54,12 +54,15 @@ export class EventManager {
 
     Object.values(dom.formFields).forEach((field) => {
       if (field instanceof HTMLElement) {
-        field.addEventListener('input', this.handleFormInputChange);
+        field.addEventListener('input', this.handleStateUpdate);
       }
     });
 
     this.setupAdvancedControlsListeners();
+    this.setupButtonEventListeners();
+  }
 
+  private setupButtonEventListeners(): void {
     dom.buttons.downloadPng.addEventListener('click', () =>
       this.app.getQrCode().download({
         name: generateFilename(this.uiManager.getCurrentMode()),
@@ -89,44 +92,70 @@ export class EventManager {
       URL.revokeObjectURL(url);
     });
 
-    
-
     dom.buttons.toggleAdvanced.addEventListener('click', () => {
-      const isHidden =
-        dom.advancedControls.container.classList.toggle('hidden');
-      dom.toggleAdvancedText.textContent = isHidden
-        ? 'Show Advanced Controls'
-        : 'Hide Advanced Controls';
+      const currentState = this.uiManager.getTabState();
+      if (currentState) {
+        const newVisibility = !currentState.isAdvancedControlsVisible;
 
-      setTimeout(() => {
-        this.uiManager.getStickyManager().handleStickyBehavior();
-      }, 0);
+        Object.values(MODES).forEach((mode) => {
+          stateService.updateState(mode, {
+            isAdvancedControlsVisible: newVisibility,
+          });
+        });
+
+        this.uiManager.renderUIFromState(
+          stateService.getState(this.uiManager.getCurrentMode())!
+        );
+
+        setTimeout(() => {
+          this.uiManager.getStickyManager().handleStickyBehavior();
+        }, 0);
+      }
     });
 
     dom.buttons.resetStyles.addEventListener('click', () => {
-      const newTabState = {
-        ...DEFAULT_ADVANCED_OPTIONS,
-        ...(TAB_SPECIFIC_DEFAULTS[this.uiManager.getCurrentMode()] || {}),
-      } as TabState;
-      updateTabState(this.uiManager.getCurrentMode(), newTabState);
-      this.uiManager.setFormControlValues(newTabState);
-      dom.advancedControls.imageFile.value = '';
-      this.app.updateQRCode();
+      const currentMode = this.uiManager.getCurrentMode();
+      const currentState = this.uiManager.getTabState();
+
+      if (currentState) {
+        const newTabState: TabState = {
+          ...currentState,
+          ...DEFAULT_ADVANCED_OPTIONS,
+          ...(TAB_SPECIFIC_DEFAULTS[currentMode] || {}),
+          isAdvancedControlsVisible: currentState.isAdvancedControlsVisible,
+          isModalVisible: false,
+        };
+
+        stateService.updateState(currentMode, newTabState);
+        dom.advancedControls.imageFile.value = '';
+        this.uiManager.getUrlHandler().updateUrlFromState(newTabState);
+      }
     });
 
     dom.buttons.sendToPhone.addEventListener('click', () => {
-      let finalUrl = window.location.href;
-      finalUrl += finalUrl.includes('?') ? '&download=png' : '?download=png';
-      this.app.getModalQrCode().update({ data: finalUrl });
-      dom.modal.overlay.classList.remove('hidden');
+      const state = this.uiManager.getTabState();
+      if (state) {
+        stateService.updateState(this.uiManager.getCurrentMode(), {
+          isModalVisible: true,
+        });
+        let finalUrl = window.location.href;
+        finalUrl += finalUrl.includes('?') ? '&download=png' : '?download=png';
+        this.app.getModalQrCode().update({ data: finalUrl });
+      }
     });
 
-    dom.modal.closeButton.addEventListener('click', () =>
-      dom.modal.overlay.classList.add('hidden')
-    );
+    dom.modal.closeButton.addEventListener('click', () => {
+      stateService.updateState(this.uiManager.getCurrentMode(), {
+        isModalVisible: false,
+      });
+    });
+
     dom.modal.overlay.addEventListener('click', (event) => {
-      if (event.target === dom.modal.overlay)
-        dom.modal.overlay.classList.add('hidden');
+      if (event.target === dom.modal.overlay) {
+        stateService.updateState(this.uiManager.getCurrentMode(), {
+          isModalVisible: false,
+        });
+      }
     });
   }
 
@@ -141,6 +170,7 @@ export class EventManager {
         increment
       );
       this.previousWidth = parseInt(dom.advancedControls.width.value);
+      await this.handleStateUpdate();
     } finally {
       this.isOptimizing = false;
     }
@@ -149,103 +179,74 @@ export class EventManager {
   private setupAdvancedControlsListeners(): void {
     const { advancedControls } = dom;
 
-    const genericUpdate = () => {
-      if (this.isOptimizing) return;
-      this.previousWidth = parseInt(advancedControls.width.value) || 0;
-      updateTabState(
-        this.uiManager.getCurrentMode(),
-        this.uiManager.getFormControlValues()
-      );
-      this.app.updateQRCode();
-    };
-
-    const isPerfectlySized = (size: number): boolean => {
-      const qr = (this.app.getQrCode() as any)._qr;
-      if (!qr) return true; // Failsafe
-      const moduleCount = qr.getModuleCount();
-      const state = this.uiManager.getTabState();
-      const margin = state?.margin ?? 0;
-      if (moduleCount === 0) return true; // Failsafe
-
-      return (size - margin * 2) % moduleCount === 0;
-    };
-
     Object.values(advancedControls).forEach((field) => {
       if (field instanceof HTMLElement) {
-        field.addEventListener('input', async (event) => {
+        let eventType = 'input';
+        if (
+          field instanceof HTMLInputElement &&
+          (field.type === 'checkbox' || field.type === 'radio')
+        ) {
+          eventType = 'change';
+        } else if (field instanceof HTMLSelectElement) {
+          eventType = 'change';
+        }
+
+        field.addEventListener(eventType, async (event) => {
           const target = event.target as HTMLInputElement | HTMLSelectElement;
           const isOptimized = advancedControls.optimizeSize.checked;
 
-          // --- Main Logic Switch ---
           switch (target.id) {
+            case 'form-width':
+            case 'form-height':
+              if (isOptimized) {
+                const newValue =
+                  parseInt((target as HTMLInputElement).value) || 0;
+
+                const qr = (this.app.getQrCode() as any)._qr;
+                if (qr) {
+                  const moduleCount = qr.getModuleCount();
+                  const margin = this.uiManager.getTabState()?.margin ?? 0;
+                  const isPerfectlySized =
+                    moduleCount > 0 &&
+                    (newValue - margin * 2) % moduleCount === 0;
+
+                  if (isPerfectlySized) {
+                    this.previousWidth = newValue;
+                    return;
+                  }
+                }
+
+                const increment = newValue > this.previousWidth ? 1 : -1;
+                await this.handleOptimization(increment);
+              } else {
+                await this.handleStateUpdate();
+              }
+              break;
+
             case 'form-optimize-size':
               if (advancedControls.optimizeSize.checked) {
-                this.isOptimizing = true;
                 advancedControls.roundSize.checked = true;
-                updateTabState(
-                  this.uiManager.getCurrentMode(),
-                  this.uiManager.getFormControlValues()
-                );
-                await this.app.updateQRCode();
-                this.isOptimizing = false;
-                await this.handleOptimization(0);
-              } else {
-                genericUpdate();
               }
+              await this.handleStateUpdate();
+              await this.handleOptimization(0);
               break;
 
             case 'form-round-size':
               if (!advancedControls.roundSize.checked) {
                 advancedControls.optimizeSize.checked = false;
               }
-              genericUpdate();
-              break;
-
-            case 'form-qr-type-number':
-              if (isOptimized) {
-                this.isOptimizing = true;
-                updateTabState(
-                  this.uiManager.getCurrentMode(),
-                  this.uiManager.getFormControlValues()
-                );
-                await this.app.updateQRCode();
-                this.isOptimizing = false;
-                await this.handleOptimization(0);
-              } else {
-                advancedControls.imageFile.value = '';
-                genericUpdate();
-              }
-              break;
-
-            case 'form-width':
-            case 'form-height':
-              if (isOptimized) {
-                const newValue = parseInt(target.value) || 0;
-                if (isPerfectlySized(newValue)) {
-                  this.previousWidth = newValue;
-                  return;
-                }
-                const increment = newValue > this.previousWidth ? 1 : -1;
-                await this.handleOptimization(increment);
-              } else {
-                genericUpdate();
-              }
+              await this.handleStateUpdate();
               break;
 
             case 'form-margin':
+              await this.handleStateUpdate();
               if (isOptimized) {
-                updateTabState(
-                  this.uiManager.getCurrentMode(),
-                  this.uiManager.getFormControlValues()
-                );
                 await this.handleOptimization(0);
-              } else {
-                genericUpdate();
               }
               break;
 
             default:
-              genericUpdate();
+              await this.handleStateUpdate();
               break;
           }
         });

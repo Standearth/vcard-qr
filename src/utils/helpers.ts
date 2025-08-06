@@ -4,7 +4,7 @@ import { dom } from '../config/dom';
 import { Mode, MODES } from '../config/constants';
 import AsyncQRCodeStyling from '../lib/AsyncQRCodeStyling';
 import { UIManager } from '../app/UIManager';
-import { getPixelMultiplier, setPixelMultiplier } from '../app/state';
+import { stateService } from '../app/StateService';
 
 export function calculateAndApplyOptimalQrCodeSize(
   qrCodeInstance: AsyncQRCodeStyling,
@@ -26,7 +26,9 @@ export function calculateAndApplyOptimalQrCodeSize(
   const { width, height, margin } = currentTabState;
   const startingSize = Math.min(width || 0, height || 0);
 
-  let pixelMultiplier = getPixelMultiplier(uiManager.getCurrentMode());
+  let pixelMultiplier = stateService.getPixelMultiplier(
+    uiManager.getCurrentMode()
+  );
 
   if (pixelMultiplier === 0) {
     pixelMultiplier = Math.round(startingSize / moduleCount);
@@ -36,7 +38,7 @@ export function calculateAndApplyOptimalQrCodeSize(
 
   const newSize = pixelMultiplier * moduleCount + (margin || 0) * 2;
 
-  setPixelMultiplier(uiManager.getCurrentMode(), pixelMultiplier);
+  stateService.setPixelMultiplier(uiManager.getCurrentMode(), pixelMultiplier);
   uiManager.updateDimensions(newSize, newSize);
 }
 

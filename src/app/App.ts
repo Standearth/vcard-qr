@@ -71,49 +71,49 @@ export class App {
 
   getQRCodeData = (): string => {
     const currentMode = this.ui.getCurrentMode();
-    const state = stateService.getState(currentMode);
+    const state = stateService.getState(currentMode); // Get the state
     if (!state) return '';
 
-    const generators: Partial<Record<Mode, () => string>> = {
-      [MODES.VCARD]: () => {
+    const generators: Partial<Record<Mode, (s: TabState) => string>> = {
+      // Each generator now receives the state 's' as an argument
+      [MODES.VCARD]: (s) => {
         const vcardLines = [
           'BEGIN:VCARD',
           'VERSION:3.0',
-          `N:${state.lastName || ''};${state.firstName || ''}`,
-          `FN:${`${state.firstName || ''} ${state.lastName || ''}`.trim()}`,
-          state.org ? `ORG:${state.org}` : '',
-          state.title ? `TITLE:${state.title}` : '',
-          state.email ? `EMAIL:${state.email}` : '',
-          state.officePhone
-            ? `TEL;TYPE=WORK,VOICE:${state.officePhone}${
-                state.extension ? `;x=${state.extension}` : ''
+          `N:${s.lastName || ''};${s.firstName || ''}`,
+          `FN:${`${s.firstName || ''} ${s.lastName || ''}`.trim()}`,
+          s.org ? `ORG:${s.org}` : '',
+          s.title ? `TITLE:${s.title}` : '',
+          s.email ? `EMAIL:${s.email}` : '',
+          s.officePhone
+            ? `TEL;TYPE=WORK,VOICE:${s.officePhone}${
+                s.extension ? `;x=${s.extension}` : ''
               }`
             : '',
-          state.workPhone
+          s.workPhone
             ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumberForVCard(
-                state.workPhone
+                s.workPhone
               )}`
             : '',
-          state.cellPhone
-            ? `TEL;TYPE=CELL:${formatPhoneNumberForVCard(state.cellPhone)}`
+          s.cellPhone
+            ? `TEL;TYPE=CELL:${formatPhoneNumberForVCard(s.cellPhone)}`
             : '',
-          state.website ? `URL:${state.website}` : '',
-          state.linkedin ? `URL:${state.linkedin}` : '',
-          state.notes ? `NOTE:${state.notes.replace(/\n/g, '\n')}` : '',
+          s.website ? `URL:${s.website}` : '',
+          s.linkedin ? `URL:${s.linkedin}` : '',
+          s.notes ? `NOTE:${s.notes.replace(/\n/g, '\n')}` : '',
           'END:VCARD',
         ];
         return vcardLines.filter(Boolean).join('\n');
       },
-      [MODES.LINK]: () => state.linkUrl || 'https://stand.earth',
-      [MODES.WIFI]: () => {
-        return `WIFI:S:${state.wifiSsid || ''};T:${
-          state.wifiEncryption || 'WPA'
-        };P:${state.wifiPassword || ''};H:${
-          state.wifiHidden ? 'true' : 'false'
-        };;`;
+      [MODES.LINK]: (s) => s.linkUrl || 'https://stand.earth',
+      [MODES.WIFI]: (s) => {
+        return `WIFI:S:${s.wifiSsid || ''};T:${
+          s.wifiEncryption || 'WPA'
+        };P:${s.wifiPassword || ''};H:${s.wifiHidden ? 'true' : 'false'};;`;
       },
     };
-    return generators[currentMode]!();
+    // Pass the state object to the appropriate generator function
+    return generators[currentMode]!(state);
   };
 
   private buildQrConfig = (data: string): Partial<Options> => {

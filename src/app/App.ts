@@ -23,10 +23,17 @@ import { formatPhoneNumberForVCard } from '../utils/helpers';
 
 export let qrCode: AsyncQRCodeStyling;
 
+/**
+ * The main application class. Orchestrates the initialization of all major components.
+ */
 export class App {
   private ui: UIManager;
   private modalQrCode: AsyncQRCodeStyling;
 
+  /**
+   * Initializes the application, sets up the UI and state managers,
+   * and renders the initial QR code.
+   */
   constructor() {
     this.ui = new UIManager(this);
     stateService.initialize(this.ui);
@@ -49,6 +56,10 @@ export class App {
     this.handleRouteChange();
   }
 
+  /**
+   * Retrieves the current vCard data from the application state.
+   * @returns An object containing the vCard data for the Apple Wallet pass.
+   */
   getVCardData = (): object => {
     const state = stateService.getState(this.ui.getCurrentMode());
     if (!state) return {};
@@ -61,21 +72,37 @@ export class App {
     };
   };
 
+  /**
+   * Returns the main QR code instance.
+   * @returns The primary AsyncQRCodeStyling instance.
+   */
   getQrCode = (): AsyncQRCodeStyling => qrCode;
+
+  /**
+   * Returns the modal QR code instance used for the "Send to Phone" feature.
+   * @returns The modal's AsyncQRCodeStyling instance.
+   */
   getModalQrCode = (): AsyncQRCodeStyling => this.modalQrCode;
 
+  /**
+   * Initializes the FontAwesome icons used in the application.
+   */
   private initializeIcons(): void {
     library.add(faDownload, faMobileAlt, faCog, faUndo);
     faDom.watch();
   }
 
+  /**
+   * Generates the raw string data for the QR code based on the current application mode and state.
+   * This function is pure and operates only on the state object.
+   * @returns The raw data string for the QR code (vCard, URL, or WiFi string).
+   */
   getQRCodeData = (): string => {
     const currentMode = this.ui.getCurrentMode();
-    const state = stateService.getState(currentMode); // Get the state
+    const state = stateService.getState(currentMode);
     if (!state) return '';
 
     const generators: Partial<Record<Mode, (s: TabState) => string>> = {
-      // Each generator now receives the state 's' as an argument
       [MODES.VCARD]: (s) => {
         const vcardLines = [
           'BEGIN:VCARD',
@@ -112,10 +139,14 @@ export class App {
         };P:${s.wifiPassword || ''};H:${s.wifiHidden ? 'true' : 'false'};;`;
       },
     };
-    // Pass the state object to the appropriate generator function
     return generators[currentMode]!(state);
   };
 
+  /**
+   * Builds the configuration object for the qr-code-styling library from the current state.
+   * @param data The raw data string for the QR code.
+   * @returns A partial Options object for the qr-code-styling library.
+   */
   private buildQrConfig = (data: string): Partial<Options> => {
     const state = stateService.getState(this.ui.getCurrentMode());
     if (!state) return { data };
@@ -133,6 +164,11 @@ export class App {
     };
   };
 
+  /**
+   * Asynchronously loads the image/logo for the QR code.
+   * It prioritizes a user-uploaded file, otherwise falls back to default logos.
+   * @returns A promise that resolves with the base64-encoded image data string.
+   */
   private loadImageAsync = (): Promise<string | undefined> => {
     const state = stateService.getState(this.ui.getCurrentMode());
     if (!state?.showImage) {
@@ -177,6 +213,10 @@ export class App {
     });
   };
 
+  /**
+   * Updates the QR code with the current data and styling options from the state.
+   * This is the main re-rendering trigger for the QR code itself.
+   */
   updateQRCode = async (): Promise<void> => {
     const data = this.getQRCodeData();
     const config = this.buildQrConfig(data);
@@ -212,6 +252,10 @@ export class App {
     stateService.updateState(currentMode, { qrCodeContent, isQrCodeValid });
   };
 
+  /**
+   * Handles changes in the URL hash, updating the application state accordingly.
+   * This is called on initial load and on hashchange events.
+   */
   handleRouteChange = async (): Promise<void> => {
     const hash = window.location.hash;
     const params = new URLSearchParams(hash.split('?')[1] || '');
@@ -243,6 +287,10 @@ export class App {
     this.handleDownloadFromUrl(downloadType);
   };
 
+  /**
+   * Triggers a file download if a 'download' parameter is found in the URL.
+   * @param downloadType The file type to download (e.g., 'png', 'svg').
+   */
   private handleDownloadFromUrl(downloadType: string | null): void {
     if (!downloadType) return;
     setTimeout(() => {

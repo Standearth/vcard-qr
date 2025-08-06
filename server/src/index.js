@@ -1,4 +1,3 @@
-
 const express = require('express');
 const { PKPass } = require('passkit-generator');
 const fs = require('fs').promises;
@@ -12,12 +11,25 @@ const port = process.env.PORT || 3000;
 async function startServer() {
   const certs = {
     wwdr: await fs.readFile(path.join(__dirname, '../certs/signerCert.pem')), // Using self-signed cert as WWDR for dev
-    signerCert: await fs.readFile(path.join(__dirname, '../certs/signerCert.pem')),
-    signerKey: await fs.readFile(path.join(__dirname, '../certs/signerKey.pem')),
+    signerCert: await fs.readFile(
+      path.join(__dirname, '../certs/signerCert.pem')
+    ),
+    signerKey: await fs.readFile(
+      path.join(__dirname, '../certs/signerKey.pem')
+    ),
   };
 
   app.post('/api/create-pass', async (req, res) => {
     try {
+      // Destructure the body and provide default fallbacks
+      const {
+        firstName = '',
+        lastName = '',
+        org = 'Stand.earth',
+        officePhone = '',
+        email = '',
+      } = req.body;
+
       const passTemplatePath = path.join(__dirname, '../models/pass.pass');
 
       const pass = await PKPass.from({
@@ -25,21 +37,18 @@ async function startServer() {
         certificates: certs,
       });
 
-      // Add dynamic data from the client request
       pass.serialNumber = `sn-${Date.now()}`;
-      pass.description = 'vCard';
-      pass.organizationName = req.body.org || 'Your Organization';
+      pass.description = 'Stand.earth vCard';
+      pass.organizationName = org;
 
-      pass.generic.primaryFields[0].value = `${req.body.firstName} ${req.body.lastName}`;
-      pass.generic.secondaryFields[0].value = req.body.officePhone;
-      pass.generic.auxiliaryFields[0].value = req.body.email;
-
+      pass.generic.primaryFields[0].value = `${firstName} ${lastName}`.trim();
+      pass.generic.secondaryFields[0].value = officePhone;
+      pass.generic.auxiliaryFields[0].value = email;
 
       const passBuffer = await pass.asBuffer();
 
       res.set('Content-Type', 'application/vnd.apple.pkpass');
       res.status(200).send(passBuffer);
-
     } catch (error) {
       console.error(error);
       res.status(500).send('Error generating pass.');

@@ -11,6 +11,10 @@ import { stateService } from './StateService';
 import { dom } from '../config/dom';
 import { App } from './App';
 
+/**
+ * Manages all direct interactions with the DOM. It is responsible for rendering the UI
+ * based on the current state and does not contain any business logic.
+ */
 export class UIManager {
   private currentMode: Mode = MODES.VCARD;
 
@@ -19,6 +23,10 @@ export class UIManager {
   private tabManager: TabManager;
   private urlHandler: UrlHandler;
 
+  /**
+   * Initializes all UI sub-managers.
+   * @param app The main App instance.
+   */
   constructor(app: App) {
     this.formManager = new FormManager(this);
     new EventManager(app, this);
@@ -29,28 +37,54 @@ export class UIManager {
   }
 
   // Delegated methods
+  /** Switches the active tab in the UI. */
   switchTab = (newMode: Mode, isInitialLoad = false): void =>
     this.tabManager.switchTab(newMode, isInitialLoad);
+
+  /** Gets the currently active form fields based on the tab mode. */
   getActiveFormFields = () => this.formManager.getActiveFormFields();
+
+  /** Reads all values from the form controls and returns them as a TabState object. */
   getFormControlValues = (): TabState =>
     this.formManager.getFormControlValues();
+
+  /** Sets the values of all form controls based on a TabState object. */
   setFormControlValues = (values: TabState): void =>
     this.formManager.setFormControlValues(values);
+
+  /** Retrieves the vCard data specifically for the Apple Wallet feature. */
   getVCardData = (): { [key: string]: string } =>
     this.formManager.getVCardData();
 
   // Getters and Setters
+  /** Gets the current active tab mode. */
   getCurrentMode = (): Mode => this.currentMode;
+
+  /** Sets the current active tab mode. */
   setCurrentMode = (mode: Mode): void => {
     this.currentMode = mode;
   };
+
+  /** Gets the TabManager instance. */
   getTabManager = (): TabManager => this.tabManager;
+
+  /** Gets the FormManager instance. */
   getFormManager = (): FormManager => this.formManager;
+
+  /** Gets the UrlHandler instance. */
   getUrlHandler = (): UrlHandler => this.urlHandler;
+
+  /** Gets the StickyManager instance. */
   getStickyManager = (): StickyManager => this.stickyManager;
+
+  /** Gets the state for the current tab from the StateService. */
   getTabState = (): TabState | undefined =>
     stateService.getState(this.currentMode);
 
+  /**
+   * Renders the tab and button states (visibility, active states) based on the current application state.
+   * @param state The current TabState object.
+   */
   private renderTabsAndButtons(state: TabState): void {
     const currentMode = this.getCurrentMode();
 
@@ -78,6 +112,10 @@ export class UIManager {
     dom.anniversaryLogoContainer.style.display = isWifi ? 'none' : 'flex';
   }
 
+  /**
+   * The main rendering function. Updates the entire UI to match the provided state.
+   * @param state The TabState object to render.
+   */
   renderUIFromState = (state: TabState): void => {
     this.setFormControlValues(state);
     this.renderTabsAndButtons(state);
@@ -102,6 +140,11 @@ export class UIManager {
     }
   };
 
+  /**
+   * Updates the width and height dimensions in the state and triggers a re-render.
+   * @param width The new width value.
+   * @param height The new height value.
+   */
   updateDimensions = (width: number, height: number): void => {
     const state = this.getTabState();
     if (state) {

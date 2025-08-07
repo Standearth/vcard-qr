@@ -2,11 +2,15 @@ import express, { Request, Response } from 'express';
 import { PKPass } from 'passkit-generator';
 import fs from 'fs/promises';
 import path from 'path';
+import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 
 const app = express();
 app.use(express.json());
 
 const port = process.env.PORT || 3000;
+
+// Create a client for the Secret Manager
+const secretManagerClient = new SecretManagerServiceClient();
 
 interface VCardData {
   firstName?: string;
@@ -24,20 +28,38 @@ interface VCardData {
 }
 
 async function startServer() {
+  // Helper function to fetch secrets
+  async function getSecret(secretEnvVar: string): Promise<string> {
+    const secretResourceName = process.env[secretEnvVar];
+    if (!secretResourceName) {
+      throw new Error(`Environment variable ${secretEnvVar} is not set.`);
+    }
+    const [version] = await secretManagerClient.accessSecretVersion({
+      name: secretResourceName,
+    });
+    const payload = version.payload?.data?.toString();
+    if (!payload) {
+      throw new Error(`Secret payload for ${secretEnvVar} is empty.`);
+    }
+    return payload;
+  }
+
+  // Fetch all secrets concurrently for faster startup
+  const [signerKey, signerCert, wwdrCert] = await Promise.all([
+    getSecret('SIGNER_KEY_SECRET'),
+    getSecret('SIGNER_CERT_SECRET'),
+    getSecret('WWDR_CERT_SECRET'),
+  ]);
+
   const certs = {
-    wwdr: await fs.readFile(path.join(__dirname, '../certs/signerCert.pem')),
-    signerCert: await fs.readFile(
-      path.join(__dirname, '../certs/signerCert.pem')
-    ),
-    signerKey: await fs.readFile(
-      path.join(__dirname, '../certs/signerKey.pem')
-    ),
+    wwdr: wwdrCert,
+    signerCert: signerCert,
+    signerKey: signerKey,
   };
 
   app.post('/api/create-pass', async (req: Request, res: Response) => {
     try {
       const passTemplatePath = path.join(__dirname, '../models/pass.pass');
-
       const {
         firstName = '',
         lastName = '',
@@ -69,7 +91,6 @@ async function startServer() {
       pass.secondaryFields[0].value =
         officePhone + (extension ? ` x${extension}` : '');
       pass.auxiliaryFields[0].value = email;
-
       pass.backFields[0].value = org;
       pass.backFields[1].value = title;
       pass.backFields[2].value = workPhone;
@@ -77,9 +98,6 @@ async function startServer() {
       pass.backFields[4].value = website;
       pass.backFields[5].value = linkedin;
       pass.backFields[6].value = notes;
-
-      // Correct: Use the 'props' getter for reliable logging
-      console.log('Generated pass data:', JSON.stringify(pass.props, null, 2));
 
       const passBuffer = pass.getAsBuffer();
 

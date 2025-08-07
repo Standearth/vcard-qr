@@ -29,6 +29,43 @@
         "label": "Email",
         "value": "johndoe@example.com"
       }
+    ],
+    "backFields": [
+      {
+        "key": "org",
+        "label": "Organization",
+        "value": "Stand.earth"
+      },
+      {
+        "key": "title",
+        "label": "Title",
+        "value": "Senior Tinkerer"
+      },
+      {
+        "key": "workPhone",
+        "label": "Work Phone",
+        "value": ""
+      },
+      {
+        "key": "cellPhone",
+        "label": "Cell Phone",
+        "value": ""
+      },
+      {
+        "key": "website",
+        "label": "Website",
+        "value": "https://stand.earth"
+      },
+      {
+        "key": "linkedin",
+        "label": "LinkedIn",
+        "value": ""
+      },
+      {
+        "key": "notes",
+        "label": "Notes",
+        "value": ""
+      }
     ]
   }
 }

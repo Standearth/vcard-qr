@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint . --ext .ts --ignore-pattern 'dist/'",
     "typecheck": "npx tsc --noEmit",
-    "format": "prettier --write \"src/**/*.{ts,scss}\" \"*.{html,json,md}\" \"**/*.yml\""
+    "format": "prettier --write \"**/*.{ts,js,json,md,scss,html,yml}\""
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.2",

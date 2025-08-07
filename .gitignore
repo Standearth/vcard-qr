@@ -1,8 +1,11 @@
 # Dependency directories
 node_modules/
 
-# Vite build output
+# Build output
 dist
+
+# Certificates
+server/certs/
 
 # OS-generated files
 .DS_Store

@@ -1,71 +1,31 @@
 {
+  "passTypeIdentifier": "pass.com.stand.earth",
   "formatVersion": 1,
-  "passTypeIdentifier": "pass.com.example.vcard",
+  "teamIdentifier": "YOUR_TEAM_IDENTIFIER",
   "serialNumber": "123456",
-  "teamIdentifier": "_YOUR_TEAM_ID_HERE_",
-  "organizationName": "Your Organization",
-  "description": "vCard",
-  "logoText": "Your Logo",
-  "foregroundColor": "rgb(255, 255, 255)",
-  "backgroundColor": "rgb(0, 0, 0)",
+  "description": "Stand.earth vCard",
+  "organizationName": "Stand.earth",
+  "logoText": "Stand.earth",
+  "foregroundColor": "rgb(16, 16, 18)",
+  "backgroundColor": "rgb(245, 244, 237)",
+  "labelColor": "rgb(16, 16, 18)",
   "generic": {
-    "primaryFields": [
-      {
-        "key": "name",
-        "label": "Name",
-        "value": "John Doe"
-      }
-    ],
-    "secondaryFields": [
-      {
-        "key": "phone",
-        "label": "Phone",
-        "value": "555-555-5555"
-      }
-    ],
-    "auxiliaryFields": [
-      {
-        "key": "email",
-        "label": "Email",
-        "value": "johndoe@example.com"
-      }
-    ],
+    "primaryFields": [{ "key": "name", "label": "Name", "value": "" }],
+    "secondaryFields": [{ "key": "phone", "label": "Phone", "value": "" }],
+    "auxiliaryFields": [{ "key": "email", "label": "Email", "value": "" }],
     "backFields": [
-      {
-        "key": "org",
-        "label": "Organization",
-        "value": "Stand.earth"
-      },
-      {
-        "key": "title",
-        "label": "Title",
-        "value": "Senior Tinkerer"
-      },
-      {
-        "key": "workPhone",
-        "label": "Work Phone",
-        "value": ""
-      },
-      {
-        "key": "cellPhone",
-        "label": "Cell Phone",
-        "value": ""
-      },
-      {
-        "key": "website",
-        "label": "Website",
-        "value": "https://stand.earth"
-      },
-      {
-        "key": "linkedin",
-        "label": "LinkedIn",
-        "value": ""
-      },
-      {
-        "key": "notes",
-        "label": "Notes",
-        "value": ""
-      }
+      { "key": "org", "label": "Organization", "value": "" },
+      { "key": "title", "label": "Title", "value": "" },
+      { "key": "workPhone", "label": "Work Phone", "value": "" },
+      { "key": "cellPhone", "label": "Cell Phone", "value": "" },
+      { "key": "website", "label": "Website", "value": "" },
+      { "key": "linkedin", "label": "LinkedIn", "value": "" },
+      { "key": "notes", "label": "Notes", "value": "" }
     ]
+  },
+  "barcode": {
+    "format": "PKBarcodeFormatQR",
+    "message": "",
+    "messageEncoding": "iso-8859-1"
   }
 }

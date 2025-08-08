@@ -1,5 +1,7 @@
 import { dom } from '../../config/dom';
 import { UIManager } from '../UIManager';
+import { stateService } from '../StateService';
+import { generateVCardForAppleWallet } from '../../utils/helpers';
 
 export class WalletManager {
   private uiManager: UIManager;
@@ -18,15 +20,20 @@ export class WalletManager {
   }
 
   private setupEventListeners(): void {
-    console.log(
-      'Attempting to set up event listener for Add to Wallet button.',
-      dom.buttons.addToWallet
-    );
     dom.buttons.addToWallet.addEventListener('click', () => this.createPass());
   }
 
   private async createPass(): Promise<void> {
-    const vCardData = this.uiManager.getFormManager().getVCardData();
+    const currentMode = this.uiManager.getCurrentMode();
+    const state = stateService.getState(currentMode);
+
+    if (!state) {
+      console.error('No state available to generate pass.');
+      return;
+    }
+
+    const vcard = generateVCardForAppleWallet(state);
+    const anniversaryLogo = state.anniversaryLogo ?? false;
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
@@ -36,7 +43,7 @@ export class WalletManager {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(vCardData),
+        body: JSON.stringify({ vcard, anniversaryLogo }),
       });
 
       if (!response.ok) {

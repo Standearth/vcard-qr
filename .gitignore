@@ -5,7 +5,8 @@ node_modules/
 dist
 
 # Certificates
-server/certs/
+server/certs/*
+!server/certs/AppleWWDRCAG4.pem
 
 # OS-generated files
 .DS_Store

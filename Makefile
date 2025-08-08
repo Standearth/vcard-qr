@@ -7,6 +7,11 @@ BILLING_ACCOUNT = $(shell gcloud billing accounts list --format='value(ACCOUNT_I
 
 PROJECT_EXISTS = $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&1 && echo "yes")
 
+# --- Certificate Filenames ---
+SIGNER_KEY_FILE = Stand-PassKit.key
+SIGNER_CERT_FILE = Stand-PassKit.pem
+WWDR_CERT_FILE = AppleWWDRCAG4.pem
+
 # --- Other variables ---
 PROJECT_NUM           = $(shell gcloud projects describe $(PROJECT_ID) --format="value(projectNumber)" 2>/dev/null)
 REGION                = us-central1
@@ -141,14 +146,14 @@ add-secrets-placeholder: create-secrets
 		rm signerKey.pem signerCert.pem; \
 
 add-secrets-local:
-	@echo "🔐 Checking for local placeholder certificates..."
-	@if [ -f server/certs/signerKey.pem ] || [ -f server/certs/signerCert.pem ]; then \
-		echo "✅ Local certificates already exist in server/certs. Skipping creation."; \
+	@echo "🔐 Checking for local placeholder signer certificates..."
+	@if [ -f server/certs/$(SIGNER_KEY_FILE) ] || [ -f server/certs/$(SIGNER_CERT_FILE) ]; then \
+		echo "✅ Local signer certificates already exist in server/certs. Skipping creation."; \
 	else \
-		echo "   -> No local certificates found. Generating..."; \
+		echo "   -> No local signer certificates found. Generating..."; \
 		mkdir -p server/certs; \
-		openssl req -x509 -newkey rsa:2048 -keyout server/certs/signerKey.pem -out server/certs/signerCert.pem -days 365 -nodes -subj "/CN=localhost"; \
-		echo "✅ Local certificates created in server/certs."; \
+		openssl req -x509 -newkey rsa:2048 -keyout server/certs/$(SIGNER_KEY_FILE) -out server/certs/$(SIGNER_CERT_FILE) -days 365 -nodes -subj "/CN=localhost"; \
+		echo "✅ Local signer certificates created in server/certs."; \
 	fi
 
 ## --------------------------------------
@@ -180,19 +185,19 @@ show-github-secrets: create-project
 ## --------------------------------------
 
 upload-signer-key: create-project
-	@read -p "Enter the local file path for the SIGNER KEY (e.g., /path/to/signerKey.pem): " file_path; \
+	@read -p "Enter the local file path for the SIGNER KEY (e.g., /path/to/$(SIGNER_KEY_FILE)): " file_path; \
 	if [ ! -f "$$file_path" ]; then echo "Error: File not found at '$$file_path'"; exit 1; fi; \
 	echo "   -> Uploading new version to $(SECRET_KEY) from '$$file_path'..."; \
 	gcloud secrets versions add $(SECRET_KEY) --data-file="$$file_path" --project=$(PROJECT_ID)
 
 upload-signer-cert: create-project
-	@read -p "Enter the local file path for the SIGNER CERTIFICATE (e.g., /path/to/signerCert.pem): " file_path; \
+	@read -p "Enter the local file path for the SIGNER CERTIFICATE (e.g., /path/to/$(SIGNER_CERT_FILE)): " file_path; \
 	if [ ! -f "$$file_path" ]; then echo "Error: File not found at '$$file_path'"; exit 1; fi; \
 	echo "   -> Uploading new version to $(SECRET_CERT) from '$$file_path'..."; \
 	gcloud secrets versions add $(SECRET_CERT) --data-file="$$file_path" --project=$(PROJECT_ID)
 
 upload-wwdr-cert: create-project
-	@read -p "Enter the local file path for the WWDR CERTIFICATE (e.g., /path/to/wwdr.pem): " file_path; \
+	@read -p "Enter the local file path for the WWDR CERTIFICATE (e.g., /path/to/$(WWDR_CERT_FILE)): " file_path; \
 	if [ ! -f "$$file_path" ]; then echo "Error: File not found at '$$file_path'"; exit 1; fi; \
 	echo "   -> Uploading new version to $(SECRET_WWDR) from '$$file_path'..."; \
 	gcloud secrets versions add $(SECRET_WWDR) --data-file="$$file_path" --project=$(PROJECT_ID)

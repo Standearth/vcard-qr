@@ -3,6 +3,7 @@
 import AsyncQRCodeStyling from '../lib/AsyncQRCodeStyling';
 import { Options } from 'qr-code-styling';
 import { library, dom as faDom } from '@fortawesome/fontawesome-svg-core';
+import { faApple } from '@fortawesome/free-brands-svg-icons';
 import {
   faDownload,
   faMobileAlt,
@@ -19,7 +20,7 @@ import {
   DEFAULT_ADVANCED_OPTIONS,
   TabState,
 } from '../config/constants';
-import { formatPhoneNumberForVCard } from '../utils/helpers';
+import { generateQRCodeData } from '../utils/helpers';
 
 export let qrCode: AsyncQRCodeStyling;
 
@@ -88,7 +89,7 @@ export class App {
    * Initializes the FontAwesome icons used in the application.
    */
   private initializeIcons(): void {
-    library.add(faDownload, faMobileAlt, faCog, faUndo);
+    library.add(faDownload, faMobileAlt, faCog, faUndo, faApple as any);
     faDom.watch();
   }
 
@@ -101,46 +102,7 @@ export class App {
     const currentMode = this.ui.getCurrentMode();
     const state = stateService.getState(currentMode);
     if (!state) return '';
-
-    // eslint-disable-next-line no-unused-vars
-    const generators: Partial<Record<Mode, (s: TabState) => string>> = {
-      [MODES.VCARD]: (s) => {
-        const vcardLines = [
-          'BEGIN:VCARD',
-          'VERSION:3.0',
-          `N:${s.lastName || ''};${s.firstName || ''}`,
-          `FN:${`${s.firstName || ''} ${s.lastName || ''}`.trim()}`,
-          s.org ? `ORG:${s.org}` : '',
-          s.title ? `TITLE:${s.title}` : '',
-          s.email ? `EMAIL:${s.email}` : '',
-          s.officePhone
-            ? `TEL;TYPE=WORK,VOICE:${s.officePhone}${
-                s.extension ? `;x=${s.extension}` : ''
-              }`
-            : '',
-          s.workPhone
-            ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumberForVCard(
-                s.workPhone
-              )}`
-            : '',
-          s.cellPhone
-            ? `TEL;TYPE=CELL:${formatPhoneNumberForVCard(s.cellPhone)}`
-            : '',
-          s.website ? `URL:${s.website}` : '',
-          s.linkedin ? `URL:${s.linkedin}` : '',
-          s.notes ? `NOTE:${s.notes.replace(/\n/g, '\n')}` : '',
-          'END:VCARD',
-        ];
-        return vcardLines.filter(Boolean).join('\n');
-      },
-      [MODES.LINK]: (s) => s.linkUrl || 'https://stand.earth',
-      [MODES.WIFI]: (s) => {
-        return `WIFI:S:${s.wifiSsid || ''};T:${
-          s.wifiEncryption || 'WPA'
-        };P:${s.wifiPassword || ''};H:${s.wifiHidden ? 'true' : 'false'};;`;
-      },
-    };
-    return generators[currentMode]!(state);
+    return generateQRCodeData(state, currentMode);
   };
 
   /**

@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { PKPass } from 'passkit-generator';
 import path from 'path';
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
+import fs from 'fs';
 
 const app = express();
 app.use(express.json());
@@ -12,67 +13,92 @@ const port = process.env.PORT || 3000;
 const secretManagerClient = new SecretManagerServiceClient();
 
 interface VCardData {
-  firstName?: string;
-  lastName?: string;
-  org?: string;
-  title?: string;
-  email?: string;
-  officePhone?: string;
-  extension?: string;
-  workPhone?: string;
-  cellPhone?: string;
-  website?: string;
-  linkedin?: string;
-  notes?: string;
+  vcard: string;
+  anniversaryLogo: boolean;
+}
+
+interface Certs {
+  wwdr: string;
+  signerCert: string;
+  signerKey: string;
+}
+
+// Certificate filenames
+const SIGNER_KEY_FILE = 'Stand-PassKit.key';
+const SIGNER_CERT_FILE = 'Stand-PassKit.pem';
+const WWDR_CERT_FILE = 'AppleWWDRCAG4.pem';
+
+// Helper function to fetch secrets from Secret Manager
+async function getSecret(secretEnvVar: string): Promise<string> {
+  const secretResourceName = process.env[secretEnvVar];
+  if (!secretResourceName) {
+    throw new Error(`Environment variable ${secretEnvVar} is not set.`);
+  }
+  const [version] = await secretManagerClient.accessSecretVersion({
+    name: secretResourceName,
+  });
+  const payload = version.payload?.data?.toString();
+  if (!payload) {
+    throw new Error(`Secret payload for ${secretEnvVar} is empty.`);
+  }
+  return payload;
+}
+
+async function loadCertificates(): Promise<Certs> {
+  const certsDir = path.join(__dirname, '../certs');
+  const keyPath = path.join(certsDir, SIGNER_KEY_FILE);
+  const certPath = path.join(certsDir, SIGNER_CERT_FILE);
+  const wwdrPath = path.join(certsDir, WWDR_CERT_FILE);
+
+  let signerKey: string;
+  let signerCert: string;
+  let wwdr: string;
+
+  try {
+    // Attempt to fetch all secrets from Secret Manager first
+    [signerKey, signerCert, wwdr] = await Promise.all([
+      getSecret('SIGNER_KEY_SECRET'),
+      getSecret('SIGNER_CERT_SECRET'),
+      getSecret('WWDR_CERT_SECRET'),
+    ]);
+    console.log('Certificates loaded from Secret Manager.');
+  } catch (secretError) {
+    console.warn(
+      'Could not load certificates from Secret Manager. Attempting to load from local files...',
+      secretError
+    );
+
+    // Fallback to local files if Secret Manager fails for any cert
+    if (
+      fs.existsSync(keyPath) &&
+      fs.existsSync(certPath) &&
+      fs.existsSync(wwdrPath)
+    ) {
+      console.log('Loading certificates from local files...');
+      signerKey = fs.readFileSync(keyPath, 'utf8');
+      signerCert = fs.readFileSync(certPath, 'utf8');
+      wwdr = fs.readFileSync(wwdrPath, 'utf8');
+    } else {
+      throw new Error(
+        'Neither Secret Manager nor local files could provide all necessary certificates.'
+      );
+    }
+  }
+
+  return {
+    wwdr,
+    signerCert,
+    signerKey,
+  };
 }
 
 async function startServer() {
-  // Helper function to fetch secrets
-  async function getSecret(secretEnvVar: string): Promise<string> {
-    const secretResourceName = process.env[secretEnvVar];
-    if (!secretResourceName) {
-      throw new Error(`Environment variable ${secretEnvVar} is not set.`);
-    }
-    const [version] = await secretManagerClient.accessSecretVersion({
-      name: secretResourceName,
-    });
-    const payload = version.payload?.data?.toString();
-    if (!payload) {
-      throw new Error(`Secret payload for ${secretEnvVar} is empty.`);
-    }
-    return payload;
-  }
-
-  // Fetch all secrets concurrently for faster startup
-  const [signerKey, signerCert, wwdrCert] = await Promise.all([
-    getSecret('SIGNER_KEY_SECRET'),
-    getSecret('SIGNER_CERT_SECRET'),
-    getSecret('WWDR_CERT_SECRET'),
-  ]);
-
-  const certs = {
-    wwdr: wwdrCert,
-    signerCert: signerCert,
-    signerKey: signerKey,
-  };
+  const certs = await loadCertificates();
 
   app.post('/api/create-pass', async (req: Request, res: Response) => {
     try {
       const passTemplatePath = path.join(__dirname, '../models/pass.pass');
-      const {
-        firstName = '',
-        lastName = '',
-        org = 'Stand.earth',
-        title = '',
-        email = '',
-        officePhone = '',
-        extension = '',
-        workPhone = '',
-        cellPhone = '',
-        website = '',
-        linkedin = '',
-        notes = '',
-      }: VCardData = req.body;
+      const { vcard, anniversaryLogo }: VCardData = req.body;
 
       const pass = await PKPass.from(
         {
@@ -82,21 +108,21 @@ async function startServer() {
         {
           serialNumber: `sn-${Date.now()}`,
           description: 'Stand.earth vCard',
-          organizationName: org,
+          organizationName: 'Stand.earth',
+          logoText: 'Stand.earth',
+          backgroundColor: 'rgb(245, 244, 237)',
+          foregroundColor: 'rgb(16, 16, 18)',
+          labelColor: 'rgb(16, 16, 18)',
+          // IMPORTANT: Replace with your actual Apple Developer Team Identifier
+          teamIdentifier: 'YOUR_TEAM_IDENTIFIER',
         }
       );
 
-      pass.primaryFields[0].value = `${firstName} ${lastName}`.trim();
-      pass.secondaryFields[0].value =
-        officePhone + (extension ? ` x${extension}` : '');
-      pass.auxiliaryFields[0].value = email;
-      pass.backFields[0].value = org;
-      pass.backFields[1].value = title;
-      pass.backFields[2].value = workPhone;
-      pass.backFields[3].value = cellPhone;
-      pass.backFields[4].value = website;
-      pass.backFields[5].value = linkedin;
-      pass.backFields[6].value = notes;
+      pass.setBarcodes({
+        format: 'PKBarcodeFormatQR',
+        message: vcard,
+        messageEncoding: 'iso-8859-1',
+      });
 
       const passBuffer = pass.getAsBuffer();
 

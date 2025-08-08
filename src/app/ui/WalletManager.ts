@@ -7,6 +7,14 @@ export class WalletManager {
   constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
     this.setupEventListeners();
+    this.checkWalletVisibility();
+  }
+
+  private checkWalletVisibility(): void {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('appleWallet') === 'true') {
+      dom.buttons.addToWallet.classList.remove('hidden');
+    }
   }
 
   private setupEventListeners(): void {
@@ -21,7 +29,9 @@ export class WalletManager {
     const vCardData = this.uiManager.getFormManager().getVCardData();
 
     try {
-      const response = await fetch('/api/create-pass', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+
+      const response = await fetch(`${apiBaseUrl}/api/create-pass`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -21,7 +21,7 @@ SECRET_CERT           = apple-wallet-signer-cert
 SECRET_WWDR           = apple-wallet-wwdr-cert
 CUSTOM_DOMAIN         = pkpass.stand.earth
 
-.PHONY: all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status
+.PHONY: all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status
 
 # Default target
 all: help
@@ -139,8 +139,16 @@ add-secrets-placeholder: create-secrets
 		gcloud secrets versions add $(SECRET_CERT) --data-file="signerCert.pem" --project=$(PROJECT_ID); \
 		gcloud secrets versions add $(SECRET_WWDR) --data-file="signerCert.pem" --project=$(PROJECT_ID); \
 		rm signerKey.pem signerCert.pem; \
+
+add-secrets-local:
+	@echo "🔐 Checking for local placeholder certificates..."
+	@if [ -f server/certs/signerKey.pem ] || [ -f server/certs/signerCert.pem ]; then \
+		echo "✅ Local certificates already exist in server/certs. Skipping creation."; \
 	else \
-		echo "✅ Secret $(SECRET_KEY) already has data. Skipping placeholder generation."; \
+		echo "   -> No local certificates found. Generating..."; \
+		mkdir -p server/certs; \
+		openssl req -x509 -newkey rsa:2048 -keyout server/certs/signerKey.pem -out server/certs/signerCert.pem -days 365 -nodes -subj "/CN=localhost"; \
+		echo "✅ Local certificates created in server/certs."; \
 	fi
 
 ## --------------------------------------
@@ -247,4 +255,4 @@ help:
 	@echo "  create-workload-identity   Sets up Workload Identity Federation for GitHub."
 	@echo "  create-secrets             Creates empty secrets for the application."
 	@echo "  add-secrets-placeholder    Adds placeholder certs only if secrets are empty."
-	@echo ""
+	@echo "  add-secrets-local          Adds placeholder certs for local development."

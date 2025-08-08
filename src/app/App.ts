@@ -102,6 +102,7 @@ export class App {
     const state = stateService.getState(currentMode);
     if (!state) return '';
 
+    // eslint-disable-next-line no-unused-vars
     const generators: Partial<Record<Mode, (s: TabState) => string>> = {
       [MODES.VCARD]: (s) => {
         const vcardLines = [

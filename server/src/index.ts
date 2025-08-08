@@ -1,6 +1,5 @@
 import express, { Request, Response } from 'express';
 import { PKPass } from 'passkit-generator';
-import fs from 'fs/promises';
 import path from 'path';
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 

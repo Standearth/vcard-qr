@@ -1,1 +1,1 @@
-gcp_project_id = "gam-project-7ybms"
+gcp_project_id = "pkpass-server"

@@ -98,7 +98,7 @@ async function startServer() {
   app.post('/api/create-pass', async (req: Request, res: Response) => {
     try {
       const passTemplatePath = path.join(__dirname, '../models/pass.pass');
-      const { vcard, anniversaryLogo }: VCardData = req.body;
+      const { vcard }: VCardData = req.body;
 
       const pass = await PKPass.from(
         {

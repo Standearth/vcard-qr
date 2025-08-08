@@ -119,6 +119,7 @@ function generateVCardLines(state: TabState): string[] {
 }
 
 export function generateQRCodeData(state: TabState, mode: Mode): string {
+  // eslint-disable-next-line no-unused-vars
   const generators: Partial<Record<Mode, (s: TabState) => string>> = {
     [MODES.VCARD]: (s) => generateVCardLines(s).join('\n'),
     [MODES.LINK]: (s) => s.linkUrl || 'https://stand.earth',

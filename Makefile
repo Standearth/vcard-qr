@@ -2,10 +2,16 @@
 TFFILE := terraform.tfvars
 
 # --- Configuration ---
-PROJECT_ID    = $(shell grep 'gcp_project_id' $(TFFILE) 2>/dev/null | awk -F' = ' '{print $$2}' | tr -d '"')
+PROJECT_ID    := $(shell grep 'gcp_project_id' $(TFFILE) 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
 BILLING_ACCOUNT = $(shell gcloud billing accounts list --format='value(ACCOUNT_ID)' --filter='OPEN=true' | head -n 1)
 
-PROJECT_EXISTS = $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&1 && echo "yes")
+PROJECT_EXISTS := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&1 && echo 1)
+
+# --- Argument Parsing ---
+# This captures any argument that isn't a known target, making it available as a file path.
+KNOWN_TARGETS         := all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status
+FILE_PATH             := $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS))
+$(FILE_PATH): ;
 
 # --- Certificate Filenames ---
 SIGNER_KEY_FILE = Stand-PassKit.key
@@ -43,18 +49,24 @@ setup: create-project setup-project create-service-account create-workload-ident
 ## --------------------------------------
 
 create-project:
-	@if [ "$(PROJECT_EXISTS)" = "yes" ]; then \
+	@if [ -n "$(PROJECT_EXISTS)" ]; then \
 		echo "✅ Project '$(PROJECT_ID)' already exists. Skipping creation."; \
 	else \
-		echo "🔍 Project configuration file '$(TFFILE)' not found or project does not exist."; \
+		echo "ℹ️ Project configuration file '$(TFFILE)' not found or project does not exist."; \
 		read -p "Enter a globally unique ID for your new Google Cloud Project: " project_id; \
+		if gcloud projects describe $$project_id >/dev/null 2>&1; then \
+			echo "✅ Project '$$project_id' already exists."; \
+		else \
+			echo "⏳ Creating new project '$$project_id'..."; \
+			gcloud projects create $$project_id; \
+			echo "🔗 Linking project '$$project_id' to billing account '$(BILLING_ACCOUNT)'..."; \
+			gcloud billing projects link $$project_id --billing-account=$(BILLING_ACCOUNT); \
+		fi; \
 		echo "gcp_project_id = \"$$project_id\"" > $(TFFILE); \
-		echo "   -> Creating new project '$$project_id'..."; \
-		gcloud projects create $$project_id; \
-		echo "   -> Linking project '$$project_id' to billing account '$(BILLING_ACCOUNT)'..."; \
-		gcloud billing projects link $$project_id --billing-account=$(BILLING_ACCOUNT); \
-		echo "✅ Project created and configured."; \
+		echo "✅ Project setup complete and $(TFFILE) updated."; \
 	fi
+
+
 
 setup-project: create-project
 	@echo "🛠️  Enabling required Google Cloud APIs for project $(PROJECT_ID)..."
@@ -185,19 +197,28 @@ show-github-secrets: create-project
 ## --------------------------------------
 
 upload-signer-key: create-project
-	@read -p "Enter the local file path for the SIGNER KEY (e.g., /path/to/$(SIGNER_KEY_FILE)): " file_path; \
+	@file_path='$(FILE_PATH)'; \
+	if [ -z "$$file_path" ]; then \
+		read -p "Enter the local file path for the SIGNER KEY (e.g., /path/to/$(SIGNER_KEY_FILE)): " file_path; \
+	fi; \
 	if [ ! -f "$$file_path" ]; then echo "Error: File not found at '$$file_path'"; exit 1; fi; \
 	echo "   -> Uploading new version to $(SECRET_KEY) from '$$file_path'..."; \
 	gcloud secrets versions add $(SECRET_KEY) --data-file="$$file_path" --project=$(PROJECT_ID)
 
 upload-signer-cert: create-project
-	@read -p "Enter the local file path for the SIGNER CERTIFICATE (e.g., /path/to/$(SIGNER_CERT_FILE)): " file_path; \
+	@file_path='$(FILE_PATH)'; \
+	if [ -z "$$file_path" ]; then \
+		read -p "Enter the local file path for the SIGNER CERTIFICATE (e.g., /path/to/$(SIGNER_CERT_FILE)): " file_path; \
+	fi; \
 	if [ ! -f "$$file_path" ]; then echo "Error: File not found at '$$file_path'"; exit 1; fi; \
 	echo "   -> Uploading new version to $(SECRET_CERT) from '$$file_path'..."; \
 	gcloud secrets versions add $(SECRET_CERT) --data-file="$$file_path" --project=$(PROJECT_ID)
 
 upload-wwdr-cert: create-project
-	@read -p "Enter the local file path for the WWDR CERTIFICATE (e.g., /path/to/$(WWDR_CERT_FILE)): " file_path; \
+	@file_path='$(FILE_PATH)'; \
+	if [ -z "$$file_path" ]; then \
+		read -p "Enter the local file path for the WWDR CERTIFICATE (e.g., /path/to/$(WWDR_CERT_FILE)): " file_path; \
+	fi; \
 	if [ ! -f "$$file_path" ]; then echo "Error: File not found at '$$file_path'"; exit 1; fi; \
 	echo "   -> Uploading new version to $(SECRET_WWDR) from '$$file_path'..."; \
 	gcloud secrets versions add $(SECRET_WWDR) --data-file="$$file_path" --project=$(PROJECT_ID)

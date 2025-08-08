@@ -31,9 +31,7 @@ all: help
 ## --------------------------------------
 
 setup: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder show-github-secrets
-	@printf "
-✅ Full one-time setup is complete. Run 'make terraform-apply' to deploy infrastructure.
-"
+	@echo "✅ Full one-time setup is complete. Run 'make terraform-apply' to deploy infrastructure."
 
 ## --------------------------------------
 ## One-Time Project Setup (Step-by-Step)
@@ -177,19 +175,19 @@ upload-signer-key: create-project
 	@read -p "Enter the local file path for the SIGNER KEY (e.g., /path/to/signerKey.pem): " file_path; \
 	if [ ! -f "$$file_path" ]; then echo "Error: File not found at '$$file_path'"; exit 1; fi; \
 	echo "   -> Uploading new version to $(SECRET_KEY) from '$$file_path'..."; \
-	gcloud secrets versions add $(SECRET_KEY) --data-file="$$file_path" --project=$(PROJECT_ID);
+	gcloud secrets versions add $(SECRET_KEY) --data-file="$$file_path" --project=$(PROJECT_ID)
 
 upload-signer-cert: create-project
 	@read -p "Enter the local file path for the SIGNER CERTIFICATE (e.g., /path/to/signerCert.pem): " file_path; \
 	if [ ! -f "$$file_path" ]; then echo "Error: File not found at '$$file_path'"; exit 1; fi; \
 	echo "   -> Uploading new version to $(SECRET_CERT) from '$$file_path'..."; \
-	gcloud secrets versions add $(SECRET_CERT) --data-file="$$file_path" --project=$(PROJECT_ID);
+	gcloud secrets versions add $(SECRET_CERT) --data-file="$$file_path" --project=$(PROJECT_ID)
 
 upload-wwdr-cert: create-project
 	@read -p "Enter the local file path for the WWDR CERTIFICATE (e.g., /path/to/wwdr.pem): " file_path; \
 	if [ ! -f "$$file_path" ]; then echo "Error: File not found at '$$file_path'"; exit 1; fi; \
 	echo "   -> Uploading new version to $(SECRET_WWDR) from '$$file_path'..."; \
-	gcloud secrets versions add $(SECRET_WWDR) --data-file="$$file_path" --project=$(PROJECT_ID);
+	gcloud secrets versions add $(SECRET_WWDR) --data-file="$$file_path" --project=$(PROJECT_ID)
 
 ## --------------------------------------
 ## Infrastructure Management

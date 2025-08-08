@@ -19,8 +19,9 @@ GITHUB_REPO           = Standearth/vcard-qr
 SECRET_KEY            = apple-wallet-signer-key
 SECRET_CERT           = apple-wallet-signer-cert
 SECRET_WWDR           = apple-wallet-wwdr-cert
+CUSTOM_DOMAIN         = pkpass.stand.earth
 
-.PHONY: all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets
+.PHONY: all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status
 
 # Default target
 all: help
@@ -30,7 +31,9 @@ all: help
 ## --------------------------------------
 
 setup: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder show-github-secrets
-	@echo "\n✅ Full one-time setup is complete. Run 'make terraform-apply' to deploy infrastructure."
+	@printf "
+✅ Full one-time setup is complete. Run 'make terraform-apply' to deploy infrastructure.
+"
 
 ## --------------------------------------
 ## One-Time Project Setup (Step-by-Step)
@@ -201,6 +204,20 @@ terraform-destroy: create-project
 	@echo "🔥 Destroying all managed infrastructure for project $(PROJECT_ID)..."
 	@terraform destroy -auto-approve
 
+map-custom-domain: terraform-apply
+	@echo "🌐 Mapping custom domain '$(CUSTOM_DOMAIN)' to service '$(SERVICE_NAME)'..."
+	@echo "   -> This requires that you have already configured a CNAME record pointing to ghs.googlehosted.com."
+	@-gcloud beta run domain-mappings create \
+		--service=$(SERVICE_NAME) \
+		--domain=$(CUSTOM_DOMAIN) \
+		--region=$(REGION) \
+		--project=$(PROJECT_ID) || \
+	echo "✅ Domain mapping may already exist. Check status with 'make check-domain-status'."
+
+check-domain-status: create-project
+	@echo "🔎 Checking status for custom domain '$(CUSTOM_DOMAIN)'..."
+	@gcloud beta run domain-mappings describe --domain=$(CUSTOM_DOMAIN) --project=$(PROJECT_ID) --region=$(REGION)
+
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -212,6 +229,10 @@ help:
 	@echo "  setup                      Runs the full one-time setup process for a new project."
 	@echo "  terraform-apply            Applies the Terraform infrastructure configuration."
 	@echo "  terraform-destroy          Destroys all managed infrastructure."
+	@echo ""
+	@echo "--- POST-DEPLOYMENT ---"
+	@echo "  map-custom-domain          Maps your custom domain to the Cloud Run service."
+	@echo "  check-domain-status        Checks the status of the custom domain mapping."
 	@echo ""
 	@echo "--- GITHUB ACTIONS ---"
 	@echo "  show-github-secrets        Displays the required secrets for your GitHub repository."

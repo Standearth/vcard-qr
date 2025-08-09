@@ -17,6 +17,9 @@ $(FILE_PATH): ;
 SIGNER_KEY_FILE = Stand-PassKit.key
 SIGNER_CERT_FILE = Stand-PassKit.pem
 WWDR_CERT_FILE = AppleWWDRCAG4.pem
+LOCALHOST_KEY_FILE = localhost.key
+LOCALHOST_CERT_FILE = localhost.pem
+
 
 # --- Other variables ---
 PROJECT_NUM           = $(shell gcloud projects describe $(PROJECT_ID) --format="value(projectNumber)" 2>/dev/null)
@@ -157,6 +160,28 @@ add-secrets-placeholder: create-secrets
 		gcloud secrets versions add $(SECRET_WWDR) --data-file="signerCert.pem" --project=$(PROJECT_ID); \
 		rm signerKey.pem signerCert.pem; \
 
+## --------------------------------------
+## Local Development
+## --------------------------------------
+
+dev:
+	@echo "🚀 Starting frontend and backend development servers..."
+	@pnpm dev
+
+add-local-https-certs:
+	@echo "🔐 Checking for local HTTPS certificates for localhost..."
+	@if [ -f server/certs/$(LOCALHOST_KEY_FILE) ] && [ -f server/certs/$(LOCALHOST_CERT_FILE) ]; then \
+		echo "✅ Local HTTPS certificates already exist in server/certs. Skipping creation."; \
+	else \
+		echo "   -> No local HTTPS certificates found. Generating..."; \
+		openssl req -x509 -newkey rsa:2048 -nodes \
+		  -keyout server/certs/$(LOCALHOST_KEY_FILE) \
+		  -out server/certs/$(LOCALHOST_CERT_FILE) \
+		  -subj "/C=US/ST=CA/L=SanFrancisco/O=LocalDev/CN=localhost" \
+		  -days 365; \
+		echo "✅ Local HTTPS certificates ($(LOCALHOST_KEY_FILE), $(LOCALHOST_CERT_FILE)) created in server/certs."; \
+	fi
+
 add-secrets-local:
 	@echo "🔐 Checking for local placeholder signer certificates..."
 	@if [ -f server/certs/$(SIGNER_KEY_FILE) ] || [ -f server/certs/$(SIGNER_CERT_FILE) ]; then \
@@ -256,6 +281,11 @@ check-domain-status: create-project
 help:
 	@echo ""
 	@echo "Usage: make [target]"
+	@echo ""
+	@echo "--- LOCAL DEVELOPMENT ---"
+	@echo "  dev                        Starts both frontend and backend servers."
+	@echo "  add-local-https-certs      Generates self-signed certificates for local HTTPS."
+	@echo "  add-secrets-local          Generates placeholder PassKit certs for local development."
 	@echo ""
 	@echo "--- FULL WORKFLOW ---"
 	@echo "  setup                      Runs the full one-time setup process for a new project."

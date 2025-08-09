@@ -3,6 +3,10 @@ node_modules/
 
 # Build output
 dist
+# highlight-start
+*.tsbuildinfo
+.vite/
+# highlight-end
 
 # Certificates
 server/certs/*

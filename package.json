@@ -11,6 +11,7 @@
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:server": "pnpm --filter server dev",
     "dev": "pnpm dev:frontend & pnpm dev:server",
+    "dev:https": "pnpm --filter frontend dev & pnpm --filter server dev:https",
     "build": "pnpm -r build",
     "lint": "eslint .",
     "format": "prettier --write .",

@@ -4,43 +4,44 @@ A web-based QR Code and vCard generator for Stand.earth.
 
 ## Features
 
-*   **vCard QR Code Generation:** Create QR codes that contain vCard contact information.
-*   **Apple Wallet Pass Generation:** Generate Apple Wallet passes from vCard data.
-*   **Customizable QR Codes:** Adjust the appearance of the QR codes.
-*   **Real-time Preview:** See a live preview of the QR code as you type.
+- **vCard QR Code Generation:** Create QR codes that contain vCard contact information.
+- **Apple Wallet Pass Generation:** Generate Apple Wallet passes from vCard data.
+- **Customizable QR Codes:** Adjust the appearance of the QR codes.
+- **Real-time Preview:** See a live preview of the QR code as you type.
 
 ## Technologies Used
 
-*   **Frontend:**
-    *   HTML5
-    *   SCSS
-    *   TypeScript
-    *   Vite
-    *   [qr-code-styling](https://github.com/kozakdenys/qr-code-styling#readme)
-*   **Backend:**
-    *   Node.js
-    *   Express.js
-    *   TypeScript
-*   **Deployment & Infrastructure:**
-    *   GitHub Actions (CI/CD)
-    *   Terraform (Infrastructure as Code)
-    *   Google Cloud Platform (GCP)
-        *   Cloud Run
-        *   Secret Manager
-    *   GitHub Pages
+- **Monorepo Management**:
+  - `pnpm` Workspaces
+- **Frontend:**
+  - HTML5
+  - SCSS
+  - TypeScript
+  - Vite
+  - [qr-code-styling](https://github.com/kozakdenys/qr-code-styling#readme)
+- **Backend:**
+  - Node.js
+  - Express.js
+  - TypeScript
+- **Deployment & Infrastructure:**
+  - GitHub Actions (CI/CD)
+  - Terraform (Infrastructure as Code)
+  - Google Cloud Platform (GCP)
+    - Cloud Run
+    - Secret Manager
+  - GitHub Pages
 
 ## Installation and Development
 
-This project uses a `Makefile` to streamline various development and deployment tasks. Below are the instructions for setting up your local environment and deploying the application.
+This project uses a `Makefile` to streamline one-time setup tasks and `pnpm` for all development commands.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/en/download/) (LTS version recommended)
-- [npm](https://www.npmjs.com/get-npm) (comes with Node.js)
+- [Node.js](https://nodejs.org/en/download/) (v22+ recommended)
+- [pnpm](https://pnpm.io/installation) (v9+ recommended)
 - [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) (for deployment to GCP)
 - [Terraform](https://www.terraform.io/downloads.html) (for infrastructure provisioning)
 - [OpenSSL](https://www.openssl.org/source/) (for generating local certificates)
-- `rsvg-convert` (for converting SVG to PNG for Apple Wallet logos, install via `brew install librsvg` on macOS)
 
 ### Local Development Setup
 
@@ -52,26 +53,38 @@ This project uses a `Makefile` to streamline various development and deployment 
     ```
 
 2.  **Install dependencies:**
+    Run this single command from the project root. `pnpm` will install dependencies for all workspaces (`frontend`, `server`, `shared-utils`).
 
     ```bash
-    npm install
-    npm install --prefix server
+    pnpm install
     ```
 
-3.  **Generate local development certificates (for Apple Wallet pass generation):**
+3.  **Generate Local Certificates:**
+    You need two sets of local certificates: one for PassKit signing and one for local HTTPS.
 
     ```bash
+    # Generates placeholder certs for Apple Wallet signing
     make add-secrets-local
-    ```
 
-    This will create `Stand-PassKit.key` and `Stand-PassKit.pem` in the `server/certs/` directory. These are self-signed certificates for local testing only. The `AppleWWDRCAG4.pem` file should be manually placed in `server/certs/` if you have it, and it is already ignored by `.gitignore` except for that specific file.
+    # Generates self-signed certs for localhost (HTTPS)
+    make add-local-https-certs
+    ```
 
 4.  **Start the development servers:**
+    Run the `dev` command from the project root to start both the frontend and backend servers concurrently. For HTTPS, use `dev:https`.
+
     ```bash
-    npm run dev # For the frontend
-    npm run dev --prefix server # For the backend API
+    # For standard HTTP development
+    pnpm dev
+
+    # For HTTPS development
+    pnpm dev:https
     ```
-    The frontend will typically run on `http://localhost:5173` and the backend on `http://localhost:3000`.
+
+    - The **frontend** will run on **`https://localhost:5173`**.
+    - The **backend** will run on **`https://localhost:3000`**.
+
+    When you first access `https://localhost:5173`, your browser will show a privacy warning. Click "Advanced" and "Proceed to..." to accept the self-signed certificate.
 
 ## Deployment
 
@@ -156,6 +169,7 @@ Here's a quick reference for common `make` commands:
 - **`make help`**: Displays all available Makefile targets and their descriptions.
 - **`make setup`**: Performs initial GCP project setup.
 - **`make add-secrets-local`**: Generates local placeholder certificates for development.
+- **`make add-local-https-certs`**: Generates self-signed certificates for local HTTPS.
 - **`make terraform-apply`**: Deploys infrastructure via Terraform.
 - **`make terraform-destroy`**: Destroys all managed infrastructure.
 - **`make show-github-secrets`**: Displays GitHub Actions secrets to be configured.

@@ -89,6 +89,56 @@ This project uses a `Makefile` to streamline one-time setup tasks and `pnpm` for
 
     When you first access `https://localhost:5173`, your browser will show a privacy warning. Click "Advanced" and "Proceed to..." to accept the self-signed certificate.
 
+### Official PassKit Certificate Workflow
+
+To generate a pass that can be installed on real devices, you must use an official certificate from Apple. The `Makefile` provides utilities to assist with this multi-step process. You can override the default filenames (`signerKey.key`, `signerCert.pem`) by passing them as arguments to the make command (e.g., `make add-private-key SIGNER_KEY_FILE=MyNewKey.key`).
+
+1.  **Create a Private Key:**
+    This command generates a new private key in the `server/certs/` directory. By default, it creates `signerKey.key`.
+
+    ```bash
+    make add-private-key
+    ```
+
+2.  **Create a Certificate Signing Request (CSR):**
+    This command uses your private key to generate a CSR. The output filename will be based on the `SIGNER_CERT_FILE` variable (e.g., `signerCert.csr`). You can provide your Apple Developer email as a named or positional argument, or be prompted for it interactively.
+
+    ```bash
+    # Option 1: Provide email as a named argument
+    make create-certificate-signing-request email=your.email@apple.com
+
+    # Option 2: Provide email as a positional argument
+    make create-certificate-signing-request your.email@apple.com
+
+    # Option 3: Be prompted interactively
+    make create-certificate-signing-request
+    ```
+
+    Upload the resulting `.csr` file to the Apple Developer portal when creating a new Pass Type ID certificate.
+
+3.  **Convert Apple Certificates to PEM Format:**
+    After Apple processes your CSR, you will download a `.cer` file. You also need the Apple Worldwide Developer Relations (WWDR) intermediate certificate, which can be downloaded from the [Apple Certificate Authority](https://www.apple.com/certificateauthority/) page (specifically the "Worldwide Developer Relations - G4" certificate). Both of these `.cer` files are in DER format and must be converted to PEM format.
+
+    The `cer-to-pem` command handles this conversion. Pass the path to your `.cer` file as an argument.
+
+    ```bash
+    # Convert your new signer certificate
+    make cer-to-pem path/to/your/pass.cer
+
+    # Convert the WWDR certificate
+    make cer-to-pem path/to/your/AppleWWDRCAG4.cer
+    ```
+
+    This will create a new file with a `.pem` extension in the same directory.
+
+4.  **Upload to Secret Manager:**
+    Once you have your official `signerKry.key`, `signerCert.pem` (your converted signer cert), and `AppleWWDRCAG4.pem` files, upload them to Google Secret Manager for your production environment.
+    ```bash
+    make upload-signer-key path/to/signerKey.key
+    make upload-signer-cert path/to/signerCert.pem
+    make upload-wwdr-cert path/to/AppleWWDRCAG4.pem
+    ```
+
 ## Deployment
 
 Deployment is managed via Terraform and GitHub Actions.
@@ -147,8 +197,8 @@ Monitor the progress of the deployment in the "Actions" tab of your GitHub repos
     These files are stored securely in Stand's 1Password `01` vault and should be treated as sensitive data.
 
     ```bash
-    make upload-signer-key path/to/Stand-PassKit.key
-    make upload-signer-cert path/to/Stand-PassKit.pem
+    make upload-signer-key path/to/signerKey.key
+    make upload-signer-cert path/to/signerCert.pem
     make upload-wwdr-cert path/to/AppleWWDRCAG4.pem
     ```
 
@@ -179,6 +229,9 @@ Here's a quick reference for common `make` commands:
 - **`make setup`**: Performs initial GCP project setup.
 - **`make add-secrets-local`**: Generates local placeholder certificates for development.
 - **`make add-local-https-certs`**: Generates self-signed certificates for local HTTPS.
+- **`make add-private-key`**: Generates a new private key for signing.
+- **`make create-certificate-signing-request [email=your@email.com]`**: Generates a CSR from the private key to submit to Apple.
+- **`make cer-to-pem [path/to/file.cer]`**: Converts a .cer certificate from Apple to the required .pem format.
 - **`make terraform-apply`**: Deploys infrastructure via Terraform.
 - **`make terraform-destroy`**: Destroys all managed infrastructure.
 - **`make show-github-secrets`**: Displays GitHub Actions secrets to be configured.

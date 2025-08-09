@@ -35,16 +35,17 @@ jobs:
         with:
           node-version: 24
       - name: Install dependencies
+        working-directory: ./frontend
         run: npm install
       - name: Build
-        run: npm run build # This command uses your vite.config.js
+        working-directory: ./frontend
+        run: npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload the 'dist' folder created by the 'npm run build' command
-          path: './dist'
+          path: './frontend/dist'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

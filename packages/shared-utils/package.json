@@ -1,0 +1,8 @@
+{
+  "name": "@vcard-qr/shared-utils",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/vcard.ts",
+  "types": "./src/vcard.ts"
+}

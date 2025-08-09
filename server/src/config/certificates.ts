@@ -1,7 +1,7 @@
 // src/config/certificates.ts
 import path from 'path';
 import { promises as fs } from 'fs';
-import { Certs } from '../types';
+import { Certs } from '../types/index.js';
 
 export async function loadCertificates(): Promise<Certs> {
   const certsDir = path.join(__dirname, '../../certs');

@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { findPersonAndPhoto } from '../services/photo.service.js';
 
-const router: Router = Router(); // Add explicit type
+const router: Router = Router();
 
 router.get('/', async (req, res) => {
   const { name } = req.query;

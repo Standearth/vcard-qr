@@ -93,12 +93,16 @@ export function generateFilename(currentMode: Mode): string {
 }
 
 export function generateQRCodeData(state: TabState, mode: Mode): string {
-  const generators: Partial<Record<Mode, (s: TabState) => string>> = {
-    [MODES.VCARD]: (s) => generateVCardString(s, false),
-    [MODES.LINK]: (s) => s.linkUrl || 'https://stand.earth',
-    [MODES.WIFI]: (s) => {
-      return `WIFI:S:${s.wifiSsid || ''};T:${s.wifiEncryption || 'WPA'};P:${s.wifiPassword || ''};H:${s.wifiHidden ? 'true' : 'false'};;`;
+  const generators: Partial<Record<Mode, () => string>> = {
+    [MODES.VCARD]: () => generateVCardString(state, false),
+    [MODES.LINK]: () => state.linkUrl || 'https://stand.earth',
+    [MODES.WIFI]: () => {
+      return `WIFI:S:${state.wifiSsid || ''};T:${
+        state.wifiEncryption || 'WPA'
+      };P:${state.wifiPassword || ''};H:${
+        state.wifiHidden ? 'true' : 'false'
+      };;`;
     },
   };
-  return generators[mode]!(state);
+  return generators[mode]!();
 }

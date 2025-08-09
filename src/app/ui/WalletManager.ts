@@ -38,7 +38,7 @@ export class WalletManager {
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
-      const response = await fetch(`${apiBaseUrl}/api/create-pass`, {
+      const response = await fetch(`${apiBaseUrl}/vcard`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

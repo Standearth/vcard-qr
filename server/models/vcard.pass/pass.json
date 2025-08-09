@@ -7,38 +7,5 @@
   "foregroundColor": "rgb(16, 16, 18)",
   "backgroundColor": "rgb(245, 244, 237)",
   "labelColor": "rgb(16, 16, 18)",
-  "generic": {
-    "primaryFields": [
-      { "key": "name", "value": "Matthew Carroll\nSenior IT Manager" }
-    ],
-    "secondaryFields": [
-      {
-        "key": "office_phone",
-        "label": "Office",
-        "value": "(604) 331-6201 x209"
-      },
-      {
-        "key": "work_phone",
-        "label": "Direct Line",
-        "value": "(415) 532-3811"
-      }
-    ],
-    "auxiliaryFields": [
-      {
-        "key": "email",
-        "label": "Email",
-        "value": "matthew.carroll@stand.earth"
-      },
-      { "key": "cell_phone", "label": "Cell Phone", "value": "(250) 509-1026" }
-    ],
-    "backFields": [
-      { "key": "website", "label": "Website", "value": "https://stand.earth" },
-      {
-        "key": "linkedin",
-        "label": "LinkedIn",
-        "value": "https://www.linkedin.com/in/matthewfcarroll/"
-      },
-      { "key": "notes", "label": "Notes", "value": "Some notes" }
-    ]
-  }
+  "generic": {}
 }

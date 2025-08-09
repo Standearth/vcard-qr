@@ -1,7 +1,10 @@
+// src/app/ui/WalletManager.ts
+
 import { dom } from '../../config/dom';
 import { UIManager } from '../UIManager';
 import { stateService } from '../StateService';
-import { generateVCardForAppleWallet } from '../../utils/helpers';
+// Remove the old helper, we'll build the vCard on the backend now
+// import { generateVCardForAppleWallet } from '../../utils/helpers';
 
 export class WalletManager {
   private uiManager: UIManager;
@@ -32,18 +35,28 @@ export class WalletManager {
       return;
     }
 
-    const vcard = generateVCardForAppleWallet(state);
-    const anniversaryLogo = state.anniversaryLogo ?? false;
+    const passData = {
+      firstName: state.firstName || '',
+      lastName: state.lastName || '',
+      title: state.title || '',
+      email: state.email || '',
+      workPhone: state.workPhone || '',
+      cellPhone: state.cellPhone || '',
+      website: state.website || '',
+      linkedin: state.linkedin || '',
+      notes: state.notes || '',
+    };
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-
+      // The endpoint remains the same, but the payload is different
       const response = await fetch(`${apiBaseUrl}/vcard`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ vcard, anniversaryLogo }),
+        // Send the new passData object
+        body: JSON.stringify(passData),
       });
 
       if (!response.ok) {
@@ -54,14 +67,17 @@ export class WalletManager {
       const url = window.URL.createObjectURL(pass);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'vcard.pkpass';
+
+      // Create a dynamic filename
+      const filename = `${passData.firstName}-${passData.lastName}-vCard.pkpass`;
+      a.download = filename.replace(/ /g, '-');
+
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (error) {
       console.error('Error creating Apple Wallet pass:', error);
-      // Optionally, show an error message to the user
     }
   }
 }

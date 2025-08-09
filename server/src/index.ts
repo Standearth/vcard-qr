@@ -1,10 +1,9 @@
+// server/index.ts
+
 import express, { Request, Response } from 'express';
 import { PKPass } from 'passkit-generator';
 import path from 'path';
-import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 import { promises as fs } from 'fs';
-// You'll also need the synchronous methods for your cert loading fallback
-import { existsSync, readFileSync } from 'fs';
 import { findPersonAndPhoto } from './photoLookup';
 
 const app = express();
@@ -12,140 +11,81 @@ app.use(express.json());
 
 const port = process.env.PORT || 3000;
 
-// Create a client for the Secret Manager
-const secretManagerClient = new SecretManagerServiceClient();
-
-interface VCardData {
-  vcard: string;
+// Interface for structured pass data from the frontend
+interface PassData {
+  firstName: string;
+  lastName: string;
+  organization: string;
+  title: string;
+  email?: string;
+  workPhone?: string;
+  cellPhone?: string;
+  website?: string;
+  linkedin?: string;
+  notes?: string;
   anniversaryLogo: boolean;
 }
 
+// Certificate Loading
 interface Certs {
-  wwdr: string;
-  signerCert: string;
-  signerKey: string;
+  wwdr: Buffer;
+  signerCert: Buffer;
+  signerKey: Buffer;
 }
-
-// Certificate filenames
-const SIGNER_KEY_FILE = 'Stand-PassKit.key';
-const SIGNER_CERT_FILE = 'Stand-PassKit.pem';
-const WWDR_CERT_FILE = 'AppleWWDRCAG4.pem';
-
-// Helper function to fetch secrets from Secret Manager
-async function getSecret(secretEnvVar: string): Promise<string> {
-  const secretResourceName = process.env[secretEnvVar];
-  if (!secretResourceName) {
-    throw new Error(`Environment variable ${secretEnvVar} is not set.`);
-  }
-  const [version] = await secretManagerClient.accessSecretVersion({
-    name: secretResourceName,
-  });
-  const payload = version.payload?.data?.toString();
-  if (!payload) {
-    throw new Error(`Secret payload for ${secretEnvVar} is empty.`);
-  }
-  return payload;
-}
-
-// Corrected certificate loading function
 async function loadCertificates(): Promise<Certs> {
   const certsDir = path.join(__dirname, '../certs');
-  const keyPath = path.join(certsDir, SIGNER_KEY_FILE);
-  const certPath = path.join(certsDir, SIGNER_CERT_FILE);
-  const wwdrPath = path.join(certsDir, WWDR_CERT_FILE);
+  return {
+    wwdr: await fs.readFile(path.join(certsDir, 'AppleWWDRCAG4.pem')),
+    signerCert: await fs.readFile(path.join(certsDir, 'Stand-PassKit.pem')),
+    signerKey: await fs.readFile(path.join(certsDir, 'Stand-PassKit.key')),
+  };
+}
 
-  let signerKey: string;
-  let signerCert: string;
-  let wwdr: string;
-
+// --- Main /vcard Endpoint ---
+app.post('/vcard', async (req: Request, res: Response) => {
   try {
-    [signerKey, signerCert, wwdr] = await Promise.all([
-      getSecret('SIGNER_KEY_SECRET'),
-      getSecret('SIGNER_CERT_SECRET'),
-      getSecret('WWDR_CERT_SECRET'),
-    ]);
-    console.log('Certificates loaded from Secret Manager.');
-  } catch (secretError) {
-    console.warn(
-      'Could not load certificates from Secret Manager. Attempting to load from local files...',
-      secretError
+    const passData: PassData = req.body;
+    if (!passData.firstName || !passData.lastName) {
+      return res.status(400).send('First and Last name are required.');
+    }
+
+    const fullName = `${passData.firstName} ${passData.lastName}`;
+    console.log(`Searching for photo for: ${fullName}`);
+
+    const photoResult = await findPersonAndPhoto(fullName);
+
+    const pass = await createPass(
+      passData,
+      photoResult.match ? photoResult.photo : null
     );
 
-    // Use the specific synchronous imports here
-    if (existsSync(keyPath) && existsSync(certPath) && existsSync(wwdrPath)) {
-      console.log('Loading certificates from local files...');
-      signerKey = readFileSync(keyPath, 'utf8');
-      signerCert = readFileSync(certPath, 'utf8');
-      wwdr = readFileSync(wwdrPath, 'utf8');
-    } else {
-      throw new Error(
-        'Neither Secret Manager nor local files could provide all necessary certificates.'
-      );
-    }
+    const passBuffer = pass.getAsBuffer();
+    const fileName = `${fullName.replace(/[^a-z0-9]/gi, '_')}.pkpass`;
+
+    res.set({
+      'Content-Type': 'application/vnd.apple.pkpass',
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+    });
+    res.status(200).send(passBuffer);
+  } catch (error) {
+    console.error('Error generating pass:', error);
+    res.status(500).send('Failed to generate pass.');
   }
+});
 
-  return { wwdr, signerCert, signerKey };
-}
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
 
-async function startServer() {
-  app.post('/vcard', async (req: Request, res: Response) => {
-    try {
-      const passTemplatePath = path.join(__dirname, '../models/pass.pass');
-      const { vcard }: VCardData = req.body;
-
-      let firstName = '';
-      let lastName = '';
-
-      const fnMatch = vcard.match(/^FN:(.*)$/m);
-      const nMatch = vcard.match(/^N:(.*)$/m);
-
-      if (nMatch && nMatch[1]) {
-        const nParts = nMatch[1].split(';');
-        lastName = nParts[0].trim();
-        firstName = nParts[1].trim();
-      } else if (fnMatch && fnMatch[1]) {
-        const fnParts = fnMatch[1].trim().split(' ');
-        firstName = fnParts[0];
-        lastName = fnParts.slice(1).join(' ');
-      }
-
-      if (!firstName && !lastName) {
-        firstName = 'contact';
-        lastName = 'vcard';
-      }
-
-      const sanitizeFileName = (name: string): string => {
-        return name.replace(/[^a-z0-9-_\s]/gi, '_').replace(/\s+/g, '-');
-      };
-
-      const fullName = [firstName, lastName].filter(Boolean).join(' ');
-      const fileName = sanitizeFileName(`${fullName} vCard`) + '.pkpass';
-
-      const pass = await createPass();
-
-      const passBuffer = pass.getAsBuffer();
-
-      res.set('Content-Type', 'application/vnd.apple.pkpass');
-      res.set('Content-Disposition', `attachment; filename="${fileName}"`);
-      res.status(200).send(passBuffer);
-    } catch (error) {
-      console.error(error);
-      res.status(500).send('Error generating pass.');
-    }
-  });
-
-  app.get('/', (req: Request, res: Response) => {
-    res.redirect('https://stand.earth');
-  });
-
-  app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
-  });
-}
-
-async function createPass() {
+// --- CORRECTED createPass Function ---
+async function createPass(
+  data: PassData,
+  photoBuffer: Buffer | null
+): Promise<PKPass> {
   const certs = await loadCertificates();
+  const passModelPath = path.join(__dirname, '../models/vcard.pass');
 
+  // Step 1: Create the pass from the model without overrides for fields
   const pass = await PKPass.from(
     {
       model: 'models/vcard',
@@ -154,37 +94,78 @@ async function createPass() {
     { serialNumber: Date.now().toString() }
   );
 
+  // Step 2: Directly access and set the field values on the pass instance
+  // Note: We replace the entire array to clear any default values from the model.
+  pass.primaryFields.push({
+    key: 'name',
+    value: `${data.firstName} ${data.lastName}\n${data.title}`,
+  });
+
+  pass.secondaryFields.push({
+    key: 'work_phone',
+    label: 'Direct Line',
+    value: data.workPhone || '',
+  });
+
+  pass.auxiliaryFields.push(
+    {
+      key: 'email',
+      label: 'Email',
+      value: data.email || '',
+    },
+    {
+      key: 'cell_phone',
+      label: 'Cell Phone',
+      value: data.cellPhone || '',
+    }
+  );
+
+  pass.backFields.push(
+    {
+      key: 'website',
+      label: 'Website',
+      value: data.website || 'https://stand.earth',
+    },
+    {
+      key: 'linkedin',
+      label: 'LinkedIn',
+      value: data.linkedin || '',
+    },
+    {
+      key: 'notes',
+      label: 'Notes',
+      value: data.notes || '',
+    }
+  );
+
+  // Add the photo buffer
+  if (photoBuffer) {
+    console.log('Photo found, adding thumbnail.png to pass.');
+    pass.addBuffer('thumbnail.png', photoBuffer);
+  } else {
+    console.log('No photo found, pass will not have a thumbnail.');
+  }
+
+  // Build and set the QR code
+  let vCardString = `BEGIN:VCARD\r\nVERSION:3.0\r\n`;
+  vCardString += `N:${data.lastName};${data.firstName}\r\n`;
+  vCardString += `FN:${data.firstName} ${data.lastName}\r\n`;
+  vCardString += `ORG:${data.organization}\r\n`;
+  vCardString += `TITLE:${data.title}\r\n`;
+  if (data.email) vCardString += `EMAIL:${data.email}\r\n`;
+  if (data.workPhone)
+    vCardString += `TEL;TYPE=WORK,VOICE:${data.workPhone}\r\n`;
+  if (data.cellPhone) vCardString += `TEL;TYPE=CELL:${data.cellPhone}\r\n`;
+  if (data.website) vCardString += `URL:${data.website}\r\n`;
+  if (data.linkedin) vCardString += `URL:${data.linkedin}\r\n`;
+  if (data.notes) vCardString += `NOTE:${data.notes.replace(/\n/g, '\\n')}\r\n`;
+  vCardString += `END:VCARD`;
+
   pass.setBarcodes({
+    message: vCardString,
     format: 'PKBarcodeFormatQR',
-    message:
-      'BEGIN:VCARD\r\nVERSION:3.0\r\nN:Carroll;Matthew\r\nFN:Matthew Carroll\r\nORG:Stand.earth\r\nTITLE:Senior IT Manager\r\nEMAIL:matthew.carroll@stand.earth\r\nTEL;TYPE=WORK,VOICE:+16043316201;x=209\r\nTEL;TYPE=WORK,VOICE,MSG,PREF:+14155323811\r\nTEL;TYPE=CELL:+12505091026\r\nURL:https://stand.earth\r\nURL:https://www.linkedin.com/in/matthewfcarroll/\r\nNOTE:Test notes\r\nEND:VCARD',
+    messageEncoding: 'iso-8859-1',
   });
 
   return pass;
 }
-
-async function main() {
-  const nameToFind = 'Gisela Hurtado';
-  console.log(`Searching for: ${nameToFind}...`);
-
-  // Call the function with the debug flag set to true
-  const result = await findPersonAndPhoto(nameToFind);
-
-  if (result.match) {
-    console.log(`✅ Match found!`);
-    console.log(`Name on page: ${result.name}`);
-
-    // This will save the final photo from the function's return object
-    const outputPath = './matched_photo.png';
-    await fs.writeFile(outputPath, result.photo);
-    console.log(`Photo saved to ${outputPath}`);
-  } else {
-    console.log(`❌ No match found for "${nameToFind}".`);
-  }
-}
-
-main();
-
-main();
-
-startServer();

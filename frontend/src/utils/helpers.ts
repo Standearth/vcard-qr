@@ -5,7 +5,7 @@ import { Mode, MODES, TabState } from '../config/constants';
 import AsyncQRCodeStyling from '../lib/AsyncQRCodeStyling';
 import { UIManager } from '../app/UIManager';
 import { stateService } from '../app/StateService';
-import { generateVCardString } from '../../packages/shared-utils/src/vcard';
+import { generateVCardString } from '@vcard-qr/shared-utils';
 
 export function calculateAndApplyOptimalQrCodeSize(
   qrCodeInstance: AsyncQRCodeStyling,
@@ -94,10 +94,7 @@ export function generateFilename(currentMode: Mode): string {
 
 export function generateQRCodeData(state: TabState, mode: Mode): string {
   const generators: Partial<Record<Mode, (s: TabState) => string>> = {
-    // highlight-start
-    // Use the shared utility. QR codes typically use LF (\n) line endings.
     [MODES.VCARD]: (s) => generateVCardString(s, false),
-    // highlight-end
     [MODES.LINK]: (s) => s.linkUrl || 'https://stand.earth',
     [MODES.WIFI]: (s) => {
       return `WIFI:S:${s.wifiSsid || ''};T:${s.wifiEncryption || 'WPA'};P:${s.wifiPassword || ''};H:${s.wifiHidden ? 'true' : 'false'};;`;

@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "./src/vcard.ts",
-  "types": "./src/vcard.ts"
+  "scripts": {
+    "build": "tsc"
+  },
+  "main": "./dist/vcard.js",
+  "types": "./dist/vcard.d.ts"
 }

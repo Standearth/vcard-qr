@@ -1,8 +1,8 @@
 // src/api/photo.router.ts
 import { Router } from 'express';
-import { findPersonAndPhoto } from '../services/photo.service';
+import { findPersonAndPhoto } from '../services/photo.service.js';
 
-const router = Router();
+const router: Router = Router(); // Add explicit type
 
 router.get('/', async (req, res) => {
   const { name } = req.query;

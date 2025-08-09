@@ -1,9 +1,9 @@
 // src/services/pass.service.ts
 
 import { PKPass } from 'passkit-generator';
-import { loadCertificates } from '../config/certificates';
-import { PassData } from '../types';
-import { generateVCardString } from '../../../packages/shared-utils/src/vcard';
+import { loadCertificates } from '../config/certificates.js';
+import { PassData } from '../types/index.js';
+import { generateVCardString } from '@vcard-qr/shared-utils';
 
 /**
  * Generates a .pkpass file buffer from user data and an optional photo.
@@ -88,20 +88,7 @@ export async function generatePassBuffer(
   }
 
   // --- Build and set the QR code ---
-  // The vCard string is constructed to be embedded in the QR code.
-  let vCardString = `BEGIN:VCARD\r\nVERSION:3.0\r\n`;
-  vCardString += `N:${data.lastName};${data.firstName}\r\n`;
-  vCardString += `FN:${data.firstName} ${data.lastName}\r\n`;
-  vCardString += `ORG:${data.organization}\r\n`;
-  vCardString += `TITLE:${data.title}\r\n`;
-  if (data.email) vCardString += `EMAIL:${data.email}\r\n`;
-  // highlight-start
-  // Add the office phone with extension
-  if (data.officePhone)
-    vCardString += `TEL;TYPE=WORK,VOICE:${data.officePhone}${data.extension ? `;ext=${data.extension}` : ''}\r\n`;
-  // highlight-end
-  if (data.workPhone)
-    vCardString += `TEL;TYPE=WORK,VOICE:${data.workPhone}\r\n`;
+  const vCardString = generateVCardString(data, true);
 
   pass.setBarcodes({
     message: vCardString,

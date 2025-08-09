@@ -7,11 +7,13 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w frontend & npm run dev -w server",
-    "build": "npm run build -w server && npm run build -w frontend",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:server": "pnpm --filter server dev",
+    "dev": "pnpm dev:frontend & pnpm dev:server",
+    "build": "pnpm run -r --workspace-concurrency=1 build",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "typecheck": "npx tsc --noEmit"
+    "typecheck": "tsc -b --verbose"
   },
   "devDependencies": {
     "eslint": "^9.32.0",

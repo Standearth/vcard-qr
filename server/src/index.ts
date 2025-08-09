@@ -1,8 +1,8 @@
 // src/index.ts
 import express from 'express';
 // Rename the import for clarity
-import vcardPassRouter from './api/pass.router';
-import photoRouter from './api/photo.router';
+import vcardPassRouter from './api/pass.router.js';
+import photoRouter from './api/photo.router.js';
 
 const app = express();
 app.use(express.json());

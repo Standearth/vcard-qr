@@ -1,10 +1,10 @@
 // src/api/pass.router.ts
 import { Router } from 'express';
-import { generatePassBuffer } from '../services/pass.service';
-import { findPersonAndPhoto } from '../services/photo.service';
-import { PassData } from '../types';
+import { generatePassBuffer } from '../services/pass.service.js';
+import { findPersonAndPhoto } from '../services/photo.service.js';
+import { PassData } from '../types/index.js';
 
-const router = Router();
+const router: Router = Router();
 
 router.post('/', async (req, res) => {
   try {

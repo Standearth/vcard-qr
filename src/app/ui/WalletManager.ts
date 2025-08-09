@@ -38,24 +38,30 @@ export class WalletManager {
     const passData = {
       firstName: state.firstName || '',
       lastName: state.lastName || '',
+      organization: state.org || 'Stand.earth',
       title: state.title || '',
       email: state.email || '',
+      officePhone: state.officePhone || '',
+      extension: state.extension || '',
       workPhone: state.workPhone || '',
       cellPhone: state.cellPhone || '',
       website: state.website || '',
       linkedin: state.linkedin || '',
       notes: state.notes || '',
+      // This property is used on the backend pass.json model
+      anniversaryLogo: state.anniversaryLogo || false,
     };
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      // The endpoint remains the same, but the payload is different
-      const response = await fetch(`${apiBaseUrl}/vcard`, {
+      // highlight-start
+      // Use the new, versioned, and specific endpoint
+      const response = await fetch(`${apiBaseUrl}/api/v1/passes/vcard`, {
+        // highlight-end
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        // Send the new passData object
         body: JSON.stringify(passData),
       });
 

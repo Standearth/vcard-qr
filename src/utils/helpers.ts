@@ -5,6 +5,7 @@ import { Mode, MODES, TabState } from '../config/constants';
 import AsyncQRCodeStyling from '../lib/AsyncQRCodeStyling';
 import { UIManager } from '../app/UIManager';
 import { stateService } from '../app/StateService';
+import { generateVCardString } from '../../packages/shared-utils/src/vcard';
 
 export function calculateAndApplyOptimalQrCodeSize(
   qrCodeInstance: AsyncQRCodeStyling,
@@ -91,45 +92,16 @@ export function generateFilename(currentMode: Mode): string {
   return 'qr-code';
 }
 
-function generateVCardLines(state: TabState): string[] {
-  return [
-    'BEGIN:VCARD',
-    'VERSION:3.0',
-    `N:${state.lastName || ''};${state.firstName || ''}`,
-    `FN:${`${state.firstName || ''} ${state.lastName || ''}`.trim()}`,
-    state.org ? `ORG:${state.org}` : '',
-    state.title ? `TITLE:${state.title}` : '',
-    state.email ? `EMAIL:${state.email}` : '',
-    state.officePhone
-      ? `TEL;TYPE=WORK,VOICE:${state.officePhone}${state.extension ? `;x=${state.extension}` : ''}`
-      : '',
-    state.workPhone
-      ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumberForVCard(
-          state.workPhone
-        )}`
-      : '',
-    state.cellPhone
-      ? `TEL;TYPE=CELL:${formatPhoneNumberForVCard(state.cellPhone)}`
-      : '',
-    state.website ? `URL:${state.website}` : '',
-    state.linkedin ? `URL:${state.linkedin}` : '',
-    state.notes ? `NOTE:${state.notes.replace(/\n/g, '\n')}` : '',
-    'END:VCARD',
-  ].filter(Boolean) as string[];
-}
-
 export function generateQRCodeData(state: TabState, mode: Mode): string {
-  // eslint-disable-next-line no-unused-vars
   const generators: Partial<Record<Mode, (s: TabState) => string>> = {
-    [MODES.VCARD]: (s) => generateVCardLines(s).join('\n'),
+    // highlight-start
+    // Use the shared utility. QR codes typically use LF (\n) line endings.
+    [MODES.VCARD]: (s) => generateVCardString(s, false),
+    // highlight-end
     [MODES.LINK]: (s) => s.linkUrl || 'https://stand.earth',
     [MODES.WIFI]: (s) => {
       return `WIFI:S:${s.wifiSsid || ''};T:${s.wifiEncryption || 'WPA'};P:${s.wifiPassword || ''};H:${s.wifiHidden ? 'true' : 'false'};;`;
     },
   };
   return generators[mode]!(state);
-}
-
-export function generateVCardForAppleWallet(state: TabState): string {
-  return generateVCardLines(state).join('\r\n');
 }

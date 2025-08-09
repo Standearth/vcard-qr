@@ -1,13 +1,16 @@
 # QR Code Generator
 
-A web-based QR Code and vCard generator for Stand.earth.
+A web-based QR Code and vCard generator for Stand.earth, structured as a modern monorepo.
 
 ## Features
 
-- **vCard QR Code Generation:** Create QR codes that contain vCard contact information.
-- **Apple Wallet Pass Generation:** Generate Apple Wallet passes from vCard data.
+- **vCard QR Code Generation:** Create "business card" QR codes that contain vCard contact information.
+- **URL QR Code Generation:** Create QR codes to visit a link.
+- **WiFi QR Code Generation:** Create QR codes to connect to a network.
 - **Customizable QR Codes:** Adjust the appearance of the QR codes.
 - **Real-time Preview:** See a live preview of the QR code as you type.
+- **Apple Wallet Pass Generation:** Generate Apple Wallet passes from vCard data.
+- **Automated Photo Lookup:** Automatically include a person's photo from the Stand.earth staff page and adds it to the Apple Wallet pass.
 
 ## Technologies Used
 
@@ -109,6 +112,12 @@ Monitor the progress of the deployment in the "Actions" tab of your GitHub repos
 ### Deployment to Google Cloud Platform (GCP)
 
 1.  **Initial GCP Project Setup:**
+
+    > [!IMPORTANT]
+    > Before you begin, make sure you have the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) installed and have authenticated as a user with sufficient permissions to create and manage Google Cloud projects.
+    >
+    > It is highly recommended to use [Google Cloud Shell](https://cloud.google.com/shell), as it comes pre-configured with the necessary tools and authentications, simplifying the setup process.
+
     Run the `setup` Makefile target to create and configure your GCP project, service accounts, and workload identity federation. This is a one-time setup.
 
     ```bash

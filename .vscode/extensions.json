@@ -1,3 +1,9 @@
 {
-  "recommendations": ["hashicorp.terraform", "esbenp.prettier-vscode"]
+  "recommendations": [
+    "hashicorp.terraform",
+    "esbenp.prettier-vscode",
+    "yzhang.markdown-all-in-one",
+    "eamodio.gitlens",
+    "github.vscode-github-actions"
+  ]
 }

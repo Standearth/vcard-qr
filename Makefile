@@ -2,16 +2,15 @@
 TFFILE := terraform.tfvars
 
 # --- Configuration ---
-PROJECT_ID      := $(shell grep 'gcp_project_id' $(TFFILE) 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
+PROJECT_ID      := $(shell cat $(TFFILE) 2>/dev/null | grep 'gcp_project_id' | cut -d'=' -f2 | tr -d ' "')
 BILLING_ACCOUNT  = $(shell gcloud billing accounts list --format='value(ACCOUNT_ID)' --filter='OPEN=true' | head -n 1)
 PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&1 && echo 1)
 
 # --- Argument Parsing ---
-KNOWN_TARGETS   := all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup
+KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup-policy cleanup-images-now
 
 # This allows passing named arguments like `make target email=foo@bar.com`
 $(foreach v, $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS)), $(eval $(v)))
-
 # This captures the first unlabelled argument passed after the target
 ARG := $(firstword $(filter-out $(KNOWN_TARGETS) $(patsubst %-,-%,$(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS))),$(MAKECMDGOALS)))
 
@@ -21,7 +20,6 @@ SIGNER_CERT_FILE    = signerCert.pem
 WWDR_CERT_FILE      = AppleWWDRCAG4.pem
 LOCALHOST_KEY_FILE  = localhost.key
 LOCALHOST_CERT_FILE = localhost.pem
-
 
 # --- Other variables ---
 PROJECT_NUM           = $(shell gcloud projects describe $(PROJECT_ID) --format="value(projectNumber)" 2>/dev/null)
@@ -38,7 +36,7 @@ SECRET_WWDR           = apple-wallet-wwdr-cert
 CUSTOM_DOMAIN         = pkpass.stand.earth
 REPO_NAME             = $(SERVICE_NAME)-repo
 
-.PHONY: all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars
+.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup-policy cleanup-images-now
 
 # Default target
 all: help
@@ -55,7 +53,17 @@ check-gcp-project:
 ## Full Setup from Scratch
 ## --------------------------------------
 
-setup: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder setup-artifact-cleanup show-github-secrets
+setup:
+	@if [ ! -f "$(TFFILE)" ]; then \
+		echo "ℹ️ Configuration file not found. Running initial project creation first..."; \
+		$(MAKE) create-project; \
+		echo "🔄 Restarting setup process with new configuration..."; \
+		$(MAKE) setup; \
+	else \
+		$(MAKE) _setup_tasks; \
+	fi
+
+_setup_tasks: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder setup-artifact-cleanup-policy show-github-secrets
 	@echo "✅ Full one-time setup is complete. Run 'make terraform-apply' to deploy infrastructure."
 
 ## --------------------------------------
@@ -350,12 +358,23 @@ check-domain-status: check-gcp-project
 	@echo "🔎 Checking status for custom domain '$(CUSTOM_DOMAIN)'..."
 	@gcloud beta run domain-mappings describe --domain=$(CUSTOM_DOMAIN) --project=$(PROJECT_ID) --region=$(REGION)
 
-setup-artifact-cleanup: terraform-apply
+setup-artifact-cleanup-policy: terraform-apply
 	@echo "🧹 Applying cleanup policy to Artifact Registry repository '$(REPO_NAME)'..."
 	@gcloud artifacts repositories set-cleanup-policies $(REPO_NAME) \
-		--policy=cleanup-policy.json \
+		--policy-file=cleanup-policy.json \
 		--location=$(REGION) \
 		--project=$(PROJECT_ID)
+
+cleanup-images-now: check-gcp-project
+	@echo "🧹 Deleting all untagged images from Artifact Registry repository '$(REPO_NAME)'..."
+	@gcloud artifacts docker images list $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPO_NAME) --filter='-tags:*' --format='get(digest)' --quiet | \
+	while read digest; do \
+		if [ -n "$$digest" ]; then \
+			echo "   -> Deleting image with digest $$digest..."; \
+			gcloud artifacts docker images delete $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPO_NAME)@$$digest --delete-tags --quiet; \
+		fi; \
+	done
+	@echo "✅ Cleanup complete."
 
 ## --------------------------------------
 ## Help
@@ -365,8 +384,7 @@ help:
 	@echo "Usage: make [target] [arg] or [arg=value]"
 	@echo ""
 	@echo "--- LOCAL DEVELOPMENT ---"
-	@echo "  dev                        Starts both frontend and backend servers via HTTP."
-	@echo "  dev:https                  Starts both frontend and backend servers via HTTPS."
+	@echo "  dev                        Starts both frontend and backend servers via HTTPS."
 	@echo "  add-secrets-local          Generates placeholder PassKit key and cert for local use."
 	@echo "  add-local-https-certs      Generates self-signed certificates for local HTTPS."
 	@echo ""
@@ -379,9 +397,12 @@ help:
 	@echo ""
 	@echo "--- FULL WORKFLOW ---"
 	@echo "  setup                      Runs the full one-time setup process for a new project."
+	@echo ""
+	@echo "--- INFRASTRUCTURE ---"
 	@echo "  terraform-apply            Applies the Terraform infrastructure configuration."
 	@echo "  terraform-destroy          Destroys all managed infrastructure."
-	@echo "  setup-artifact-cleanup     Sets an automated 30-day cleanup policy on the Docker repository."
+	@echo "  setup-artifact-cleanup-policy Sets an automated 30-day cleanup policy on the Docker repository."
+	@echo "  cleanup-images-now         Immediately deletes all untagged Docker images from the repository."
 	@echo ""
 	@echo "--- POST-DEPLOYMENT ---"
 	@echo "  map-custom-domain          Maps your custom domain to the Cloud Run service."

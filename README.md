@@ -306,4 +306,5 @@ CERT_WWDR="AppleWWDRCAG4.pem"
 
 FRONTEND_DOMAIN="qr.stand.earth"
 BACKEND_DOMAIN="pkpass.stand.earth"
+GITHUB_REPO="Standearth/vcard-qr"
 ```

@@ -38,7 +38,7 @@ export class WalletManager {
     const passData = {
       firstName: state.firstName || '',
       lastName: state.lastName || '',
-      organization: state.org || 'Stand.earth',
+      organization: state.org || '',
       title: state.title || '',
       email: state.email || '',
       officePhone: state.officePhone || '',

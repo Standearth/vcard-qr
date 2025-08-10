@@ -95,7 +95,7 @@ export function generateFilename(currentMode: Mode): string {
 export function generateQRCodeData(state: TabState, mode: Mode): string {
   const generators: Partial<Record<Mode, () => string>> = {
     [MODES.VCARD]: () => generateVCardString(state, false),
-    [MODES.LINK]: () => state.linkUrl || 'https://stand.earth',
+    [MODES.LINK]: () => state.linkUrl || '',
     [MODES.WIFI]: () => {
       return `WIFI:S:${state.wifiSsid || ''};T:${
         state.wifiEncryption || 'WPA'

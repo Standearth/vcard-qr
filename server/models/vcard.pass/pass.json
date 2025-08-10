@@ -1,9 +1,5 @@
 {
   "formatVersion": 1,
-  "passTypeIdentifier": "pass.earth.stand.vcard",
-  "teamIdentifier": "3WCH54M3A8",
-  "organizationName": "Stand.earth",
-  "description": "Stand.earth Business Card",
   "foregroundColor": "rgb(16, 16, 18)",
   "backgroundColor": "rgb(245, 244, 237)",
   "labelColor": "rgb(16, 16, 18)",

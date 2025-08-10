@@ -76,7 +76,7 @@ export async function generatePassBuffer(
     {
       key: 'website',
       label: 'Website',
-      value: data.website || 'https://stand.earth',
+      value: data.website || '',
     },
     {
       key: 'linkedin',

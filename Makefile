@@ -8,7 +8,7 @@ BILLING_ACCOUNT = $(shell gcloud billing accounts list --format='value(ACCOUNT_I
 PROJECT_EXISTS := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&1 && echo 1)
 
 # --- Argument Parsing ---
-KNOWN_TARGETS         := all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem
+KNOWN_TARGETS         := all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars
 # This allows passing named arguments like `make target email=foo@bar.com`
 $(foreach v, $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS)), $(eval $(v)))
 # This captures the first unlabelled argument passed after the target
@@ -36,10 +36,18 @@ SECRET_CERT           = apple-wallet-signer-cert
 SECRET_WWDR           = apple-wallet-wwdr-cert
 CUSTOM_DOMAIN         = pkpass.stand.earth
 
-.PHONY: all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem
+.PHONY: all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars
 
 # Default target
 all: help
+
+# Helper target to ensure GCP project is set
+check-gcp-project:
+	@if [ -z "$(PROJECT_ID)" ]; then \
+		echo "❌ Error: GCP Project ID is not set. Please run 'make setup' first to create terraform.tfvars."; \
+		exit 1; \
+	fi
+	@gcloud config set project $(PROJECT_ID)
 
 ## --------------------------------------
 ## Full Setup from Scratch
@@ -68,9 +76,11 @@ create-project:
 		fi; \
 		echo "gcp_project_id = \"$$project_id\"" > $(TFFILE); \
 		echo "✅ Project setup complete and $(TFFILE) updated."; \
+		echo "🔄 Setting active gcloud project to '$$project_id'..."; \
+		gcloud config set project $$project_id; \
 	fi
 
-setup-project: create-project
+setup-project: check-gcp-project
 	@echo "🛠️  Enabling required Google Cloud APIs for project $(PROJECT_ID)..."
 	@sleep 15
 	@gcloud services enable \
@@ -83,7 +93,7 @@ setup-project: create-project
 		compute.googleapis.com \
 		--project=$(PROJECT_ID)
 
-create-service-account: create-project
+create-service-account: check-gcp-project
 	@echo "👤 Checking for Service Account '$(SERVICE_ACCOUNT_NAME)'..."
 	@if gcloud iam service-accounts describe $(SERVICE_ACCOUNT_EMAIL) --project=$(PROJECT_ID) > /dev/null 2>&1; then \
 		echo "✅ Service Account '$(SERVICE_ACCOUNT_NAME)' already exists."; \
@@ -95,7 +105,7 @@ create-service-account: create-project
 			--project=$(PROJECT_ID); \
 	fi
 
-create-workload-identity: create-project
+create-workload-identity: check-gcp-project
 	@echo "🔗 Setting up Workload Identity Federation for GitHub..."
 	@echo "   -> Checking for Pool..."
 	@if gcloud iam workload-identity-pools describe $(WORKLOAD_POOL_ID) --location="global" --project=$(PROJECT_ID) > /dev/null 2>&1; then \
@@ -138,7 +148,7 @@ create-workload-identity: create-project
 		--member="principal://iam.googleapis.com/projects/$(PROJECT_NUM)/locations/global/workloadIdentityPools/$(WORKLOAD_POOL_ID)/subject/repo:$(GITHUB_REPO)" \
 		--project=$(PROJECT_ID)
 
-create-secrets: create-project
+create-secrets: check-gcp-project
 	@echo "🔑 Checking for required secrets..."
 	@for secret in $(SECRET_KEY) $(SECRET_CERT) $(SECRET_WWDR); do \
 		if gcloud secrets describe $$secret --project=$(PROJECT_ID) > /dev/null 2>&1; then \
@@ -235,7 +245,7 @@ add-local-https-certs:
 ## GitHub Actions Secrets
 ## --------------------------------------
 
-show-github-secrets: create-project
+show-github-secrets: check-gcp-project
 	@echo "\n"
 	@echo "********************************************************************************"
 	@echo "✅ GitHub Actions Secrets"
@@ -259,7 +269,7 @@ show-github-secrets: create-project
 ## Manual Secret Management
 ## --------------------------------------
 
-upload-signer-key: create-project
+upload-signer-key: check-gcp-project
 	@arg='$(ARG)'; \
 	if [ -z "$$arg" ]; then \
 		read -p "Enter the local file path for the SIGNER KEY (e.g., /path/to/$(SIGNER_KEY_FILE)): " arg; \
@@ -268,7 +278,7 @@ upload-signer-key: create-project
 	echo "   -> Uploading new version to $(SECRET_KEY) from '$$arg'..."; \
 	gcloud secrets versions add $(SECRET_KEY) --data-file="$$arg" --project=$(PROJECT_ID)
 
-upload-signer-cert: create-project
+upload-signer-cert: check-gcp-project
 	@arg='$(ARG)'; \
 	if [ -z "$$arg" ]; then \
 		read -p "Enter the local file path for the SIGNER CERTIFICATE (e.g., /path/to/$(SIGNER_CERT_FILE)): " arg; \
@@ -277,7 +287,7 @@ upload-signer-cert: create-project
 	echo "   -> Uploading new version to $(SECRET_CERT) from '$$arg'..."; \
 	gcloud secrets versions add $(SECRET_CERT) --data-file="$$arg" --project=$(PROJECT_ID)
 
-upload-wwdr-cert: create-project
+upload-wwdr-cert: check-gcp-project
 	@arg='$(ARG)'; \
 	if [ -z "$$arg" ]; then \
 		read -p "Enter the local file path for the WWDR CERTIFICATE (e.g., /path/to/$(WWDR_CERT_FILE)): " arg; \
@@ -287,19 +297,44 @@ upload-wwdr-cert: create-project
 	gcloud secrets versions add $(SECRET_WWDR) --data-file="$$arg" --project=$(PROJECT_ID)
 
 ## --------------------------------------
+## Environment Variable Management
+## --------------------------------------
+
+set-backend-env-vars: check-gcp-project
+	@echo "📡 Configuring environment variables for Cloud Run service '$(SERVICE_NAME)'..."
+	@if [ ! -f .env ]; then \
+		echo "   -> .env file not found. Will prompt for values."; \
+		read -p "Enter PASS_TEAM_ID: " pass_team_id; \
+		read -p "Enter PASS_TYPE_ID: " pass_type_id; \
+		read -p "Enter VITE_ORG_NAME: " vite_org_name; \
+		read -p "Enter PASS_DESCRIPTION: " pass_description; \
+	else \
+		echo "   -> Reading configuration from .env file..."; \
+		pass_team_id=$$(grep PASS_TEAM_ID .env | cut -d '=' -f2 | tr -d '\"'); \
+		pass_type_id=$$(grep PASS_TYPE_ID .env | cut -d '=' -f2 | tr -d '\"'); \
+		vite_org_name=$$(grep VITE_ORG_NAME .env | cut -d '=' -f2 | tr -d '\"'); \
+		pass_description=$$(grep PASS_DESCRIPTION .env | cut -d '=' -f2 | tr -d '\"'); \
+	fi; \
+	echo "   -> Applying variables to Cloud Run service..."; \
+	gcloud run services update $(SERVICE_NAME) \
+		--region=$(REGION) \
+		--project=$(PROJECT_ID) \
+		--update-env-vars="NODE_ENV=production,PASS_TEAM_ID=$$pass_team_id,PASS_TYPE_ID=$$pass_type_id,VITE_ORG_NAME=$$vite_org_name,PASS_DESCRIPTION=$$pass_description"
+
+## --------------------------------------
 ## Infrastructure Management
 ## --------------------------------------
 
-terraform-apply: create-project
+terraform-apply: check-gcp-project
 	@echo "🏗️  Applying Terraform configuration for project $(PROJECT_ID)..."
 	@terraform init
 	@terraform apply -auto-approve
 
-terraform-destroy: create-project
+terraform-destroy: check-gcp-project
 	@echo "🔥 Destroying all managed infrastructure for project $(PROJECT_ID)..."
 	@terraform destroy -auto-approve
 
-map-custom-domain: terraform-apply
+map-custom-domain: check-gcp-project
 	@echo "🌐 Mapping custom domain '$(CUSTOM_DOMAIN)' to service '$(SERVICE_NAME)'..."
 	@echo "   -> This requires that you have already configured a CNAME record pointing to ghs.googlehosted.com."
 	@-gcloud beta run domain-mappings create \
@@ -309,7 +344,7 @@ map-custom-domain: terraform-apply
 		--project=$(PROJECT_ID) || \
 	echo "✅ Domain mapping may already exist. Check status with 'make check-domain-status'."
 
-check-domain-status: create-project
+check-domain-status: check-gcp-project
 	@echo "🔎 Checking status for custom domain '$(CUSTOM_DOMAIN)'..."
 	@gcloud beta run domain-mappings describe --domain=$(CUSTOM_DOMAIN) --project=$(PROJECT_ID) --region=$(REGION)
 
@@ -341,6 +376,7 @@ help:
 	@echo "--- POST-DEPLOYMENT ---"
 	@echo "  map-custom-domain          Maps your custom domain to the Cloud Run service."
 	@echo "  check-domain-status        Checks the status of the custom domain mapping."
+	@echo "  set-backend-env-vars       Sets runtime environment variables for the Cloud Run service."
 	@echo ""
 	@echo "--- GITHUB ACTIONS ---"
 	@echo "  show-github-secrets        Displays the required secrets for your GitHub repository."

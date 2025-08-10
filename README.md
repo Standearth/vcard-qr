@@ -36,7 +36,7 @@ A web-based QR Code and vCard generator for Stand.earth, structured as a modern 
 
 ## Configuration
 
-This project uses environment variables for all organization-specific settings. To configure your own instance, follow these steps:
+This project uses environment variables for all organization-specific settings.
 
 1.  **Create an Environment File:**
     Copy the template file to create your local configuration file. This file is ignored by Git and will not be committed.
@@ -48,8 +48,24 @@ This project uses environment variables for all organization-specific settings. 
 2.  **Edit `.env`:**
     Open the `.env` file and fill in the values for your organization. This includes your Apple Developer Team ID, Pass Type ID, default organization name, and production domains.
 
-3.  **CI/CD Configuration:**
-    For automated deployments, you must set these same environment variables as **Repository secrets** in your GitHub project settings under `Settings > Secrets and variables > Actions`.
+### CI/CD and Production Environments
+
+To deploy the application, you must configure these variables in your hosting environments.
+
+#### Frontend (GitHub Pages)
+
+The frontend is configured at build time. You must set the following as **Repository secrets** in your GitHub project under `Settings > Secrets and variables > Actions`:
+
+- `VITE_ORG_NAME`
+- `VITE_ORG_WEBSITE`
+- `BACKEND_DOMAIN`
+
+#### Backend (Google Cloud Run)
+
+The backend uses runtime environment variables. After your initial deployment, you can set them by running the following `make` command. It will use the values from your local `.env` file or prompt you for them.
+
+````bash
+make set-backend-env-vars
 
 ## Installation and Development
 
@@ -257,3 +273,4 @@ Here's a quick reference for common `make` commands:
 - **`make upload-wwdr-cert [path/to/wwdr]`**: Uploads your Apple WWDR certificate to Secret Manager.
 - **`make map-custom-domain`**: Maps a custom domain to the Cloud Run service.
 - **`make check-domain-status`**: Checks the status of the custom domain mapping.
+````

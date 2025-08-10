@@ -38,17 +38,23 @@ export async function generatePassBuffer(
 
   // --- Populate Pass Fields ---
 
-  // Primary Field (Name and Title)
+  // Primary Field (Name & Title)
   pass.primaryFields.push({
     key: 'name',
-    value: `${data.firstName} ${data.lastName}\n${data.title}`,
+    value: `${data.firstName} ${data.lastName},\n${data.title}`,
   });
 
-  // Secondary Field (Work Phone)
+  // Secondary Fields (Direct Line & Office Phone)
   pass.secondaryFields.push({
     key: 'work_phone',
     label: 'Direct Line',
     value: data.workPhone || '',
+  });
+
+  pass.secondaryFields.push({
+    key: 'office_phone',
+    label: 'Office Phone',
+    value: data.officePhone + ' x' + data.extension || '',
   });
 
   // Auxiliary Fields (Email and Cell)

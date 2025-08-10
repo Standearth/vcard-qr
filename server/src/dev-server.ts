@@ -1,7 +1,4 @@
 // src/dev-server.ts
-import dotenv from 'dotenv';
-dotenv.config();
-
 import https from 'https';
 import fs from 'fs';
 import path from 'path';

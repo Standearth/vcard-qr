@@ -5,9 +5,10 @@ TFFILE := terraform.tfvars
 PROJECT_ID      := $(shell cat $(TFFILE) 2>/dev/null | grep 'gcp_project_id' | cut -d'=' -f2 | tr -d ' "')
 BILLING_ACCOUNT  = $(shell gcloud billing accounts list --format='value(ACCOUNT_ID)' --filter='OPEN=true' | head -n 1)
 PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&1 && echo 1)
+ADC_FILE        = $(HOME)/.config/gcloud/application_default_credentials.json
 
 # --- Argument Parsing ---
-KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup-policy cleanup-images-now
+KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup-policy cleanup-images-now gcloud-auth check-auth create-state-bucket
 
 # This allows passing named arguments like `make target email=foo@bar.com`
 $(foreach v, $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS)), $(eval $(v)))
@@ -36,18 +37,43 @@ SECRET_WWDR           = apple-wallet-wwdr-cert
 CUSTOM_DOMAIN         = pkpass.stand.earth
 REPO_NAME             = $(SERVICE_NAME)-repo
 
-.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup-policy cleanup-images-now
+.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup-policy cleanup-images-now gcloud-auth check-auth create-state-bucket
 
 # Default target
 all: help
 
 # Helper target to ensure GCP project is set
-check-gcp-project:
+check-gcp-project: check-auth
 	@if [ -z "$(PROJECT_ID)" ]; then \
 		echo "❌ Error: GCP Project ID is not set. Please run 'make setup' first to create terraform.tfvars."; \
 		exit 1; \
 	fi
 	@gcloud config set project $(PROJECT_ID)
+
+## --------------------------------------
+## Authentication
+## --------------------------------------
+
+gcloud-auth:
+	@echo "🔐 Authenticating for Google Cloud..."
+	@echo "   -> Logging in for gcloud CLI..."
+	@gcloud auth login
+	@echo "   -> Providing credentials for Application Default Credentials (for Terraform)..."
+	@gcloud auth application-default login
+	@echo "✅ Authentication complete."
+
+check-auth:
+	@if [ -z "$$(gcloud config get-value account 2>/dev/null)" ]; then \
+		echo "❌ Error: You are not logged into Google Cloud."; \
+		echo "   Please run 'make gcloud-auth' or 'gcloud auth login' and try again."; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(ADC_FILE)" ]; then \
+		echo "❌ Error: Application Default Credentials are not set."; \
+		echo "   This is required for applications like Terraform to run locally."; \
+		echo "   Please run 'make gcloud-auth' or 'gcloud auth application-default login' and try again."; \
+		exit 1; \
+	fi
 
 ## --------------------------------------
 ## Full Setup from Scratch
@@ -63,14 +89,14 @@ setup:
 		$(MAKE) _setup_tasks; \
 	fi
 
-_setup_tasks: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder setup-artifact-cleanup-policy show-github-secrets
-	@echo "✅ Full one-time setup is complete. Run 'make terraform-apply' to deploy infrastructure."
+_setup_tasks: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder create-state-bucket terraform-apply setup-artifact-cleanup-policy show-github-secrets
+	@echo "✅ Full one-time setup is complete."
 
 ## --------------------------------------
 ## One-Time Project Setup (Step-by-Step)
 ## --------------------------------------
 
-create-project:
+create-project: check-auth
 	@if [ -n "$(PROJECT_EXISTS)" ]; then \
 		echo "✅ Project '$(PROJECT_ID)' already exists. Skipping creation."; \
 	else \
@@ -336,13 +362,24 @@ set-backend-env-vars: check-gcp-project
 ## Infrastructure Management
 ## --------------------------------------
 
-terraform-apply: check-gcp-project
+create-state-bucket: check-gcp-project
+	@echo "🏗️  Creating GCS bucket for Terraform state if it doesn't exist..."
+	@if gsutil ls gs://$(PROJECT_ID)-tfstate > /dev/null 2>&1; then \
+		echo "✅ GCS bucket gs://$(PROJECT_ID)-tfstate already exists."; \
+	else \
+		echo "   -> Creating GCS bucket gs://$(PROJECT_ID)-tfstate..."; \
+		gsutil mb -p $(PROJECT_ID) -l $(REGION) gs://$(PROJECT_ID)-tfstate; \
+		gsutil versioning set on gs://$(PROJECT_ID)-tfstate; \
+	fi
+
+terraform-apply: check-gcp-project create-state-bucket
 	@echo "🏗️  Applying Terraform configuration for project $(PROJECT_ID)..."
-	@terraform init
+	@terraform init -backend-config="bucket=$(PROJECT_ID)-tfstate"
 	@terraform apply -auto-approve
 
 terraform-destroy: check-gcp-project
 	@echo "🔥 Destroying all managed infrastructure for project $(PROJECT_ID)..."
+	@terraform init -backend-config="bucket=$(PROJECT_ID)-tfstate"
 	@terraform destroy -auto-approve
 
 map-custom-domain: check-gcp-project
@@ -384,6 +421,9 @@ help:
 	@echo ""
 	@echo "Usage: make [target] [arg] or [arg=value]"
 	@echo ""
+	@echo "--- PREREQUISITES (Run Once Locally) ---"
+	@echo "  gcloud-auth                Authenticates you with Google Cloud for both CLI and local applications."
+	@echo ""
 	@echo "--- LOCAL DEVELOPMENT ---"
 	@echo "  dev                        Starts both frontend and backend servers via HTTPS."
 	@echo "  add-secrets-local          Generates placeholder PassKit key and cert for local use."
@@ -402,6 +442,7 @@ help:
 	@echo "--- INFRASTRUCTURE ---"
 	@echo "  terraform-apply            Applies the Terraform infrastructure configuration."
 	@echo "  terraform-destroy          Destroys all managed infrastructure."
+	@echo "  create-state-bucket        Creates the GCS bucket for storing Terraform remote state."
 	@echo "  setup-artifact-cleanup-policy Sets an automated 30-day cleanup policy on the Docker repository."
 	@echo "  cleanup-images-now         Immediately deletes all untagged Docker images from the repository."
 	@echo ""

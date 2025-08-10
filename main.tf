@@ -1,4 +1,9 @@
+# --- Terraform Configuration ---
 terraform {
+  backend "gcs" {
+    bucket = "" # This will be provided by the Makefile
+    prefix = "terraform/state"
+  }
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -7,6 +12,7 @@ terraform {
   }
 }
 
+# --- Providers ---
 provider "google" {
   project = var.gcp_project_id
   region  = var.gcp_region

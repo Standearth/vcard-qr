@@ -2,23 +2,24 @@
 TFFILE := terraform.tfvars
 
 # --- Configuration ---
-PROJECT_ID    := $(shell grep 'gcp_project_id' $(TFFILE) 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
-BILLING_ACCOUNT = $(shell gcloud billing accounts list --format='value(ACCOUNT_ID)' --filter='OPEN=true' | head -n 1)
-
-PROJECT_EXISTS := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&1 && echo 1)
+PROJECT_ID      := $(shell grep 'gcp_project_id' $(TFFILE) 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
+BILLING_ACCOUNT  = $(shell gcloud billing accounts list --format='value(ACCOUNT_ID)' --filter='OPEN=true' | head -n 1)
+PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&1 && echo 1)
 
 # --- Argument Parsing ---
-KNOWN_TARGETS         := all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars
+KNOWN_TARGETS   := all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup
+
 # This allows passing named arguments like `make target email=foo@bar.com`
 $(foreach v, $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS)), $(eval $(v)))
+
 # This captures the first unlabelled argument passed after the target
-ARG             := $(firstword $(filter-out $(KNOWN_TARGETS) $(patsubst %-,-%,$(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS))),$(MAKECMDGOALS)))
+ARG := $(firstword $(filter-out $(KNOWN_TARGETS) $(patsubst %-,-%,$(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS))),$(MAKECMDGOALS)))
 
 # --- Certificate Filenames ---
-SIGNER_KEY_FILE = signerKey.key
-SIGNER_CERT_FILE = signerCert.pem
-WWDR_CERT_FILE = AppleWWDRCAG4.pem
-LOCALHOST_KEY_FILE = localhost.key
+SIGNER_KEY_FILE     = signerKey.key
+SIGNER_CERT_FILE    = signerCert.pem
+WWDR_CERT_FILE      = AppleWWDRCAG4.pem
+LOCALHOST_KEY_FILE  = localhost.key
 LOCALHOST_CERT_FILE = localhost.pem
 
 
@@ -35,6 +36,7 @@ SECRET_KEY            = apple-wallet-signer-key
 SECRET_CERT           = apple-wallet-signer-cert
 SECRET_WWDR           = apple-wallet-wwdr-cert
 CUSTOM_DOMAIN         = pkpass.stand.earth
+REPO_NAME             = $(SERVICE_NAME)-repo
 
 .PHONY: all setup create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars
 
@@ -53,7 +55,7 @@ check-gcp-project:
 ## Full Setup from Scratch
 ## --------------------------------------
 
-setup: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder show-github-secrets
+setup: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder setup-artifact-cleanup show-github-secrets
 	@echo "✅ Full one-time setup is complete. Run 'make terraform-apply' to deploy infrastructure."
 
 ## --------------------------------------
@@ -348,6 +350,13 @@ check-domain-status: check-gcp-project
 	@echo "🔎 Checking status for custom domain '$(CUSTOM_DOMAIN)'..."
 	@gcloud beta run domain-mappings describe --domain=$(CUSTOM_DOMAIN) --project=$(PROJECT_ID) --region=$(REGION)
 
+setup-artifact-cleanup: terraform-apply
+	@echo "🧹 Applying cleanup policy to Artifact Registry repository '$(REPO_NAME)'..."
+	@gcloud artifacts repositories set-cleanup-policies $(REPO_NAME) \
+		--policy=cleanup-policy.json \
+		--location=$(REGION) \
+		--project=$(PROJECT_ID)
+
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -372,6 +381,7 @@ help:
 	@echo "  setup                      Runs the full one-time setup process for a new project."
 	@echo "  terraform-apply            Applies the Terraform infrastructure configuration."
 	@echo "  terraform-destroy          Destroys all managed infrastructure."
+	@echo "  setup-artifact-cleanup     Sets an automated 30-day cleanup policy on the Docker repository."
 	@echo ""
 	@echo "--- POST-DEPLOYMENT ---"
 	@echo "  map-custom-domain          Maps your custom domain to the Cloud Run service."

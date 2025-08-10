@@ -101,6 +101,7 @@ setup-project: check-gcp-project
 		secretmanager.googleapis.com \
 		iamcredentials.googleapis.com \
 		compute.googleapis.com \
+		cloudresourcemanager.googleapis.com \
 		--project=$(PROJECT_ID)
 
 create-service-account: check-gcp-project

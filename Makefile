@@ -68,7 +68,7 @@ check-auth:
 		echo "   Please run 'make gcloud-auth' or 'gcloud auth login' and try again."; \
 		exit 1; \
 	fi
-	@if [ ! -f "$(ADC_FILE)" ]; then \
+	@if [ "$${CLOUD_SHELL}" != "true" ] && [ ! -f "$(ADC_FILE)" ]; then \
 		echo "❌ Error: Application Default Credentials are not set."; \
 		echo "   This is required for applications like Terraform to run locally."; \
 		echo "   Please run 'make gcloud-auth' or 'gcloud auth application-default login' and try again."; \

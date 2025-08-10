@@ -41,14 +41,19 @@ A web-based QR Code and vCard generator for Stand.earth, structured as a modern 
 
 This project uses environment variables for all organization-specific settings.
 
-1.  **Create an Environment File:**
+1.  **Fork the Repository:**
+    If you plan to deploy the frontend using your own GitHub account for GitHub Pages, you must first fork this repository. This ensures that the CI/CD pipeline has the necessary permissions to deploy to your account.
+
+    (The frontend compiles to a static page, so you can also build it locally and deploy it elsewhere manually very easily.)
+
+2.  **Create an Environment File:**
     Copy the template file to create your local configuration file. This file is ignored by Git and will not be committed.
 
     ```bash
     cp .env.template .env
     ```
 
-2.  **Edit `.env`:**
+3.  **Edit `.env`:**
     Open the .env file and fill in the values for your organization. This includes your Apple Developer Team ID, Pass Type ID, default organization name, and production domains.
 
 ### CI/CD and Production Environments
@@ -93,6 +98,15 @@ This project uses a `Makefile` to streamline one-time setup tasks and `pnpm` for
 ### Local Development Setup
 
 1.  **Clone the repository:**
+
+    Clone your forked repository (if deploying to GitHub Pages):
+
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/vcard-qr.git
+    cd vcard-qr
+    ```
+
+    Or clone this repository (if deploying elsewhere):
 
     ```bash
     git clone https://github.com/Standearth/vcard-qr.git

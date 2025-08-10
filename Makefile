@@ -8,7 +8,7 @@ PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&
 ADC_FILE        = $(HOME)/.config/gcloud/application_default_credentials.json
 
 # --- Argument Parsing ---
-KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars cleanup-images-now gcloud-auth check-auth create-state-bucket
+KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
 
 # This allows passing named arguments like `make target email=foo@bar.com`
 $(foreach v, $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS)), $(eval $(v)))
@@ -26,23 +26,30 @@ LOCALHOST_CERT_FILE = localhost.pem
 PROJECT_NUM           = $(shell gcloud projects describe $(PROJECT_ID) --format="value(projectNumber)" 2>/dev/null)
 FRONTEND_DOMAIN       = $(shell grep FRONTEND_DOMAIN .env 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
 BACKEND_DOMAIN        = $(shell grep BACKEND_DOMAIN .env 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
+GITHUB_REPO           = $(shell grep GITHUB_REPO .env 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
 REGION                = us-central1
 SERVICE_NAME          = pkpass-server
 SERVICE_ACCOUNT_NAME  = github-actions-runner
 SERVICE_ACCOUNT_EMAIL = $(SERVICE_ACCOUNT_NAME)@$(PROJECT_ID).iam.gserviceaccount.com
 WORKLOAD_POOL_ID      = github-actions-pool
 WORKLOAD_PROVIDER_ID  = github-provider
-GITHUB_REPO           = Standearth/vcard-qr
 SECRET_KEY            = apple-wallet-signer-key
 SECRET_CERT           = apple-wallet-signer-cert
 SECRET_WWDR           = apple-wallet-wwdr-cert
-CUSTOM_DOMAIN         = pkpass.stand.earth
 REPO_NAME             = $(SERVICE_NAME)-repo
 
-.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars cleanup-images-now gcloud-auth check-auth create-state-bucket
+.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
 
 # Default target
 all: help
+
+# Helper target to ensure essential .env variables are set
+check-env-vars:
+	@if [ -z "$(FRONTEND_DOMAIN)" ] || [ -z "$(BACKEND_DOMAIN)" ] || [ -z "$(GITHUB_REPO)" ]; then \
+		echo "❌ Error: FRONTEND_DOMAIN, BACKEND_DOMAIN, or GITHUB_REPO is not set."; \
+		echo "   Please copy .env.template to .env and configure these variables first."; \
+		exit 1; \
+	fi
 
 # Helper target to ensure GCP project is set
 check-gcp-project: check-auth
@@ -81,9 +88,9 @@ check-auth:
 ## Full Setup from Scratch
 ## --------------------------------------
 
-setup:
+setup: check-env-vars
 	@if [ ! -f "$(TFFILE)" ]; then \
-		echo "ℹ️ Configuration file not found. Running initial project creation first..."; \
+		echo "ℹ️  Configuration file not found. Running initial project creation first..."; \
 		$(MAKE) create-project; \
 		echo "🔄 Restarting setup process with new configuration..."; \
 		$(MAKE) setup; \
@@ -102,7 +109,7 @@ create-project: check-auth
 	@if [ -n "$(PROJECT_EXISTS)" ]; then \
 		echo "✅ Project '$(PROJECT_ID)' already exists. Skipping creation."; \
 	else \
-		echo "ℹ️ Project configuration file '$(TFFILE)' not found or project does not exist."; \
+		echo "ℹ️  Project configuration file '$(TFFILE)' not found or project does not exist."; \
 		read -p "Enter a globally unique ID for your new Google Cloud Project: " project_id; \
 		if gcloud projects describe $$project_id >/dev/null 2>&1; then \
 			echo "✅ Project '$$project_id' already exists."; \
@@ -119,7 +126,7 @@ create-project: check-auth
 	fi
 
 setup-project: check-gcp-project
-	@echo "🛠️  Enabling required Google Cloud APIs for project $(PROJECT_ID)..."
+	@echo "🛠️   Enabling required Google Cloud APIs for project $(PROJECT_ID)..."
 	@sleep 15
 	@gcloud services enable \
 		iam.googleapis.com \
@@ -284,7 +291,7 @@ add-local-https-certs:
 ## GitHub Actions Secrets
 ## --------------------------------------
 
-show-github-secrets: check-gcp-project
+show-github-secrets: check-gcp-project check-env-vars
 	@echo ""
 	@echo "********************************************************************************"
 	@echo "✅ GitHub Actions Secrets"
@@ -306,6 +313,9 @@ show-github-secrets: check-gcp-project
 	@echo ""
 	@echo " Name: BACKEND_DOMAIN"
 	@echo "Value: $(BACKEND_DOMAIN)"
+	@echo ""
+	@echo " Name: GITHUB_REPO"
+	@echo "Value: $(GITHUB_REPO)"
 	@echo ""
 	@echo "********************************************************************************"
 	@echo ""
@@ -371,7 +381,7 @@ set-backend-env-vars: check-gcp-project
 ## --------------------------------------
 
 create-state-bucket: check-gcp-project
-	@echo "🏗️  Creating GCS bucket for Terraform state if it doesn't exist..."
+	@echo "🏗️   Creating GCS bucket for Terraform state if it doesn't exist..."
 	@if gsutil ls gs://$(PROJECT_ID)-tfstate > /dev/null 2>&1; then \
 		echo "✅ GCS bucket gs://$(PROJECT_ID)-tfstate already exists."; \
 	else \
@@ -381,7 +391,7 @@ create-state-bucket: check-gcp-project
 	fi
 
 terraform-apply: check-gcp-project create-state-bucket
-	@echo "🏗️  Applying Terraform configuration for project $(PROJECT_ID)..."
+	@echo "🏗️   Applying Terraform configuration for project $(PROJECT_ID)..."
 	@terraform init -backend-config="bucket=$(PROJECT_ID)-tfstate"
 	@terraform apply -auto-approve
 
@@ -390,19 +400,19 @@ terraform-destroy: check-gcp-project
 	@terraform init -backend-config="bucket=$(PROJECT_ID)-tfstate"
 	@terraform destroy -auto-approve
 
-map-custom-domain: check-gcp-project
-	@echo "🌐 Mapping custom domain '$(CUSTOM_DOMAIN)' to service '$(SERVICE_NAME)'..."
+map-custom-domain: check-gcp-project check-env-vars
+	@echo "🌐 Mapping custom domain '$(BACKEND_DOMAIN)' to service '$(SERVICE_NAME)'..."
 	@echo "   -> This requires that you have already configured a CNAME record pointing to ghs.googlehosted.com."
 	@-gcloud beta run domain-mappings create \
 		--service=$(SERVICE_NAME) \
-		--domain=$(CUSTOM_DOMAIN) \
+		--domain=$(BACKEND_DOMAIN) \
 		--region=$(REGION) \
 		--project=$(PROJECT_ID) || \
 	echo "✅ Domain mapping may already exist. Check status with 'make check-domain-status'."
 
-check-domain-status: check-gcp-project
-	@echo "🔎 Checking status for custom domain '$(CUSTOM_DOMAIN)'..."
-	@gcloud beta run domain-mappings describe --domain=$(CUSTOM_DOMAIN) --project=$(PROJECT_ID) --region=$(REGION)
+check-domain-status: check-gcp-project check-env-vars
+	@echo "🔎 Checking status for custom domain '$(BACKEND_DOMAIN)'..."
+	@gcloud beta run domain-mappings describe --domain=$(BACKEND_DOMAIN) --project=$(PROJECT_ID) --region=$(REGION)
 
 cleanup-images-now: check-gcp-project
 	@echo "🧹 Deleting all untagged images from Artifact Registry repository '$(REPO_NAME)'..."

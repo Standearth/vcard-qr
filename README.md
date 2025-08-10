@@ -64,8 +64,9 @@ The frontend is configured at build time. You must set the following as **Reposi
 
 The backend uses runtime environment variables. After your initial deployment, you can set them by running the following `make` command. It will use the values from your local `.env` file or prompt you for them.
 
-````bash
+```bash
 make set-backend-env-vars
+```
 
 ## Installation and Development
 
@@ -84,7 +85,7 @@ This project uses a `Makefile` to streamline one-time setup tasks and `pnpm` for
 1.  **Clone the repository:**
 
     ```bash
-    git clone [https://github.com/Standearth/vcard-qr.git](https://github.com/Standearth/vcard-qr.git)
+    git clone https://github.com/Standearth/vcard-qr.git
     cd vcard-qr
     ```
 
@@ -137,14 +138,7 @@ To generate a pass that can be installed on real devices, you must use an offici
     This command uses your private key to generate a CSR. The output filename will be based on the `SIGNER_CERT_FILE` variable (e.g., `signerCert.csr`). You can provide your Apple Developer email as a named or positional argument, or be prompted for it interactively.
 
     ```bash
-    # Option 1: Provide email as a named argument
-    make create-certificate-signing-request email=your.email@apple.com
-
-    # Option 2: Provide email as a positional argument
-    make create-certificate-signing-request your.email@apple.com
-
-    # Option 3: Be prompted interactively
-    make create-certificate-signing-request
+    make create-certificate-signing-request your.email@example.com
     ```
 
     Upload the resulting `.csr` file to the Apple Developer portal when creating a new Pass Type ID certificate.
@@ -156,7 +150,7 @@ To generate a pass that can be installed on real devices, you must use an offici
 
     ```bash
     # Convert your new signer certificate
-    make cer-to-pem path/to/your/pass.cer
+    make cer-to-pem path/to/your/signerCert.cer
 
     # Convert the WWDR certificate
     make cer-to-pem path/to/your/AppleWWDRCAG4.cer
@@ -165,7 +159,7 @@ To generate a pass that can be installed on real devices, you must use an offici
     This will create a new file with a `.pem` extension in the same directory.
 
 4.  **Upload to Secret Manager:**
-    Once you have your official `signerKry.key`, `signerCert.pem` (your converted signer cert), and `AppleWWDRCAG4.pem` files, upload them to Google Secret Manager for your production environment.
+    Once you have your official `signerKey.key`, `signerCert.pem` (your converted signer cert), and `AppleWWDRCAG4.pem` files, upload them to Google Secret Manager for your production environment.
     ```bash
     make upload-signer-key path/to/signerKey.key
     make upload-signer-cert path/to/signerCert.pem

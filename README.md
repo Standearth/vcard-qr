@@ -108,16 +108,13 @@ This project uses a `Makefile` to streamline one-time setup tasks and `pnpm` for
     ```
 
 4.  **Start the development servers:**
-    Run the `dev` command from the project root to start both the frontend and backend servers concurrently. For HTTPS, use `dev:https`.
+    Run the `dev` command from the project root to start both the frontend and backend servers concurrently.
 
     ```bash
-    # For standard HTTP development
     pnpm dev
-
-    # For HTTPS development
-    pnpm dev:https
     ```
 
+    - The servers will automatically use HTTPS if local certificates are found (see `make add-local-https-certs`).
     - The **frontend** will run on **`https://localhost:5173`**.
     - The **backend** will run on **`https://localhost:3000`**.
 
@@ -261,6 +258,8 @@ Here's a quick reference for common `make` commands:
 - **`make cer-to-pem [path/to/file.cer]`**: Converts a .cer certificate from Apple to the required .pem format.
 - **`make terraform-apply`**: Deploys infrastructure via Terraform.
 - **`make terraform-destroy`**: Destroys all managed infrastructure.
+- **`make setup-artifact-cleanup-policy`**: Sets an automated 7-day cleanup policy for untagged images in the Docker repository.
+- **`make cleanup-images-now`**: Immediately deletes all untagged Docker images from the repository.
 - **`make show-github-secrets`**: Displays GitHub Actions secrets to be configured.
 - **`make upload-signer-key [path/to/key]`**: Uploads your Apple Wallet signer key to Secret Manager.
 - **`make upload-signer-cert [path/to/cert]`**: Uploads your Apple Wallet signer certificate to Secret Manager.

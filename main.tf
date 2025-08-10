@@ -74,6 +74,14 @@ resource "google_artifact_registry_repository" "docker_repo" {
   description   = "Docker repository for the ${var.service_name}"
   format        = "DOCKER"
   depends_on    = [google_project_service.apis]
+  cleanup_policies {
+    id     = "delete-untagged-images-after-7-days"
+    action = "DELETE"
+    condition {
+      tag_state  = "UNTAGGED"
+      older_than = "604800s" # 7 days in seconds
+    }
+  }
 }
 
 # Cloud Run Service

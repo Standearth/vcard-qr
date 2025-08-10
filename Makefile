@@ -8,7 +8,7 @@ PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&
 ADC_FILE        = $(HOME)/.config/gcloud/application_default_credentials.json
 
 # --- Argument Parsing ---
-KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup-policy cleanup-images-now gcloud-auth check-auth create-state-bucket
+KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars cleanup-images-now gcloud-auth check-auth create-state-bucket
 
 # This allows passing named arguments like `make target email=foo@bar.com`
 $(foreach v, $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS)), $(eval $(v)))
@@ -37,7 +37,7 @@ SECRET_WWDR           = apple-wallet-wwdr-cert
 CUSTOM_DOMAIN         = pkpass.stand.earth
 REPO_NAME             = $(SERVICE_NAME)-repo
 
-.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars setup-artifact-cleanup-policy cleanup-images-now gcloud-auth check-auth create-state-bucket
+.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars cleanup-images-now gcloud-auth check-auth create-state-bucket
 
 # Default target
 all: help
@@ -89,7 +89,7 @@ setup:
 		$(MAKE) _setup_tasks; \
 	fi
 
-_setup_tasks: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder create-state-bucket terraform-apply setup-artifact-cleanup-policy show-github-secrets
+_setup_tasks: create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder create-state-bucket terraform-apply show-github-secrets
 	@echo "✅ Full one-time setup is complete."
 
 ## --------------------------------------
@@ -396,13 +396,6 @@ check-domain-status: check-gcp-project
 	@echo "🔎 Checking status for custom domain '$(CUSTOM_DOMAIN)'..."
 	@gcloud beta run domain-mappings describe --domain=$(CUSTOM_DOMAIN) --project=$(PROJECT_ID) --region=$(REGION)
 
-setup-artifact-cleanup-policy: terraform-apply
-	@echo "🧹 Applying cleanup policy to Artifact Registry repository '$(REPO_NAME)'..."
-	@gcloud artifacts repositories set-cleanup-policies $(REPO_NAME) \
-		--policy=cleanup-policy.json \
-		--location=$(REGION) \
-		--project=$(PROJECT_ID)
-
 cleanup-images-now: check-gcp-project
 	@echo "🧹 Deleting all untagged images from Artifact Registry repository '$(REPO_NAME)'..."
 	@gcloud artifacts docker images list $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPO_NAME) --filter='-tags:*' --format='get(digest)' --quiet | \
@@ -443,7 +436,6 @@ help:
 	@echo "  terraform-apply            Applies the Terraform infrastructure configuration."
 	@echo "  terraform-destroy          Destroys all managed infrastructure."
 	@echo "  create-state-bucket        Creates the GCS bucket for storing Terraform remote state."
-	@echo "  setup-artifact-cleanup-policy Sets an automated 30-day cleanup policy on the Docker repository."
 	@echo "  cleanup-images-now         Immediately deletes all untagged Docker images from the repository."
 	@echo ""
 	@echo "--- POST-DEPLOYMENT ---"

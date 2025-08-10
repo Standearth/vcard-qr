@@ -34,6 +34,23 @@ A web-based QR Code and vCard generator for Stand.earth, structured as a modern 
     - Secret Manager
   - GitHub Pages
 
+## Configuration
+
+This project uses environment variables for all organization-specific settings. To configure your own instance, follow these steps:
+
+1.  **Create an Environment File:**
+    Copy the template file to create your local configuration file. This file is ignored by Git and will not be committed.
+
+    ```bash
+    cp .env.template .env
+    ```
+
+2.  **Edit `.env`:**
+    Open the `.env` file and fill in the values for your organization. This includes your Apple Developer Team ID, Pass Type ID, default organization name, and production domains.
+
+3.  **CI/CD Configuration:**
+    For automated deployments, you must set these same environment variables as **Repository secrets** in your GitHub project settings under `Settings > Secrets and variables > Actions`.
+
 ## Installation and Development
 
 This project uses a `Makefile` to streamline one-time setup tasks and `pnpm` for all development commands.

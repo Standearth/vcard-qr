@@ -3,14 +3,18 @@ node_modules/
 
 # Build output
 dist
-# highlight-start
 *.tsbuildinfo
 .vite/
-# highlight-end
 
 # Certificates
 server/certs/*
 !server/certs/AppleWWDRCAG4.pem
+
+# Local Environment Variables
+# Keep sensitive keys and environment-specific settings out of the repo.
+.env
+.env.*.local
+.env.local
 
 # OS-generated files
 .DS_Store
@@ -23,3 +27,16 @@ Thumbs.db
 crash.log
 *.tfvars
 *.tfplan
+
+# IDE and Editor Directories
+# Prevent editor-specific settings from being committed.
+.idea/
+
+# Log files
+# Keep log files generated during development or by tools out of the repo.
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*

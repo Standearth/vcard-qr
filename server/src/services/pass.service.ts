@@ -27,6 +27,11 @@ export async function generatePassBuffer(
       certificates: certs,
     },
     {
+      // Dynamically override the critical identifiers
+      passTypeIdentifier: process.env.PASS_TYPE_ID || 'pass.com.example.vcard',
+      teamIdentifier: process.env.PASS_TEAM_ID || 'A1B2C3D4E5',
+      organizationName: process.env.VITE_ORG_NAME || 'Example Organization',
+      description: process.env.PASS_DESCRIPTION || 'Example Business Card',
       serialNumber: Date.now().toString(),
     }
   );

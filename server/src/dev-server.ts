@@ -23,7 +23,7 @@ try {
     console.log(`✅ Secure dev server is running on https://localhost:${port}`);
   });
 } catch (error) {
-  console.error('❌ Could not start HTTPS server.');
+  console.error('❌ Could not start HTTPS server.:', error);
   console.error('Did you forget to run "make add-local-https-certs"?');
 
   // Fallback to HTTP if certs are missing

@@ -15,8 +15,8 @@ $(foreach v, $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS)), $(eval $(v)))
 ARG             := $(firstword $(filter-out $(KNOWN_TARGETS) $(patsubst %-,-%,$(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS))),$(MAKECMDGOALS)))
 
 # --- Certificate Filenames ---
-SIGNER_KEY_FILE = Stand-PassKit.key
-SIGNER_CERT_FILE = Stand-PassKit.pem
+SIGNER_KEY_FILE = signerKey.key
+SIGNER_CERT_FILE = signerCert.pem
 WWDR_CERT_FILE = AppleWWDRCAG4.pem
 LOCALHOST_KEY_FILE = localhost.key
 LOCALHOST_CERT_FILE = localhost.pem

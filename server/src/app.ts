@@ -1,9 +1,8 @@
-// src/app.ts
-import express from 'express';
+import express, { Express } from 'express';
 import vcardPassRouter from './api/pass.router.js';
 import photoRouter from './api/photo.router.js';
 
-const app = express();
+const app: Express = express();
 app.use(express.json());
 
 // Mount the API routers

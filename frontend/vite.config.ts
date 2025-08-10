@@ -1,10 +1,11 @@
-import { defineConfig, ServerOptions } from 'vite';
+import { defineConfig, ServerOptions, loadEnv } from 'vite';
 import fs from 'fs';
 import path from 'path';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command }) => {
-  const isProduction = command === 'build';
+export default defineConfig(({ command, mode }) => {
+  const isProduction = mode === 'production';
+  const env = loadEnv(mode, process.cwd(), '');
 
   // Define paths to the development certificate
   const keyPath = path.resolve(__dirname, '../server/certs/localhost.key');
@@ -36,7 +37,7 @@ export default defineConfig(({ command }) => {
     server, // Use the configured server object
     define: {
       'import.meta.env.VITE_API_BASE_URL': isProduction
-        ? JSON.stringify('https://pkpass.stand.earth')
+        ? JSON.stringify(`https://${env.BACKEND_DOMAIN}`)
         : JSON.stringify(''),
     },
   };

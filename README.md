@@ -5,12 +5,15 @@ A web-based QR Code and vCard generator for Stand.earth, structured as a modern 
 ## Features
 
 - **vCard QR Code Generation:** Create "business card" QR codes that contain vCard contact information.
+
 - **URL QR Code Generation:** Create QR codes to visit a link.
-- **WiFi QR Code Generation:** Create QR codes to connect to a network.
-- **Customizable QR Codes:** Adjust the appearance of the QR codes.
-- **Real-time Preview:** See a live preview of the QR code as you type.
+
+- **WiFi QRCode Generation:** Create QR codes to connect to a network.
+  - _Customizable QR Codes_: Adjust the appearance of the QR codes.
+  - _Real-time Preview_: See a live preview of the QR code as you type.
+
 - **Apple Wallet Pass Generation:** Generate Apple Wallet passes from vCard data.
-- **Automated Photo Lookup:** Automatically include a person's photo from the Stand.earth staff page and adds it to the Apple Wallet pass.
+  - _Automated Photo Lookup:_ Automatically include a person's photo from the Stand.earth staff page and adds it to the Apple Wallet pass.
 
 ## Technologies Used
 
@@ -46,7 +49,7 @@ This project uses environment variables for all organization-specific settings.
     ```
 
 2.  **Edit `.env`:**
-    Open the `.env` file and fill in the values for your organization. This includes your Apple Developer Team ID, Pass Type ID, default organization name, and production domains.
+    Open the .env file and fill in the values for your organization. This includes your Apple Developer Team ID, Pass Type ID, default organization name, and production domains.
 
 ### CI/CD and Production Environments
 
@@ -58,11 +61,18 @@ The frontend is configured at build time. You must set the following as **Reposi
 
 - `VITE_ORG_NAME`
 - `VITE_ORG_WEBSITE`
+- `FRONTEND_DOMAIN`
 - `BACKEND_DOMAIN`
+
+Get the values for these secrets by running the following `make` command.
+
+```bash
+make show-github-secrets
+```
 
 #### Backend (Google Cloud Run)
 
-The backend uses runtime environment variables. After your initial deployment, you can set them by running the following `make` command. It will use the values from your local `.env` file or prompt you for them.
+The backend uses runtime environment variables. After your initial deployment, you can set them by running the following `make` command. It will use the values from your local .env file or prompt you for them.
 
 ```bash
 make set-backend-env-vars
@@ -157,6 +167,7 @@ To generate a pass that can be installed on real devices, you must use an offici
 
 4.  **Upload to Secret Manager:**
     Once you have your official `signerKey.key`, `signerCert.pem` (your converted signer cert), and `AppleWWDRCAG4.pem` files, upload them to Google Secret Manager for your production environment.
+
     ```bash
     make upload-signer-key path/to/signerKey.key
     make upload-signer-cert path/to/signerCert.pem
@@ -169,13 +180,9 @@ Deployment is managed via Terraform and GitHub Actions.
 
 ### Hosting
 
-The frontend is hosted on GitHub Pages. Frontend deployment is automated via the `.github/workflows/deploy.yml` GitHub Actions workflow, which builds the static site and creates a deployment artifact from the `dist/` directory. This artifact is then deployed directly to GitHub Page.
+The frontend is hosted on GitHub Pages. Frontend deployment is automated via the `.github/workflows/deploy.yml` GitHub Actions workflow, which builds the static site and creates a deployment artifact from the `dist/` directory. This artifact is then deployed directly to GitHub Page. The frontend site is accessible at the provided GitHub Pages URL, or via a custom subdomain which is configured in the `CNAME` file and managed through GitHub Pages settings.
 
-The frontend site is accessible at the custom domain `qr.stand.earth`, which is configured in the `CNAME` file and managed through GitHub Pages settings.
-
-The backend is hosted on Google Cloud Run. Backend deployment is automated via the `./github/workflows/deploy-server.yml` GitHub Actions workflow, which builds and packages the node microservice for generating and signing Apple Wallet PassKit files, and then deploys that to Google Cloud Run.
-
-The backend PassKit service is accessible at `pkpass.stand.earth`.
+The backend is hosted on Google Cloud Run. Backend deployment is automated via the `./github/workflows/deploy-server.yml` GitHub Actions workflow, which builds and packages the node microservice for generating and signing Apple Wallet PassKit files, and then deploys that to Google Cloud Run. The backend is accessible at the provided app.run URL, or using a custom subdomain configured below.
 
 ### CI/CD Pipeline (GitHub Actions)
 
@@ -185,14 +192,14 @@ Monitor the progress of the deployment in the "Actions" tab of your GitHub repos
 
 ### Deployment to Google Cloud Platform (GCP)
 
-1.  **Initial GCP Project Setup:**
+1.  **Initial GCP Configuration:**
 
     > [!IMPORTANT]
     > Before you begin, make sure you have the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) installed and have authenticated as a user with sufficient permissions to create and manage Google Cloud projects.
     >
     > It is highly recommended to use [Google Cloud Shell](https://cloud.google.com/shell), as it comes pre-configured with the necessary tools and authentications, simplifying the setup process.
 
-    Run the `setup` Makefile target to create and configure your GCP project, service accounts, and workload identity federation. This is a one-time setup.
+    Run the `setup` Makefile target to create and configure your GCP project, authorization, service accounts, and workload identity federation. This is a one-time setup.
 
     ```bash
     make setup
@@ -218,8 +225,6 @@ Monitor the progress of the deployment in the "Actions" tab of your GitHub repos
 3.  **Upload Apple Wallet Signing Certificates:**
     You will need your actual Apple Wallet signing key (`.key`), certificate (`.pem`), and the Apple Worldwide Developer Relations Certification Authority (WWDR) certificate (`.pem`). You can upload these to Google Secret Manager by passing the file path directly on the command line, which allows you to use shell tab-completion.
 
-    These files are stored securely in Stand's 1Password `01` vault and should be treated as sensitive data.
-
     ```bash
     make upload-signer-key path/to/signerKey.key
     make upload-signer-cert path/to/signerCert.pem
@@ -237,10 +242,13 @@ Monitor the progress of the deployment in the "Actions" tab of your GitHub repos
 
 5.  **Map Custom Domain (Optional):**
     If you have a custom domain, you can map it to your Cloud Run service. Ensure you have configured a CNAME record pointing to `ghs.googlehosted.com` first.
+
     ```bash
     make map-custom-domain
     ```
+
     You can check the status of your domain mapping:
+
     ```bash
     make check-domain-status
     ```
@@ -258,7 +266,6 @@ Here's a quick reference for common `make` commands:
 - **`make cer-to-pem [path/to/file.cer]`**: Converts a .cer certificate from Apple to the required .pem format.
 - **`make terraform-apply`**: Deploys infrastructure via Terraform.
 - **`make terraform-destroy`**: Destroys all managed infrastructure.
-- **`make setup-artifact-cleanup-policy`**: Sets an automated 7-day cleanup policy for untagged images in the Docker repository.
 - **`make cleanup-images-now`**: Immediately deletes all untagged Docker images from the repository.
 - **`make show-github-secrets`**: Displays GitHub Actions secrets to be configured.
 - **`make upload-signer-key [path/to/key]`**: Uploads your Apple Wallet signer key to Secret Manager.
@@ -266,4 +273,23 @@ Here's a quick reference for common `make` commands:
 - **`make upload-wwdr-cert [path/to/wwdr]`**: Uploads your Apple WWDR certificate to Secret Manager.
 - **`make map-custom-domain`**: Maps a custom domain to the Cloud Run service.
 - **`make check-domain-status`**: Checks the status of the custom domain mapping.
-````
+
+## Notes on Stand's installation
+
+The frontend is hosted at [qr.stand.earth](https://qr.stand.earth) and the backend PassKit service is accessible at [pkpass.stand.earth](https://pkpass.stand.earth). Copies of key files are stored securely in Stand's 1Password admin vault and should be treated as sensitive data. The .env parameters used locally or in deployment are below:
+
+```
+VITE_ORG_NAME="Stand.earth"
+VITE_ORG_WEBSITE="https://stand.earth"
+
+PASS_TEAM_ID="3WCH54M3A8"
+PASS_TYPE_ID="pass.earth.stand.vcard"
+PASS_DESCRIPTION="Stand.earth Business Card"
+
+CERT_SIGNER_KEY="Stand-PassKit.key"
+CERT_SIGNER_CERT="Stand-PassKit.pem"
+CERT_WWDR="AppleWWDRCAG4.pem"
+
+FRONTEND_DOMAIN="qr.stand.earth"
+BACKEND_DOMAIN="pkpass.stand.earth"
+```

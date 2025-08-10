@@ -1,3 +1,5 @@
+# .github/workflows/deploy.yml
+
 # Simple workflow for deploying static content to GitHub Pages
 name: Deploy static content to Pages
 
@@ -46,6 +48,8 @@ jobs:
           VITE_ORG_NAME: ${{ secrets.VITE_ORG_NAME }}
           VITE_ORG_WEBSITE: ${{ secrets.VITE_ORG_WEBSITE }}
           BACKEND_DOMAIN: ${{ secrets.BACKEND_DOMAIN }}
+      - name: Create CNAME file
+        run: echo "${{ secrets.FRONTEND_DOMAIN }}" > ./frontend/dist/CNAME
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact

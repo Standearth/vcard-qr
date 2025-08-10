@@ -24,6 +24,8 @@ LOCALHOST_CERT_FILE = localhost.pem
 
 # --- Other variables ---
 PROJECT_NUM           = $(shell gcloud projects describe $(PROJECT_ID) --format="value(projectNumber)" 2>/dev/null)
+FRONTEND_DOMAIN       = $(shell grep FRONTEND_DOMAIN .env 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
+BACKEND_DOMAIN        = $(shell grep BACKEND_DOMAIN .env 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
 REGION                = us-central1
 SERVICE_NAME          = pkpass-server
 SERVICE_ACCOUNT_NAME  = github-actions-runner
@@ -200,7 +202,7 @@ add-secrets-placeholder: create-secrets
 	@echo "🔐 Checking if secrets need placeholder versions..."
 	@if [ -z "$$(gcloud secrets versions list $(SECRET_KEY) --limit=1 --format='value(name)' --project=$(PROJECT_ID))" ]; then \
 		echo "   -> No versions found for $(SECRET_KEY). Generating and uploading placeholder certificate..."; \
-		openssl req -x509 -newkey rsa:2048 -keyout signerKey.pem -out signerCert.pem -days 365 -nodes -subj "/CN=stand.earth-dev-placeholder"; \
+		openssl req -x509 -newkey rsa:2048 -keyout signerKey.pem -out signerCert.pem -days 365 -nodes -subj "/CN=example.com-placeholder"; \
 		gcloud secrets versions add $(SECRET_KEY) --data-file="signerKey.pem" --project=$(PROJECT_ID); \
 		gcloud secrets versions add $(SECRET_CERT) --data-file="signerCert.pem" --project=$(PROJECT_ID); \
 		gcloud secrets versions add $(SECRET_WWDR) --data-file="signerCert.pem" --project=$(PROJECT_ID); \
@@ -290,14 +292,20 @@ show-github-secrets: check-gcp-project
 	@echo "Go to your GitHub repository's Settings > Secrets and variables > Actions."
 	@echo "Create or update the following repository secrets:"
 	@echo ""
-	@echo "Name: GCP_PROJECT_ID"
+	@echo " Name: GCP_PROJECT_ID"
 	@echo "Value: $(PROJECT_ID)"
 	@echo ""
-	@echo "Name: GCP_SERVICE_ACCOUNT"
+	@echo " Name: GCP_SERVICE_ACCOUNT"
 	@echo "Value: $(SERVICE_ACCOUNT_EMAIL)"
 	@echo ""
-	@echo "Name: GCP_WORKLOAD_IDENTITY_PROVIDER"
+	@echo " Name: GCP_WORKLOAD_IDENTITY_PROVIDER"
 	@echo "Value: projects/$(PROJECT_NUM)/locations/global/workloadIdentityPools/$(WORKLOAD_POOL_ID)/providers/$(WORKLOAD_PROVIDER_ID)"
+	@echo ""
+	@echo " Name: FRONTEND_DOMAIN"
+	@echo "Value: $(FRONTEND_DOMAIN)"
+	@echo ""
+	@echo " Name: BACKEND_DOMAIN"
+	@echo "Value: $(BACKEND_DOMAIN)"
 	@echo ""
 	@echo "********************************************************************************"
 	@echo ""

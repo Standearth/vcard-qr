@@ -7,5 +7,15 @@
     "build": "tsc"
   },
   "main": "./dist/vcard.js",
-  "types": "./dist/vcard.d.ts"
+  "types": "./dist/vcard.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/vcard.js",
+      "types": "./dist/vcard.d.ts",
+      "source": "./src/vcard.ts"
+    }
+  }
 }

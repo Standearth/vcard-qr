@@ -1,12 +1,10 @@
-{
-  "policies": [
-    {
-      "name": "delete-untagged-images-after-7-days",
-      "action": { "type": "DELETE" },
-      "condition": {
-        "olderThan": "604800s",
-        "tagState": "UNTAGGED"
-      }
+[
+  {
+    "name": "delete-untagged-images-after-7-days",
+    "action": { "type": "DELETE" },
+    "condition": {
+      "olderThan": "604800s",
+      "tagState": "UNTAGGED"
     }
-  ]
-}
+  }
+]

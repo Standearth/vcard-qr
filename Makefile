@@ -362,7 +362,7 @@ check-domain-status: check-gcp-project
 setup-artifact-cleanup-policy: terraform-apply
 	@echo "🧹 Applying cleanup policy to Artifact Registry repository '$(REPO_NAME)'..."
 	@gcloud artifacts repositories set-cleanup-policies $(REPO_NAME) \
-		--policy-file=cleanup-policy.json \
+		--policy=cleanup-policy.json \
 		--location=$(REGION) \
 		--project=$(PROJECT_ID)
 

@@ -30,6 +30,7 @@ export default defineConfig(({ command, mode }) => {
   }
 
   return {
+    envDir: '../',
     base: '/',
     build: {
       outDir: 'dist',

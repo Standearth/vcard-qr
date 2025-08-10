@@ -290,7 +290,7 @@ Here's a quick reference for common `make` commands:
 
 ## Notes on Stand's installation
 
-The frontend is hosted at [qr.stand.earth](https://qr.stand.earth) and the backend PassKit service is accessible at [pkpass.stand.earth](https://pkpass.stand.earth). Copies of key files are stored securely in Stand's 1Password admin vault and should be treated as sensitive data. The .env parameters used locally or in deployment are below:
+The frontend is hosted at [qr.stand.earth](https://qr.stand.earth) and the backend PassKit service is accessible at [pkpass.stand.earth](https://pkpass.stand.earth). Copies of key files are stored securely in Stand's 1Password admin vault and should be treated as sensitive data. The remaining .env parameters used locally or in deployment are below:
 
 ```
 VITE_ORG_NAME="Stand.earth"
@@ -299,6 +299,9 @@ VITE_ORG_WEBSITE="https://stand.earth"
 PASS_TEAM_ID="3WCH54M3A8"
 PASS_TYPE_ID="pass.earth.stand.vcard"
 PASS_DESCRIPTION="Stand.earth Business Card"
+PASS_FOREGROUND="rgb(16, 16, 18)"
+PASS_BACKGROUND="rgb(245, 244, 237)"
+PASS_LABEL="rgb(0, 133, 125)"
 
 CERT_SIGNER_KEY="Stand-PassKit.key"
 CERT_SIGNER_CERT="Stand-PassKit.pem"

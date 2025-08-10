@@ -19,6 +19,17 @@ export async function generatePassBuffer(
   // Load necessary certificates from the config module
   const certs = await loadCertificates();
 
+  const passOptions = {
+    passTypeIdentifier: process.env.PASS_TYPE_ID || 'pass.com.example.vcard',
+    teamIdentifier: process.env.PASS_TEAM_ID || 'A1B2C3D4E5',
+    organizationName: process.env.VITE_ORG_NAME || 'Example Organization',
+    description: process.env.PASS_DESCRIPTION || 'Example Business Card',
+    serialNumber: Date.now().toString(),
+    foregroundColor: process.env.PASS_FOREGROUND || 'rgb(0, 0, 0)',
+    backgroundColor: process.env.PASS_BACKGROUND || 'rgb(255, 255, 255)',
+    labelColor: process.env.PASS_LABEL || 'rgb(0, 0, 0)',
+  };
+
   // Create the pass from the template model.
   // The model path is relative to the project root where the script is executed.
   const pass = await PKPass.from(
@@ -26,14 +37,7 @@ export async function generatePassBuffer(
       model: 'models/vcard',
       certificates: certs,
     },
-    {
-      // Dynamically override the critical identifiers
-      passTypeIdentifier: process.env.PASS_TYPE_ID || 'pass.com.example.vcard',
-      teamIdentifier: process.env.PASS_TEAM_ID || 'A1B2C3D4E5',
-      organizationName: process.env.VITE_ORG_NAME || 'Example Organization',
-      description: process.env.PASS_DESCRIPTION || 'Example Business Card',
-      serialNumber: Date.now().toString(),
-    }
+    passOptions
   );
 
   // --- Populate Pass Fields ---

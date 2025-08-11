@@ -128,9 +128,6 @@ create-project: check-auth
 		grep 'PASS_FOREGROUND' .env | sed 's/PASS_FOREGROUND/pass_foreground/' >> $(TFFILE); \
 		grep 'PASS_BACKGROUND' .env | sed 's/PASS_BACKGROUND/pass_background/' >> $(TFFILE); \
 		grep 'PASS_LABEL' .env | sed 's/PASS_LABEL/pass_label/' >> $(TFFILE); \
-		grep 'PASS_DARK_FOREGROUND' .env | sed 's/PASS_DARK_FOREGROUND/pass_dark_foreground/' >> $(TFFILE); \
-		grep 'PASS_DARK_BACKGROUND' .env | sed 's/PASS_DARK_BACKGROUND/pass_dark_background/' >> $(TFFILE); \
-		grep 'PASS_DARK_LABEL' .env | sed 's/PASS_DARK_LABEL/pass_dark_label/' >> $(TFFILE); \
 		echo "✅ Project setup complete and $(TFFILE) updated."; \
 		echo "🔄 Setting active gcloud project to '$$project_id'..."; \
 		gcloud config set project $$project_id; \

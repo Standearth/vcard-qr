@@ -31,22 +31,9 @@ export async function generatePassBuffer(
     organizationName: process.env.VITE_ORG_NAME || 'Example Organization',
     description: process.env.PASS_DESCRIPTION || 'Example Business Card',
     serialNumber: Date.now().toString(),
-    fappearance: {
-      styles: {
-        light: {
-          foregroundColor: process.env.PASS_FOREGROUND || 'rgb(16, 16, 18)',
-          backgroundColor: process.env.PASS_BACKGROUND || 'rgb(245, 244, 237)',
-          labelColor: process.env.PASS_LABEL || 'rgb(16, 16, 18)',
-        },
-        dark: {
-          foregroundColor:
-            process.env.PASS_DARK_FOREGROUND || 'rgb(245, 244, 237)',
-          backgroundColor:
-            process.env.PASS_DARK_BACKGROUND || 'rgb(29, 29, 31)',
-          labelColor: process.env.PASS_DARK_LABEL || 'rgb(245, 244, 237)',
-        },
-      },
-    },
+    foregroundColor: process.env.PASS_FOREGROUND || 'rgba(159, 51, 69, 1)',
+    backgroundColor: process.env.PASS_BACKGROUND || 'rgb(245, 244, 237)',
+    labelColor: process.env.PASS_LABEL || 'rgb(16, 16, 18)',
   };
 
   // Get the directory of the current module

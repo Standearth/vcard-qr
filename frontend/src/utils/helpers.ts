@@ -27,13 +27,8 @@ export function calculateAndApplyOptimalQrCodeSize(
   const { width, height, margin } = currentTabState;
   const startingSize = Math.min(width || 0, height || 0);
 
-  let pixelMultiplier = stateService.getPixelMultiplier(
-    uiManager.getCurrentMode()
-  );
-
-  if (pixelMultiplier === 0) {
-    pixelMultiplier = Math.round(startingSize / moduleCount);
-  }
+  // Always recalculate the multiplier from the current size
+  let pixelMultiplier = Math.round(startingSize / moduleCount);
 
   pixelMultiplier += increment;
 

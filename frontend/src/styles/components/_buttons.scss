@@ -117,11 +117,13 @@
 }
 
 @container (max-width: 30rem) {
-  .buttons-section .button:nth-child(-n + 4) {
+  /* Style the first four buttons to be 50% width */
+  .buttons-section > .button:nth-child(-n + 4) {
     flex-basis: calc(50% - 0.375rem);
   }
 
-  .buttons-section .button:nth-child(n + 5) {
+  /* Style the rest of the direct children (the remaining buttons and the wrapper) to be full width */
+  .buttons-section > *:nth-child(n + 5) {
     flex-basis: 100%;
   }
 }
@@ -129,6 +131,14 @@
 .button-wrapper {
   position: relative;
   display: inline-flex;
+  cursor: not-allowed;
+  button {
+    width: 100%;
+  }
+}
+
+.button-wrapper:has(button:not(:disabled)) {
+  cursor: default;
 }
 
 .tooltip {
@@ -136,17 +146,19 @@
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  background-color: var(--color-primary-dark);
-  color: var(--color-primary-light);
-  padding: 0.5rem;
+  background-color: white;
+  color: var(--color-primary-dark);
+  padding: 0.25rem 0.5rem;
+  line-height: 1rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
   white-space: nowrap;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+  border: 1px solid var(--color-primary-dark);
   z-index: 10;
 }
 
 .button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  pointer-events: none;
 }

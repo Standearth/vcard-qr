@@ -28,7 +28,7 @@ export class WalletManager {
     const firstName = state?.firstName?.trim();
     const lastName = state?.lastName?.trim();
 
-    if (firstName && lastName) {
+    if (firstName || lastName) {
       dom.buttons.addToWallet.disabled = false;
     } else {
       dom.buttons.addToWallet.disabled = true;
@@ -49,13 +49,17 @@ export class WalletManager {
   }
 
   private setupEventListeners(): void {
-    dom.buttons.addToWallet.addEventListener('click', () => {
-      if (dom.buttons.addToWallet.disabled) {
-        this.showTooltip();
-        return;
-      }
-      this.createPass();
-    });
+    const walletButtonWrapper = dom.buttons.addToWallet.parentElement;
+
+    if (walletButtonWrapper) {
+      walletButtonWrapper.addEventListener('click', () => {
+        if (dom.buttons.addToWallet.disabled) {
+          this.showTooltip();
+          return;
+        }
+        this.createPass();
+      });
+    }
 
     // Re-validate whenever the state changes
     stateService.subscribe(this.validatePassFields);

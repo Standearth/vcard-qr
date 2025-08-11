@@ -2,10 +2,13 @@
 import { PKPass } from 'passkit-generator';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import parsePhoneNumberFromString from 'libphonenumber-js';
 import { loadCertificates } from '../config/certificates.js';
 import { PassData } from '../types/index.js';
-import { generateVCardString, formatPhoneNumber } from '@vcard-qr/shared-utils';
+import {
+  generateVCardString,
+  formatPhoneNumber,
+  generateWhatsAppLink,
+} from '@vcard-qr/shared-utils';
 
 /**
  * Generates a .pkpass file buffer from user data and an optional photo.
@@ -73,12 +76,6 @@ export async function generatePassBuffer(
     value: `${data.title}`,
   });
 
-  // Primary Field (Name & Title)
-  pass.primaryFields.push({
-    key: 'name',
-    value: `${data.firstName} ${data.lastName},\n${data.title}`,
-  });
-
   // Secondary Fields (Direct Line & Office Phone)
   pass.secondaryFields.push({
     key: 'work_phone',
@@ -124,6 +121,11 @@ export async function generatePassBuffer(
       key: 'linkedin',
       label: 'LinkedIn',
       value: data.linkedin || '',
+    },
+    {
+      key: 'whatsapp',
+      label: 'WhatsApp',
+      value: generateWhatsAppLink(data.whatsapp) || '',
     },
     {
       key: 'notes',

@@ -1,6 +1,5 @@
 // packages/shared-utils/src/vcard.ts
-import parsePhoneNumberFromString from 'libphonenumber-js';
-import { formatPhoneNumber } from './phone.js';
+import { formatPhoneNumber, generateWhatsAppLink } from './phone.js';
 
 // Define a simple type for the data this function needs.
 interface VCardData {
@@ -15,6 +14,7 @@ interface VCardData {
   cellPhone?: string;
   website?: string;
   linkedin?: string;
+  whatsapp?: string;
   notes?: string;
 }
 
@@ -27,6 +27,8 @@ interface VCardData {
 export function generateVCardString(data: VCardData, useCRLF = false): string {
   const eol = useCRLF ? '\r\n' : '\n';
 
+  const whatsAppLink = generateWhatsAppLink(data.whatsapp);
+
   const lines = [
     'BEGIN:VCARD',
     'VERSION:3.0',
@@ -36,14 +38,17 @@ export function generateVCardString(data: VCardData, useCRLF = false): string {
     data.title ? `TITLE:${data.title}` : '',
     data.email ? `EMAIL:${data.email}` : '',
     data.officePhone
-      ? `TEL;TYPE=WORK,VOICE:${formatPhoneNumber(data.officePhone)}${data.extension ? `;ext=${data.extension}` : ''}`
+      ? `TEL;TYPE=office,VOICE:${formatPhoneNumber(data.officePhone)}${data.extension ? `;ext${data.extension}` : ''}`
       : '',
     data.workPhone
-      ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumber(data.workPhone)}`
+      ? `TEL;TYPE=work,PREF,VOICE,MSG:${formatPhoneNumber(data.workPhone)}`
       : '',
-    data.cellPhone ? `TEL;TYPE=CELL:${formatPhoneNumber(data.cellPhone)}` : '',
-    data.website ? `URL:${data.website}` : '',
-    data.linkedin ? `URL:${data.linkedin}` : '',
+    data.cellPhone
+      ? `TEL;TYPE=cell,VOICE,MSG:${formatPhoneNumber(data.cellPhone)}`
+      : '',
+    data.website ? `URL;TYPE=Website:${data.website}` : '',
+    data.linkedin ? `URL;TYPE=LinkedIn:${data.linkedin}` : '',
+    whatsAppLink ? `URL;TYPE=WhatsApp:${whatsAppLink}` : '',
     data.notes ? `NOTE:${data.notes.replace(/\n/g, '\\n')}` : '',
     'END:VCARD',
   ];

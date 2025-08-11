@@ -45,6 +45,7 @@ export class FormManager {
       cellPhone: formFields.cellPhone,
       website: formFields.website,
       linkedin: formFields.linkedin,
+      whatsapp: formFields.whatsapp,
       notes: formFields.notes,
     };
   }
@@ -103,6 +104,7 @@ export class FormManager {
       cellPhone: formFields.cellPhone.value,
       website: formFields.website.value,
       linkedin: formFields.linkedin.value,
+      whatsapp: formFields.whatsapp.value,
       notes: formFields.notes.value,
       linkUrl: formFields.linkUrl.value,
       wifiSsid: formFields.wifiSsid.value,
@@ -237,6 +239,10 @@ export class FormManager {
     if (formFields.linkedin) {
       formFields.linkedin.value =
         values.linkedin ?? DEFAULT_FORM_FIELDS.linkedin;
+    }
+    if (formFields.whatsapp) {
+      formFields.whatsapp.value =
+        values.whatsapp ?? DEFAULT_FORM_FIELDS.whatsapp;
     }
     if (formFields.notes) {
       formFields.notes.value = values.notes ?? DEFAULT_FORM_FIELDS.notes;

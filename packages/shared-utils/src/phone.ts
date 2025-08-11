@@ -2,6 +2,7 @@ import parsePhoneNumberFromString, {
   PhoneNumber,
   NumberFormat,
 } from 'libphonenumber-js';
+export { PhoneNumber };
 
 /**
  * Cleans and intelligently parses a phone number string based on common patterns.
@@ -9,7 +10,7 @@ import parsePhoneNumberFromString, {
  * @param number The raw phone number string.
  * @returns A PhoneNumber object if parsing is successful, otherwise the cleaned string.
  */
-function parsePhoneNumber(number?: string): PhoneNumber | string {
+export function parsePhoneNumber(number?: string): PhoneNumber | string {
   if (!number) return '';
 
   // 1. Strip characters other than numbers and plus
@@ -77,4 +78,20 @@ export function formatPhoneNumber(
   }
 
   return result.format(format);
+}
+
+/**
+ * Generates a WhatsApp 'wa.me' link from a phone number string.
+ *
+ * @param number The raw phone number string.
+ * @returns The 'wa.me' link if the number is valid, otherwise an empty string.
+ */
+export function generateWhatsAppLink(number?: string): string {
+  const parsed = parsePhoneNumber(number);
+  // Use a more robust check than 'instanceof'
+  if (typeof parsed === 'object' && parsed.isValid && parsed.isValid()) {
+    const e164 = parsed.format('E.164');
+    return `https://wa.me/${e164.replace('+', '')}`;
+  }
+  return '';
 }

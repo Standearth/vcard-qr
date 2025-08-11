@@ -16,7 +16,11 @@ import {
   TAB_SPECIFIC_DEFAULTS,
   TabState,
 } from '../../config/constants';
-import { formatPhoneNumber } from '@vcard-qr/shared-utils';
+import {
+  formatPhoneNumber,
+  parsePhoneNumber,
+  PhoneNumber,
+} from '@vcard-qr/shared-utils';
 
 export class EventManager {
   private app: App;
@@ -30,24 +34,16 @@ export class EventManager {
     this.setupEventListeners();
   }
 
-  // Make this public so it can be called from App.ts
   public handleStateUpdate = async (): Promise<void> => {
     const currentMode = this.uiManager.getCurrentMode();
     const newValues = this.uiManager.getFormControlValues();
+
+    // The only job of this function is to update the state.
+    // The StateService will then trigger the UIManager to render.
     stateService.updateState(currentMode, newValues);
 
-    const newQrCodeContent = generateQRCodeData(
-      stateService.getState(currentMode)!,
-      currentMode
-    );
-
-    const isQrCodeValid = await this.app.updateQRCode();
-
-    stateService.updateState(currentMode, {
-      qrCodeContent: newQrCodeContent,
-      isQrCodeValid,
-    });
-
+    // After the state is updated, regenerate the QR code and update the URL
+    await this.app.updateQRCode();
     this.uiManager
       .getUrlHandler()
       .updateUrlFromState(stateService.getState(currentMode)!);
@@ -56,13 +52,14 @@ export class EventManager {
   private handlePhoneBlur = (event: Event): void => {
     const input = event.target as HTMLInputElement;
     const currentValue = input.value;
+
     if (currentValue) {
       const formattedValue = formatPhoneNumber(currentValue, 'CUSTOM');
-      if (currentValue !== formattedValue) {
-        input.value = formattedValue;
-        this.handleStateUpdate();
-      }
+      input.value = formattedValue;
     }
+
+    // After formatting the field, trigger a single, authoritative update
+    this.handleStateUpdate();
   };
 
   private setupEventListeners(): void {
@@ -83,6 +80,7 @@ export class EventManager {
     const phoneTextFields = [
       dom.formFields.workPhone,
       dom.formFields.cellPhone,
+      dom.formFields.whatsapp,
     ];
 
     phoneTextFields.forEach((field) => {

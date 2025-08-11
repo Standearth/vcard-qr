@@ -21,7 +21,11 @@ import {
   TabState,
 } from '../config/constants';
 import { generateQRCodeData } from '../utils/helpers';
-import { formatPhoneNumber } from '@vcard-qr/shared-utils';
+import {
+  formatPhoneNumber,
+  parsePhoneNumber,
+  PhoneNumber,
+} from '@vcard-qr/shared-utils';
 
 export let qrCode: AsyncQRCodeStyling;
 
@@ -160,7 +164,20 @@ export class App {
     };
 
     // Set the initial form values from the URL
+    // Set the initial form values
     this.ui.getFormManager().setFormControlValues(mergedState);
+
+    // Format phone numbers on initial load
+    const phoneFields = [
+      dom.formFields.workPhone,
+      dom.formFields.cellPhone,
+      dom.formFields.whatsapp,
+    ];
+    phoneFields.forEach((field) => {
+      if (field.value) {
+        field.value = formatPhoneNumber(field.value, 'CUSTOM');
+      }
+    });
 
     // Now, trigger a single, authoritative update to sync the rest of the app
     await this.ui.getEventManager().handleStateUpdate();

@@ -9,6 +9,7 @@ import {
   DEFAULT_FORM_FIELDS,
 } from '../config/constants';
 import { UIManager } from './UIManager';
+import { generateQRCodeData } from '../utils/helpers'; // Import the helper
 
 /**
  * Manages the application's state. It is the single source of truth for all tab states
@@ -88,7 +89,14 @@ class StateService {
   public updateState(mode: Mode, newState: Partial<TabState>): void {
     const currentState = this.getState(mode);
     if (currentState) {
-      this.tabStates[mode] = { ...currentState, ...newState };
+      const updatedState = { ...currentState, ...newState };
+
+      // Regenerate QR content whenever the state changes
+      updatedState.qrCodeContent = generateQRCodeData(updatedState, mode);
+
+      this.tabStates[mode] = updatedState;
+
+      // Trigger a single render from the new, complete state
       this.uiManager.renderUIFromState(this.getState(mode)!);
     }
   }

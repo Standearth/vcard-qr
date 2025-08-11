@@ -11,6 +11,7 @@ export interface PassData {
   extension?: string;
   website?: string;
   linkedin?: string;
+  whatsapp?: string;
   notes?: string;
   anniversaryLogo: boolean;
 }

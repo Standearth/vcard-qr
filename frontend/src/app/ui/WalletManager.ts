@@ -38,6 +38,7 @@ export class WalletManager {
       workPhone: state.workPhone || '',
       cellPhone: state.cellPhone || '',
       website: state.website || '',
+      whatsapp: state.whatsapp || '',
       linkedin: state.linkedin || '',
       notes: state.notes || '',
       // This property is used on the backend pass.json model

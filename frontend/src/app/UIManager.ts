@@ -10,6 +10,11 @@ import { WalletManager } from './ui/WalletManager';
 import { stateService } from './StateService';
 import { dom } from '../config/dom';
 import { App } from './App';
+import {
+  generateWhatsAppLink,
+  parsePhoneNumber,
+  PhoneNumber,
+} from '@vcard-qr/shared-utils';
 
 /**
  * Manages all direct interactions with the DOM. It is responsible for rendering the UI
@@ -123,6 +128,15 @@ export class UIManager {
   renderUIFromState = (state: TabState): void => {
     this.setFormControlValues(state);
     this.renderTabsAndButtons(state);
+
+    // Use the shared utility to generate and display the link
+    const whatsAppLink = generateWhatsAppLink(state.whatsapp);
+    if (whatsAppLink) {
+      dom.whatsappLink.textContent = `WhatsApp Link: ${whatsAppLink}`;
+      dom.whatsappLink.classList.remove('hidden');
+    } else {
+      dom.whatsappLink.classList.add('hidden');
+    }
 
     dom.advancedControls.container.classList.toggle(
       'hidden',

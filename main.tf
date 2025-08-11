@@ -82,6 +82,10 @@ variable "pass_label" {
   type        = string
   description = "The label color for the pass."
 }
+variable "photo_service_url" {
+  type        = string
+  description = "The base URL for the photo lookup service."
+}
 
 # --- Resources ---
 
@@ -172,6 +176,10 @@ resource "google_cloud_run_v2_service" "default" {
       env {
         name  = "WWDR_CERT_SECRET"
         value = "projects/${var.gcp_project_id}/secrets/apple-wallet-wwdr-cert/versions/latest"
+      }
+      env {
+        name  = "PHOTO_SERVICE_URL"
+        value = var.photo_service_url
       }
     }
   }

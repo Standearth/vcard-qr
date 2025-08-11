@@ -11,6 +11,8 @@ router.get('/', async (req, res) => {
     return res.status(400).send('A "name" query parameter is required.');
   }
 
+  console.log('name', name);
+
   try {
     const result = await findPersonAndPhoto(name);
 

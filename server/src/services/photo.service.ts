@@ -34,11 +34,12 @@ export async function findPersonAndPhoto(
 ): Promise<FindPersonResult> {
   const STAFF_URL = 'https://stand.earth/about/staff-board/';
 
+  if (personName.trim() == '') return { match: false };
+
   try {
     const axiosConfig = {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+        'User-Agent': 'Photo Lookup API/1.0',
       },
     };
 

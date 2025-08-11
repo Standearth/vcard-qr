@@ -105,9 +105,24 @@ _setup_tasks: create-project setup-project create-service-account create-workloa
 ## One-Time Project Setup (Step-by-Step)
 ## --------------------------------------
 
+update-tfvars:
+	@echo "🔄 Syncing .env to terraform.tfvars..."
+	@grep 'gcp_project_id' $(TFFILE) > $(TFFILE).tmp
+	@grep 'FRONTEND_DOMAIN' .env | sed 's/FRONTEND_DOMAIN/frontend_domain/' >> $(TFFILE).tmp
+	@grep 'VITE_ORG_NAME' .env | sed 's/VITE_ORG_NAME/org_name/' >> $(TFFILE).tmp
+	@grep 'PASS_TEAM_ID' .env | sed 's/PASS_TEAM_ID/pass_team_id/' >> $(TFFILE).tmp
+	@grep 'PASS_TYPE_ID' .env | sed 's/PASS_TYPE_ID/pass_type_id/' >> $(TFFILE).tmp
+	@grep 'PASS_DESCRIPTION' .env | sed 's/PASS_DESCRIPTION/pass_description/' >> $(TFFILE).tmp
+	@grep 'PASS_FOREGROUND' .env | sed 's/PASS_FOREGROUND/pass_foreground/' >> $(TFFILE).tmp
+	@grep 'PASS_BACKGROUND' .env | sed 's/PASS_BACKGROUND/pass_background/' >> $(TFFILE).tmp
+	@grep 'PASS_LABEL' .env | sed 's/PASS_LABEL/pass_label/' >> $(TFFILE).tmp
+	@grep 'PHOTO_SERVICE_URL' .env | sed 's/PHOTO_SERVICE_URL/photo_service_url/' >> $(TFFILE).tmp
+	@mv $(TFFILE).tmp $(TFFILE)
+
 create-project: check-auth
-	@if [ -n "$(PROJECT_EXISTS)" ]; then \
-		echo "✅ Project '$(PROJECT_ID)' already exists. Skipping creation."; \
+	@if [ -f "$(TFFILE)" ]; then \
+		echo "✅ $(TFFILE) already exists. Syncing from .env..."; \
+		$(MAKE) update-tfvars; \
 	else \
 		echo "ℹ️  Project configuration file '$(TFFILE)' not found or project does not exist."; \
 		read -p "Enter a globally unique ID for your new Google Cloud Project: " project_id; \
@@ -120,14 +135,7 @@ create-project: check-auth
 			gcloud billing projects link $$project_id --billing-account=$(BILLING_ACCOUNT); \
 		fi; \
 		echo "gcp_project_id = \"$$project_id\"" > $(TFFILE); \
-		grep 'FRONTEND_DOMAIN' .env | sed 's/FRONTEND_DOMAIN/frontend_domain/' >> $(TFFILE); \
-		grep 'VITE_ORG_NAME' .env | sed 's/VITE_ORG_NAME/org_name/' >> $(TFFILE); \
-		grep 'PASS_TEAM_ID' .env | sed 's/PASS_TEAM_ID/pass_team_id/' >> $(TFFILE); \
-		grep 'PASS_TYPE_ID' .env | sed 's/PASS_TYPE_ID/pass_type_id/' >> $(TFFILE); \
-		grep 'PASS_DESCRIPTION' .env | sed 's/PASS_DESCRIPTION/pass_description/' >> $(TFFILE); \
-		grep 'PASS_FOREGROUND' .env | sed 's/PASS_FOREGROUND/pass_foreground/' >> $(TFFILE); \
-		grep 'PASS_BACKGROUND' .env | sed 's/PASS_BACKGROUND/pass_background/' >> $(TFFILE); \
-		grep 'PASS_LABEL' .env | sed 's/PASS_LABEL/pass_label/' >> $(TFFILE); \
+		$(MAKE) update-tfvars; \
 		echo "✅ Project setup complete and $(TFFILE) updated."; \
 		echo "🔄 Setting active gcloud project to '$$project_id'..."; \
 		gcloud config set project $$project_id; \
@@ -373,7 +381,7 @@ create-state-bucket: check-gcp-project
 		gsutil versioning set on gs://$(PROJECT_ID)-tfstate; \
 	fi
 
-terraform-apply: check-gcp-project create-state-bucket
+terraform-apply: check-gcp-project create-state-bucket update-tfvars
 	@echo "🏗️   Applying Terraform configuration for project $(PROJECT_ID)..."
 	@terraform init -backend-config="bucket=$(PROJECT_ID)-tfstate"
 	@terraform apply -auto-approve

@@ -1,6 +1,7 @@
-// src/services/pass.service.ts
-
+// standearth/vcard-qr/vcard-qr-d31ca8391632b600a08ab90414c21ca2fedc60e0/server/src/services/pass.service.ts
 import { PKPass } from 'passkit-generator';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { loadCertificates } from '../config/certificates.js';
 import { PassData } from '../types/index.js';
 import { generateVCardString } from '@vcard-qr/shared-utils';
@@ -19,22 +20,27 @@ export async function generatePassBuffer(
   // Load necessary certificates from the config module
   const certs = await loadCertificates();
 
+  // Define pass options with fallbacks for the new environment variables
   const passOptions = {
     passTypeIdentifier: process.env.PASS_TYPE_ID || 'pass.com.example.vcard',
     teamIdentifier: process.env.PASS_TEAM_ID || 'A1B2C3D4E5',
     organizationName: process.env.VITE_ORG_NAME || 'Example Organization',
     description: process.env.PASS_DESCRIPTION || 'Example Business Card',
     serialNumber: Date.now().toString(),
-    foregroundColor: process.env.PASS_FOREGROUND || 'rgb(0, 0, 0)',
-    backgroundColor: process.env.PASS_BACKGROUND || 'rgb(255, 255, 255)',
-    labelColor: process.env.PASS_LABEL || 'rgb(0, 0, 0)',
+    foregroundColor: process.env.PASS_FOREGROUND || 'rgb(16, 16, 18)',
+    backgroundColor: process.env.PASS_BACKGROUND || 'rgb(245, 244, 237)',
+    labelColor: process.env.PASS_LABEL || 'rgb(16, 16, 18)',
   };
 
+  // Get the directory of the current module
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  // Construct an absolute path to the model directory
+  const modelPath = path.join(__dirname, '../../models/vcard');
+
   // Create the pass from the template model.
-  // The model path is relative to the project root where the script is executed.
   const pass = await PKPass.from(
     {
-      model: 'models/vcard',
+      model: modelPath,
       certificates: certs,
     },
     passOptions

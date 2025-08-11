@@ -51,7 +51,12 @@ export async function generatePassBuffer(
   // Primary Field (Name & Title)
   pass.primaryFields.push({
     key: 'name',
-    value: `${data.firstName} ${data.lastName},\n${data.title}`,
+    value: `${data.firstName} ${data.lastName}`,
+  });
+
+  pass.headerFields.push({
+    key: 'title',
+    value: `${data.title}`,
   });
 
   // Secondary Fields (Direct Line & Office Phone)
@@ -83,6 +88,11 @@ export async function generatePassBuffer(
 
   // Back Fields (Links and Notes)
   pass.backFields.push(
+    {
+      key: 'organization',
+      label: 'Organization',
+      value: `${data.organization}`,
+    },
     {
       key: 'website',
       label: 'Website',

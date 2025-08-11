@@ -30,6 +30,10 @@ export class TabManager {
 
     if (!isInitialLoad) {
       this.app.updateQRCode();
+      // Add the call to update the URL after switching tabs
+      this.uiManager
+        .getUrlHandler()
+        .updateUrlFromState(stateService.getState(newMode)!);
     }
   }
 }

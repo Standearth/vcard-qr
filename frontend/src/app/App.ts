@@ -158,15 +158,18 @@ export class App {
         urlState.anniversaryLogo ?? currentTabState?.anniversaryLogo ?? false,
     };
 
-    mergedState.qrCodeContent = generateQRCodeData(mergedState, newMode);
+    // 1. First, update the application's central state with the new data
+    stateService.updateState(this.ui.getCurrentMode(), mergedState);
 
-    // Set the form values first so that generateQRCodeData inside updateQRCode has access to them
-    this.ui.getFormManager().setFormControlValues(mergedState);
-
+    // 2. Now that the state is correct, generate the QR content and update the visual QR code
+    const newQrCodeContent = generateQRCodeData(mergedState, newMode);
     const isQrCodeValid = await this.updateQRCode();
 
+    // 3. Finally, ensure the form fields and UI are rendered from the single source of truth
+    this.ui.getFormManager().setFormControlValues(mergedState);
     stateService.updateState(this.ui.getCurrentMode(), {
       ...mergedState,
+      qrCodeContent: newQrCodeContent,
       isQrCodeValid,
     });
 

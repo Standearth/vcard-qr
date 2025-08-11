@@ -32,7 +32,6 @@ data "google_compute_default_service_account" "default" {
   project = var.gcp_project_id
 }
 
-
 # --- Variables ---
 variable "gcp_project_id" {
   type        = string
@@ -50,6 +49,40 @@ variable "service_name" {
   description = "The name of the Cloud Run service."
   default     = "pkpass-server"
 }
+
+variable "frontend_domain" {
+  type        = string
+  description = "The production domain for the frontend."
+}
+variable "org_name" {
+  type        = string
+  description = "The name of the organization."
+}
+variable "pass_team_id" {
+  type        = string
+  description = "The Apple Developer Team ID."
+}
+variable "pass_type_id" {
+  type        = string
+  description = "The Pass Type ID registered with Apple."
+}
+variable "pass_description" {
+  type        = string
+  description = "The description that appears on the pass."
+}
+variable "pass_foreground" {
+  type        = string
+  description = "The foreground color for the pass."
+}
+variable "pass_background" {
+  type        = string
+  description = "The background color for the pass."
+}
+variable "pass_label" {
+  type        = string
+  description = "The label color for the pass."
+}
+
 
 # --- Resources ---
 
@@ -93,7 +126,42 @@ resource "google_cloud_run_v2_service" "default" {
   template {
     containers {
       image = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.docker_repo.repository_id}/${var.service_name}:latest"
-
+      env {
+        name  = "NODE_ENV"
+        value = "production"
+      }
+      env {
+        name  = "FRONTEND_DOMAIN"
+        value = var.frontend_domain
+      }
+      env {
+        name  = "VITE_ORG_NAME"
+        value = var.org_name
+      }
+      env {
+        name  = "PASS_TEAM_ID"
+        value = var.pass_team_id
+      }
+      env {
+        name  = "PASS_TYPE_ID"
+        value = var.pass_type_id
+      }
+      env {
+        name  = "PASS_DESCRIPTION"
+        value = var.pass_description
+      }
+      env {
+        name  = "PASS_FOREGROUND"
+        value = var.pass_foreground
+      }
+      env {
+        name  = "PASS_BACKGROUND"
+        value = var.pass_background
+      }
+      env {
+        name  = "PASS_LABEL"
+        value = var.pass_label
+      }
       env {
         name  = "SIGNER_KEY_SECRET"
         value = "projects/${var.gcp_project_id}/secrets/apple-wallet-signer-key/versions/latest"

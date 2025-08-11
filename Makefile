@@ -8,7 +8,7 @@ PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&
 ADC_FILE        = $(HOME)/.config/gcloud/application_default_credentials.json
 
 # --- Argument Parsing ---
-KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
+KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
 
 # This allows passing named arguments like `make target email=foo@bar.com`
 $(foreach v, $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS)), $(eval $(v)))
@@ -38,7 +38,7 @@ SECRET_CERT           = apple-wallet-signer-cert
 SECRET_WWDR           = apple-wallet-wwdr-cert
 REPO_NAME             = $(SERVICE_NAME)-repo
 
-.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem set-backend-env-vars cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
+.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
 
 # Default target
 all: help
@@ -120,6 +120,14 @@ create-project: check-auth
 			gcloud billing projects link $$project_id --billing-account=$(BILLING_ACCOUNT); \
 		fi; \
 		echo "gcp_project_id = \"$$project_id\"" > $(TFFILE); \
+		grep 'FRONTEND_DOMAIN' .env | sed 's/FRONTEND_DOMAIN/frontend_domain/' >> $(TFFILE); \
+		grep 'VITE_ORG_NAME' .env | sed 's/VITE_ORG_NAME/org_name/' >> $(TFFILE); \
+		grep 'PASS_TEAM_ID' .env | sed 's/PASS_TEAM_ID/pass_team_id/' >> $(TFFILE); \
+		grep 'PASS_TYPE_ID' .env | sed 's/PASS_TYPE_ID/pass_type_id/' >> $(TFFILE); \
+		grep 'PASS_DESCRIPTION' .env | sed 's/PASS_DESCRIPTION/pass_description/' >> $(TFFILE); \
+		grep 'PASS_FOREGROUND' .env | sed 's/PASS_FOREGROUND/pass_foreground/' >> $(TFFILE); \
+		grep 'PASS_BACKGROUND' .env | sed 's/PASS_BACKGROUND/pass_background/' >> $(TFFILE); \
+		grep 'PASS_LABEL' .env | sed 's/PASS_LABEL/pass_label/' >> $(TFFILE); \
 		echo "✅ Project setup complete and $(TFFILE) updated."; \
 		echo "🔄 Setting active gcloud project to '$$project_id'..."; \
 		gcloud config set project $$project_id; \
@@ -352,33 +360,6 @@ upload-wwdr-cert: check-gcp-project
 	gcloud secrets versions add $(SECRET_WWDR) --data-file="$$arg" --project=$(PROJECT_ID)
 
 ## --------------------------------------
-## Environment Variable Management
-## --------------------------------------
-
-set-backend-env-vars: check-gcp-project
-	@echo "📡 Configuring environment variables for Cloud Run service '$(SERVICE_NAME)'..."
-	@if [ ! -f .env ]; then \
-		echo "   -> .env file not found. Will prompt for values."; \
-		read -p "Enter PASS_TEAM_ID: " pass_team_id; \
-		read -p "Enter PASS_TYPE_ID: " pass_type_id; \
-		read -p "Enter VITE_ORG_NAME: " vite_org_name; \
-		read -p "Enter PASS_DESCRIPTION: " pass_description; \
-		read -p "Enter FRONTEND_DOMAIN: " frontend_domain; \
-	else \
-		echo "   -> Reading configuration from .env file..."; \
-		pass_team_id=$$(grep PASS_TEAM_ID .env | cut -d '=' -f2 | tr -d '\"'); \
-		pass_type_id=$$(grep PASS_TYPE_ID .env | cut -d '=' -f2 | tr -d '\"'); \
-		vite_org_name=$$(grep VITE_ORG_NAME .env | cut -d '=' -f2 | tr -d '\"'); \
-		pass_description=$$(grep PASS_DESCRIPTION .env | cut -d '=' -f2 | tr -d '\"'); \
-		frontend_domain=$$(grep FRONTEND_DOMAIN .env | cut -d '=' -f2 | tr -d '\"'); \
-	fi; \
-	echo "   -> Applying variables to Cloud Run service..."; \
-	gcloud run services update $(SERVICE_NAME) \
-		--region=$(REGION) \
-		--project=$(PROJECT_ID) \
-		--update-env-vars="NODE_ENV=production,PASS_TEAM_ID=$$pass_team_id,PASS_TYPE_ID=$$pass_type_id,VITE_ORG_NAME=$$vite_org_name,PASS_DESCRIPTION=$$pass_description,FRONTEND_DOMAIN=$$frontend_domain"
-
-## --------------------------------------
 ## Infrastructure Management
 ## --------------------------------------
 
@@ -461,7 +442,6 @@ help:
 	@echo "--- POST-DEPLOYMENT ---"
 	@echo "  map-custom-domain          Maps your custom domain to the Cloud Run service."
 	@echo "  check-domain-status        Checks the status of the custom domain mapping."
-	@echo "  set-backend-env-vars       Sets runtime environment variables for the Cloud Run service."
 	@echo ""
 	@echo "--- GITHUB ACTIONS ---"
 	@echo "  show-github-secrets        Displays the required secrets for your GitHub repository."

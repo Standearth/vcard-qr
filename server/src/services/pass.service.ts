@@ -1,7 +1,8 @@
-// standearth/vcard-qr/vcard-qr-d31ca8391632b600a08ab90414c21ca2fedc60e0/server/src/services/pass.service.ts
+// src/services/pass.service.ts
 import { PKPass } from 'passkit-generator';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import parsePhoneNumberFromString from 'libphonenumber-js';
 import { loadCertificates } from '../config/certificates.js';
 import { PassData } from '../types/index.js';
 import { generateVCardString } from '@vcard-qr/shared-utils';
@@ -46,6 +47,13 @@ export async function generatePassBuffer(
     passOptions
   );
 
+  // Helper to format phone numbers for display
+  const formatPhoneForDisplay = (number?: string) => {
+    if (!number) return '';
+    const phoneNumber = parsePhoneNumberFromString(number, 'US');
+    return phoneNumber ? phoneNumber.formatNational() : number;
+  };
+
   // --- Populate Pass Fields ---
 
   // Primary Field (Name & Title)
@@ -59,17 +67,25 @@ export async function generatePassBuffer(
     value: `${data.title}`,
   });
 
+  // Primary Field (Name & Title)
+  pass.primaryFields.push({
+    key: 'name',
+    value: `${data.firstName} ${data.lastName},\n${data.title}`,
+  });
+
   // Secondary Fields (Direct Line & Office Phone)
   pass.secondaryFields.push({
     key: 'work_phone',
     label: 'Direct Line',
-    value: data.workPhone || '',
+    value: formatPhoneForDisplay(data.workPhone),
   });
 
   pass.secondaryFields.push({
     key: 'office_phone',
     label: 'Office Phone',
-    value: data.officePhone + ' x' + data.extension || '',
+    value: data.officePhone
+      ? `${formatPhoneForDisplay(data.officePhone)} x${data.extension}`
+      : '',
   });
 
   // Auxiliary Fields (Email and Cell)
@@ -82,7 +98,7 @@ export async function generatePassBuffer(
     {
       key: 'cell_phone',
       label: 'Cell Phone',
-      value: data.cellPhone || '',
+      value: formatPhoneForDisplay(data.cellPhone),
     }
   );
 

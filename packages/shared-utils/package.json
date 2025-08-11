@@ -6,6 +6,9 @@
   "scripts": {
     "build": "tsc"
   },
+  "dependencies": {
+    "libphonenumber-js": "^1.11.4"
+  },
   "main": "./dist/vcard.js",
   "types": "./dist/vcard.d.ts",
   "files": [

@@ -27,16 +27,6 @@ interface VCardData {
 export function generateVCardString(data: VCardData, useCRLF = false): string {
   const eol = useCRLF ? '\r\n' : '\n';
 
-  // Helper to format phone numbers
-  const formatPhone = (number?: string) => {
-    console.log('------');
-    console.log(number);
-    if (!number) return '';
-    const phoneNumber = parsePhoneNumberFromString(number, 'US'); // Assume US for 10-digit numbers
-    console.log(phoneNumber);
-    return phoneNumber ? phoneNumber.format('E.164') : '';
-  };
-
   const lines = [
     'BEGIN:VCARD',
     'VERSION:3.0',

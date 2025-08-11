@@ -12,14 +12,6 @@ export class WalletManager {
   constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
     this.setupEventListeners();
-    this.checkWalletVisibility();
-  }
-
-  private checkWalletVisibility(): void {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('appleWallet') === 'true') {
-      dom.buttons.addToWallet.classList.remove('hidden');
-    }
   }
 
   private setupEventListeners(): void {

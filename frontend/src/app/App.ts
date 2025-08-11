@@ -21,6 +21,7 @@ import {
   TabState,
 } from '../config/constants';
 import { generateQRCodeData } from '../utils/helpers';
+import { formatPhoneNumber } from '@vcard-qr/shared-utils';
 
 export let qrCode: AsyncQRCodeStyling;
 
@@ -158,17 +159,29 @@ export class App {
         urlState.anniversaryLogo ?? currentTabState?.anniversaryLogo ?? false,
     };
 
-    // 1. First, update the application's central state with the new data
-    stateService.updateState(this.ui.getCurrentMode(), mergedState);
+    // Set the initial form values
+    this.ui.getFormManager().setFormControlValues(mergedState);
 
-    // 2. Now that the state is correct, generate the QR content and update the visual QR code
-    const newQrCodeContent = generateQRCodeData(mergedState, newMode);
+    // Format phone numbers on initial load
+    const phoneFields = [
+      dom.formFields.officePhone,
+      dom.formFields.workPhone,
+      dom.formFields.cellPhone,
+    ];
+    phoneFields.forEach((field) => {
+      if (field.value) {
+        field.value = formatPhoneNumber(field.value, 'CUSTOM');
+      }
+    });
+
+    // Now, get the potentially updated values and update the state
+    const finalInitialState = this.ui.getFormManager().getFormControlValues();
+    stateService.updateState(this.ui.getCurrentMode(), finalInitialState);
+
+    const newQrCodeContent = generateQRCodeData(finalInitialState, newMode);
     const isQrCodeValid = await this.updateQRCode();
 
-    // 3. Finally, ensure the form fields and UI are rendered from the single source of truth
-    this.ui.getFormManager().setFormControlValues(mergedState);
     stateService.updateState(this.ui.getCurrentMode(), {
-      ...mergedState,
       qrCodeContent: newQrCodeContent,
       isQrCodeValid,
     });

@@ -12,11 +12,11 @@ import parsePhoneNumberFromString, {
 function parsePhoneNumber(number?: string): PhoneNumber | string {
   if (!number) return '';
 
-  // Strip characters other than numbers and plus
+  // 1. Strip characters other than numbers and plus
   const cleaned = number.replace(/[^0-9+]/g, '');
   let phoneNumber: PhoneNumber | undefined;
 
-  // Check for North American numbers
+  // 2. Check for North American numbers (10, 11, or 12 digits)
   let potentialNANPNumber: string | undefined;
   if (cleaned.startsWith('+1') && cleaned.length === 12) {
     potentialNANPNumber = cleaned.substring(2);
@@ -26,22 +26,20 @@ function parsePhoneNumber(number?: string): PhoneNumber | string {
     potentialNANPNumber = cleaned;
   }
 
-  // If it matches a NANP structure, parse it with a "US" hint
-  // A valid 10-digit NANP number does not start with 0 or 1.
+  // 2.1, 2.2, 2.3. If it matches a NANP structure, parse it with a "US" hint
   if (potentialNANPNumber && !['0', '1'].includes(potentialNANPNumber[0])) {
     phoneNumber = parsePhoneNumberFromString(cleaned, 'US');
   }
-  // Check for UK-like numbers (11 digits, starts with 0)
+  // 4. Check for UK-like numbers (11 digits, starts with 0)
   else if (cleaned.startsWith('0') && cleaned.length === 11) {
     phoneNumber = parsePhoneNumberFromString(cleaned, 'GB');
   }
-  // Fallback for all other numbers (including other international formats)
+  // 5. Fallback for all other numbers (including other international formats)
   else {
     phoneNumber = parsePhoneNumberFromString(cleaned);
   }
 
-  // Return the parsed object or the cleaned number if parsing fails
-  console.log('Parsed phone number:', phoneNumber);
+  // 6. Return the parsed object or the cleaned number if parsing fails
   return phoneNumber || cleaned;
 }
 
@@ -49,20 +47,34 @@ function parsePhoneNumber(number?: string): PhoneNumber | string {
  * Formats a phone number for display or data using a specific format.
  *
  * @param number The raw phone number string.
- * @param format The desired output format (e.g., 'E.164', 'NATIONAL').
+ * @param format The desired output format (e.g., 'E.164', 'NATIONAL', 'CUSTOM').
  * @returns The formatted phone number string.
  */
 export function formatPhoneNumber(
   number?: string,
-  format: NumberFormat = 'E.164'
+  format: NumberFormat | 'CUSTOM' = 'E.164'
 ): string {
   const result = parsePhoneNumber(number);
 
-  // If the result is a string, it means parsing failed, so return the cleaned input
   if (typeof result === 'string') {
     return result;
   }
 
-  // Otherwise, return the number in the requested format
+  if (format === 'CUSTOM') {
+    // For North American numbers, return the simple national format
+    if (result.country === 'US' || result.country === 'CA') {
+      return result.format('NATIONAL');
+    }
+    // For UK numbers, format as +44 (0)7...
+    if (result.country === 'GB') {
+      const national = result.format('NATIONAL');
+      if (national.startsWith('0')) {
+        return `+${result.countryCallingCode} (0)${national.substring(1)}`;
+      }
+    }
+    // For all other countries, return a formatted international number
+    return `+${result.countryCallingCode} ${result.formatNational()}`;
+  }
+
   return result.format(format);
 }

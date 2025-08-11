@@ -47,13 +47,6 @@ export async function generatePassBuffer(
     passOptions
   );
 
-  // Helper to format phone numbers for display
-  const formatPhoneForDisplay = (number?: string) => {
-    if (!number) return '';
-    const phoneNumber = parsePhoneNumberFromString(number, 'US');
-    return phoneNumber ? phoneNumber.formatNational() : number;
-  };
-
   // --- Populate Pass Fields ---
 
   // Primary Field (Name & Title)
@@ -77,14 +70,14 @@ export async function generatePassBuffer(
   pass.secondaryFields.push({
     key: 'work_phone',
     label: 'Direct Line',
-    value: formatPhoneNumber(data.workPhone, 'NATIONAL'),
+    value: formatPhoneNumber(data.workPhone, 'CUSTOM'),
   });
 
   pass.secondaryFields.push({
     key: 'office_phone',
     label: 'Office Phone',
     value: data.officePhone
-      ? `${formatPhoneNumber(data.officePhone, 'NATIONAL')} x${data.extension}`
+      ? `${formatPhoneNumber(data.officePhone, 'CUSTOM')} x${data.extension}`
       : '',
   });
 
@@ -98,7 +91,7 @@ export async function generatePassBuffer(
     {
       key: 'cell_phone',
       label: 'Cell Phone',
-      value: formatPhoneNumber(data.cellPhone, 'NATIONAL'),
+      value: formatPhoneNumber(data.cellPhone, 'CUSTOM'),
     }
   );
 

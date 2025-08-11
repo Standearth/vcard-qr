@@ -16,6 +16,7 @@ import {
   TAB_SPECIFIC_DEFAULTS,
   TabState,
 } from '../../config/constants';
+import { formatPhoneNumber } from '@vcard-qr/shared-utils';
 
 export class EventManager {
   private app: App;
@@ -51,6 +52,18 @@ export class EventManager {
       .updateUrlFromState(stateService.getState(currentMode)!);
   };
 
+  private handlePhoneBlur = (event: Event): void => {
+    const input = event.target as HTMLInputElement;
+    const currentValue = input.value;
+    if (currentValue) {
+      const formattedValue = formatPhoneNumber(currentValue, 'CUSTOM');
+      if (currentValue !== formattedValue) {
+        input.value = formattedValue;
+        this.handleStateUpdate();
+      }
+    }
+  };
+
   private setupEventListeners(): void {
     this.previousWidth = parseInt(dom.advancedControls.width.value);
     window.addEventListener('hashchange', this.app.handleRouteChange);
@@ -65,8 +78,17 @@ export class EventManager {
       );
     });
 
+    // Add specific listeners for freeform phone fields
+    const phoneFields = [dom.formFields.workPhone, dom.formFields.cellPhone];
+
+    phoneFields.forEach((field) => {
+      field.addEventListener('input', this.handleStateUpdate);
+      field.addEventListener('blur', this.handlePhoneBlur);
+    });
+
+    // Handle other form fields
     Object.values(dom.formFields).forEach((field) => {
-      if (field instanceof HTMLElement) {
+      if (field instanceof HTMLElement && !phoneFields.includes(field as any)) {
         field.addEventListener('input', this.handleStateUpdate);
       }
     });

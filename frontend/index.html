@@ -65,10 +65,19 @@
                     <i class="fas fa-mobile-alt" aria-hidden="true"></i> Send to
                     my phone
                   </button>
-                  <button id="add-to-wallet" class="button button-apple">
-                    <i class="fab fa-apple" aria-hidden="true"></i> Add to Apple
-                    Wallet
-                  </button>
+                  <div class="button-wrapper">
+                    <button
+                      id="add-to-wallet"
+                      class="button button-apple"
+                      disabled
+                    >
+                      <i class="fab fa-apple" aria-hidden="true"></i> Add to
+                      Apple Wallet
+                    </button>
+                    <div id="wallet-tooltip" class="tooltip hidden">
+                      First and Last Name are required to create a pass.
+                    </div>
+                  </div>
                   <button
                     id="toggle-advanced-controls"
                     class="button button-special"

@@ -53,80 +53,102 @@ export async function generatePassBuffer(
   // --- Populate Pass Fields ---
 
   // Primary Field (Name & Title)
-  pass.primaryFields.push({
-    key: 'name',
-    value: `${data.firstName} ${data.lastName}`,
-  });
+  if (data.firstName || data.lastName) {
+    pass.primaryFields.push({
+      key: 'name',
+      value: `${data.firstName} ${data.lastName}`.trim(),
+    });
+  }
 
-  pass.headerFields.push({
-    key: 'title',
-    value: `${data.title}`,
-  });
+  if (data.title) {
+    pass.headerFields.push({
+      key: 'title',
+      value: data.title,
+    });
+  }
 
   // Secondary Fields (Direct Line & Office Phone)
-  pass.secondaryFields.push({
-    key: 'work_phone',
-    label: 'Direct Line',
-    value: formatPhoneNumber(data.workPhone, 'CUSTOM'),
-  });
+  if (data.workPhone) {
+    pass.secondaryFields.push({
+      key: 'work_phone',
+      label: 'Direct Line',
+      value: formatPhoneNumber(data.workPhone, 'CUSTOM'),
+    });
+  }
 
-  pass.secondaryFields.push({
-    key: 'office_phone',
-    label: 'Office Phone',
-    value: data.officePhone
-      ? `${formatPhoneNumber(data.officePhone, 'CUSTOM')} x${data.extension}`
-      : '',
-  });
+  if (data.officePhone) {
+    var officePhoneWithExt = formatPhoneNumber(data.officePhone, 'CUSTOM');
+    if (data.extension) {
+      officePhoneWithExt += ` x${data.extension}`;
+    }
+    pass.secondaryFields.push({
+      key: 'office_phone',
+      label: 'Office Phone',
+      value: officePhoneWithExt,
+    });
+  }
 
   // Auxiliary Fields (Email and Cell)
-  pass.auxiliaryFields.push(
-    {
+  if (data.email) {
+    pass.auxiliaryFields.push({
       key: 'email',
       label: 'Email',
-      value: data.email || '',
-    },
-    {
+      value: data.email,
+    });
+  }
+
+  if (data.cellPhone) {
+    pass.auxiliaryFields.push({
       key: 'cell_phone',
       label: 'Cell Phone',
       value: formatPhoneNumber(data.cellPhone, 'CUSTOM'),
-    }
-  );
+    });
+  }
 
   // Back Fields (Links and Notes)
-  pass.backFields.push(
-    {
+  if (data.organization) {
+    pass.backFields.push({
       key: 'organization',
       label: 'Organization',
-      value: `${data.organization}`,
-    },
-    {
+      value: data.organization,
+    });
+  }
+
+  if (data.website) {
+    pass.backFields.push({
       key: 'website',
       label: 'Website',
-      value: data.website || '',
-    },
-    {
+      value: data.website,
+    });
+  }
+
+  if (data.linkedin) {
+    pass.backFields.push({
       key: 'linkedin',
       label: 'LinkedIn',
-      value: data.linkedin || '',
-    },
-    {
+      value: data.linkedin,
+    });
+  }
+
+  if (data.whatsapp) {
+    pass.backFields.push({
       key: 'whatsapp',
       label: 'WhatsApp',
-      value: generateWhatsAppLink(data.whatsapp) || '',
-    },
-    {
+      value: generateWhatsAppLink(data.whatsapp),
+    });
+  }
+
+  if (data.notes) {
+    pass.backFields.push({
       key: 'notes',
       label: 'Notes',
-      value: data.notes || '',
-    }
-  );
+      value: data.notes,
+    });
+  }
 
   // Add the photo to the pass if it exists
   if (photoBuffer) {
-    console.log('Photo found, adding thumbnail.png to pass.');
     pass.addBuffer('thumbnail.png', photoBuffer);
-  } else {
-    console.log('No photo found, pass will not have a thumbnail.');
   }
 
   // --- Build and set the QR code ---

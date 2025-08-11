@@ -114,6 +114,7 @@ export function initializeDomElements() {
         'add-to-wallet'
       ) as HTMLButtonElement,
     },
+    walletTooltip: document.getElementById('wallet-tooltip') as HTMLDivElement,
     modal: {
       overlay: document.getElementById('send-to-phone-modal') as HTMLDivElement,
       closeButton: document.getElementById(

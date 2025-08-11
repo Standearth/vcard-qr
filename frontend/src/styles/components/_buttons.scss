@@ -125,3 +125,28 @@
     flex-basis: 100%;
   }
 }
+
+.button-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-primary-dark);
+  color: var(--color-primary-light);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  margin-bottom: 0.5rem;
+  z-index: 10;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -3,19 +3,62 @@
 import { dom } from '../../config/dom';
 import { UIManager } from '../UIManager';
 import { stateService } from '../StateService';
-// Remove the old helper, we'll build the vCard on the backend now
-// import { generateVCardForAppleWallet } from '../../utils/helpers';
+import { generateFilename } from '../../utils/helpers.js';
 
 export class WalletManager {
   private uiManager: UIManager;
+  private tooltipTimeout?: number;
 
   constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
     this.setupEventListeners();
+    this.checkWalletVisibility();
+    this.validatePassFields(); // Initial check on page load
+  }
+
+  private checkWalletVisibility(): void {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('appleWallet') === 'true') {
+      dom.buttons.addToWallet.parentElement?.classList.remove('hidden');
+    }
+  }
+
+  private validatePassFields = (): void => {
+    const state = stateService.getState(this.uiManager.getCurrentMode());
+    const firstName = state?.firstName?.trim();
+    const lastName = state?.lastName?.trim();
+
+    if (firstName && lastName) {
+      dom.buttons.addToWallet.disabled = false;
+    } else {
+      dom.buttons.addToWallet.disabled = true;
+    }
+  };
+
+  private showTooltip(): void {
+    const tooltip = dom.walletTooltip;
+    tooltip.classList.remove('hidden');
+    // Clear any existing timer
+    if (this.tooltipTimeout) {
+      clearTimeout(this.tooltipTimeout);
+    }
+    // Hide the tooltip after 3 seconds
+    this.tooltipTimeout = window.setTimeout(() => {
+      tooltip.classList.add('hidden');
+    }, 3000);
   }
 
   private setupEventListeners(): void {
-    dom.buttons.addToWallet.addEventListener('click', () => this.createPass());
+    dom.buttons.addToWallet.addEventListener('click', () => {
+      if (dom.buttons.addToWallet.disabled) {
+        this.showTooltip();
+        return;
+      }
+      this.createPass();
+    });
+
+    // Re-validate whenever the state changes
+    stateService.subscribe(this.validatePassFields);
   }
 
   private async createPass(): Promise<void> {
@@ -47,10 +90,7 @@ export class WalletManager {
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      // highlight-start
-      // Use the new, versioned, and specific endpoint
       const response = await fetch(`${apiBaseUrl}/api/v1/passes/vcard`, {
-        // highlight-end
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,9 +107,8 @@ export class WalletManager {
       const a = document.createElement('a');
       a.href = url;
 
-      // Create a dynamic filename
-      const filename = `${passData.firstName}-${passData.lastName}-vCard.pkpass`;
-      a.download = filename.replace(/ /g, '-');
+      // Reuse the centralized filename generation function
+      a.download = `${generateFilename(currentMode)}.pkpass`;
 
       document.body.appendChild(a);
       a.click();

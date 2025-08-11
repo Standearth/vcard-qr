@@ -19,6 +19,7 @@ class StateService {
   private tabStates: Partial<Record<Mode, TabState>> = {};
   private pixelMultipliers: Partial<Record<Mode, number>> = {};
   private uiManager!: UIManager;
+  private subscribers: (() => void)[] = []; // Array of subscriber callbacks
 
   /**
    * Initializes the default state for all modes when the service is instantiated.
@@ -81,6 +82,10 @@ class StateService {
     return this.tabStates[mode];
   }
 
+  public subscribe(callback: () => void): void {
+    this.subscribers.push(callback);
+  }
+
   /**
    * Updates the state for a given mode and triggers a UI re-render.
    * @param mode The tab mode to update.
@@ -91,13 +96,14 @@ class StateService {
     if (currentState) {
       const updatedState = { ...currentState, ...newState };
 
-      // Regenerate QR content whenever the state changes
       updatedState.qrCodeContent = generateQRCodeData(updatedState, mode);
 
       this.tabStates[mode] = updatedState;
 
-      // Trigger a single render from the new, complete state
       this.uiManager.renderUIFromState(this.getState(mode)!);
+
+      // Notify all subscribers of the state change
+      this.subscribers.forEach((callback) => callback());
     }
   }
 

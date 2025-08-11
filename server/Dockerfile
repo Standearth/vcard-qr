@@ -19,8 +19,8 @@ COPY server/ ./server/
 COPY packages/shared-utils/ ./packages/shared-utils/
 COPY tsconfig.base.json ./
 
-# Run the full recursive build to ensure correct order
-RUN pnpm -r build
+# Run a filtered build to only build the server and its dependencies
+RUN pnpm --filter server... build
 
 # Prune development dependencies from the entire workspace
 RUN pnpm prune --prod
@@ -31,14 +31,15 @@ RUN pnpm prune --prod
 FROM node:24-slim
 WORKDIR /app
 
-# Copy production node_modules and relevant package.json files from builder
+# Copy production node_modules from all relevant workspaces from builder
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server/node_modules ./server/node_modules
+COPY --from=builder /app/packages/shared-utils/node_modules ./packages/shared-utils/node_modules
+
+# Copy compiled code and assets from the builder stage
 COPY --from=builder /app/packages/shared-utils/dist ./packages/shared-utils/dist
 COPY --from=builder /app/server/package.json ./server/
 COPY --from=builder /app/packages/shared-utils/package.json ./packages/shared-utils/
-
-# Copy compiled code and assets from the builder stage
 COPY --from=builder /app/server/dist ./server/dist
 COPY --from=builder /app/server/models ./server/models
 COPY --from=builder /app/server/certs/AppleWWDRCAG4.pem ./server/certs/AppleWWDRCAG4.pem

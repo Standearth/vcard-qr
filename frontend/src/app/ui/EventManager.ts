@@ -30,7 +30,8 @@ export class EventManager {
     this.setupEventListeners();
   }
 
-  private handleStateUpdate = async (): Promise<void> => {
+  // Make this public so it can be called from App.ts
+  public handleStateUpdate = async (): Promise<void> => {
     const currentMode = this.uiManager.getCurrentMode();
     const newValues = this.uiManager.getFormControlValues();
     stateService.updateState(currentMode, newValues);
@@ -78,17 +79,30 @@ export class EventManager {
       );
     });
 
-    // Add specific listeners for freeform phone fields
-    const phoneFields = [dom.formFields.workPhone, dom.formFields.cellPhone];
+    // Add specific listeners for text-based phone fields
+    const phoneTextFields = [
+      dom.formFields.workPhone,
+      dom.formFields.cellPhone,
+    ];
 
-    phoneFields.forEach((field) => {
+    phoneTextFields.forEach((field) => {
       field.addEventListener('input', this.handleStateUpdate);
       field.addEventListener('blur', this.handlePhoneBlur);
     });
 
-    // Handle other form fields
+    // Add the correct 'change' listener for the office phone dropdown
+    dom.formFields.officePhone.addEventListener(
+      'change',
+      this.handleStateUpdate
+    );
+
+    // Handle all other form fields
     Object.values(dom.formFields).forEach((field) => {
-      if (field instanceof HTMLElement && !phoneFields.includes(field as any)) {
+      if (
+        field instanceof HTMLElement &&
+        !phoneTextFields.includes(field as any) &&
+        field.id !== 'office_phone' // Exclude the office phone to avoid double-binding
+      ) {
         field.addEventListener('input', this.handleStateUpdate);
       }
     });

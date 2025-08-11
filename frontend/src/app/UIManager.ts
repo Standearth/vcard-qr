@@ -19,6 +19,7 @@ export class UIManager {
   private currentMode: Mode = MODES.VCARD;
 
   private formManager: FormManager;
+  private eventManager: EventManager;
   private stickyManager: StickyManager;
   private tabManager: TabManager;
   private urlHandler: UrlHandler;
@@ -29,7 +30,7 @@ export class UIManager {
    */
   constructor(app: App) {
     this.formManager = new FormManager(this);
-    new EventManager(app, this);
+    this.eventManager = new EventManager(app, this); // Assign the instance here
     this.stickyManager = new StickyManager();
     this.tabManager = new TabManager(app, this);
     this.urlHandler = new UrlHandler(this);
@@ -80,6 +81,9 @@ export class UIManager {
   /** Gets the state for the current tab from the StateService. */
   getTabState = (): TabState | undefined =>
     stateService.getState(this.currentMode);
+
+  /** Gets the EventManager instance. */
+  getEventManager = (): EventManager => this.eventManager;
 
   /**
    * Renders the tab and button states (visibility, active states) based on the current application state.

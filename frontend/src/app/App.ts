@@ -159,32 +159,11 @@ export class App {
         urlState.anniversaryLogo ?? currentTabState?.anniversaryLogo ?? false,
     };
 
-    // Set the initial form values
+    // Set the initial form values from the URL
     this.ui.getFormManager().setFormControlValues(mergedState);
 
-    // Format phone numbers on initial load
-    const phoneFields = [
-      dom.formFields.officePhone,
-      dom.formFields.workPhone,
-      dom.formFields.cellPhone,
-    ];
-    phoneFields.forEach((field) => {
-      if (field.value) {
-        field.value = formatPhoneNumber(field.value, 'CUSTOM');
-      }
-    });
-
-    // Now, get the potentially updated values and update the state
-    const finalInitialState = this.ui.getFormManager().getFormControlValues();
-    stateService.updateState(this.ui.getCurrentMode(), finalInitialState);
-
-    const newQrCodeContent = generateQRCodeData(finalInitialState, newMode);
-    const isQrCodeValid = await this.updateQRCode();
-
-    stateService.updateState(this.ui.getCurrentMode(), {
-      qrCodeContent: newQrCodeContent,
-      isQrCodeValid,
-    });
+    // Now, trigger a single, authoritative update to sync the rest of the app
+    await this.ui.getEventManager().handleStateUpdate();
 
     if (this.ui.getCurrentMode() === MODES.WIFI) {
       dom.formFields.wifiEncryption.dispatchEvent(new Event('change'));

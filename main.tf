@@ -82,6 +82,18 @@ variable "pass_label" {
   type        = string
   description = "The label color for the pass."
 }
+variable "pass_dark_foreground" {
+  type        = string
+  description = "The foreground color for the pass in dark mode."
+}
+variable "pass_dark_background" {
+  type        = string
+  description = "The background color for the pass in dark mode."
+}
+variable "pass_dark_label" {
+  type        = string
+  description = "The label color for the pass in dark mode."
+}
 
 
 # --- Resources ---
@@ -157,6 +169,18 @@ resource "google_cloud_run_v2_service" "default" {
       env {
         name  = "PASS_BACKGROUND"
         value = var.pass_background
+      }
+      env {
+        name  = "PASS_DARK_FOREGROUND"
+        value = var.pass_dark_foreground
+      }
+      env {
+        name  = "PASS_DARK_BACKGROUND"
+        value = var.pass_dark_background
+      }
+      env {
+        name  = "PASS_DARK_LABEL"
+        value = var.pass_dark_label
       }
       env {
         name  = "PASS_LABEL"

@@ -8,4 +8,23 @@ body {
   font-family: 'Readex Pro', sans-serif;
   background-color: var(--color-primary-light);
   margin: 0;
+  color: var(--color-primary-dark);
+}
+
+/* Automatic Dark Mode */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: var(--color-primary-light);
+    //  color: var(--color-primary-dark);
+  }
+
+  .form-input {
+    background-color: #2c2c2e;
+    border-color: #545458;
+    color: var(--color-primary-dark);
+  }
+
+  select.form-input {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23f5f4ed' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  }
 }

@@ -1,5 +1,5 @@
 .button {
-  color: var(--color-primary-white);
+  color: #ffffff; /* Use a static light color for all buttons */
   font-weight: 600;
   padding: 0.75rem 1.25rem;
   border-radius: 0.5rem;
@@ -82,7 +82,7 @@
 
 .button-apple {
   background-color: #000000;
-  color: #ffffff;
+  color: var('color-bg-apple');
   --focus-ring-color: #000000;
   @media (hover: hover) and (pointer: fine) {
     &:hover {

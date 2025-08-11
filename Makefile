@@ -363,18 +363,20 @@ set-backend-env-vars: check-gcp-project
 		read -p "Enter PASS_TYPE_ID: " pass_type_id; \
 		read -p "Enter VITE_ORG_NAME: " vite_org_name; \
 		read -p "Enter PASS_DESCRIPTION: " pass_description; \
+		read -p "Enter FRONTEND_DOMAIN: " frontend_domain; \
 	else \
 		echo "   -> Reading configuration from .env file..."; \
 		pass_team_id=$$(grep PASS_TEAM_ID .env | cut -d '=' -f2 | tr -d '\"'); \
 		pass_type_id=$$(grep PASS_TYPE_ID .env | cut -d '=' -f2 | tr -d '\"'); \
 		vite_org_name=$$(grep VITE_ORG_NAME .env | cut -d '=' -f2 | tr -d '\"'); \
 		pass_description=$$(grep PASS_DESCRIPTION .env | cut -d '=' -f2 | tr -d '\"'); \
+		frontend_domain=$$(grep FRONTEND_DOMAIN .env | cut -d '=' -f2 | tr -d '\"'); \
 	fi; \
 	echo "   -> Applying variables to Cloud Run service..."; \
 	gcloud run services update $(SERVICE_NAME) \
 		--region=$(REGION) \
 		--project=$(PROJECT_ID) \
-		--update-env-vars="NODE_ENV=production,PASS_TEAM_ID=$$pass_team_id,PASS_TYPE_ID=$$pass_type_id,VITE_ORG_NAME=$$vite_org_name,PASS_DESCRIPTION=$$pass_description"
+		--update-env-vars="NODE_ENV=production,PASS_TEAM_ID=$$pass_team_id,PASS_TYPE_ID=$$pass_type_id,VITE_ORG_NAME=$$vite_org_name,PASS_DESCRIPTION=$$pass_description,FRONTEND_DOMAIN=$$frontend_domain"
 
 ## --------------------------------------
 ## Infrastructure Management

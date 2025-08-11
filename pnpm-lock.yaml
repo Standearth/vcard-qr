@@ -17,6 +17,9 @@ importers:
       globals:
         specifier: ^15.8.0
         version: 15.15.0
+      nodemon:
+        specifier: ^3.1.10
+        version: 3.1.10
       prettier:
         specifier: ^3.2.5
         version: 3.6.2
@@ -97,6 +100,9 @@ importers:
         specifier: ^0.34.3
         version: 0.34.3
     devDependencies:
+      '@types/cheerio':
+        specifier: ^0.22.35
+        version: 0.22.35
       '@types/express':
         specifier: ^4.17.21
         version: 4.17.23
@@ -106,9 +112,6 @@ importers:
       dotenv:
         specifier: ^17.2.1
         version: 17.2.1
-      nodemon:
-        specifier: ^3.1.10
-        version: 3.1.10
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.10)(typescript@5.9.2)
@@ -772,6 +775,9 @@ packages:
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
+
+  '@types/cheerio@0.22.35':
+    resolution: {integrity: sha512-yD57BchKRvTV+JD53UZ6PD8KWY5g5rvvMLRnZR3EQBCZXiDT/HR+pKpMzFGlWNhFrXlo7VPZXtKvIEwZkAWOIA==}
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
@@ -2697,6 +2703,10 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
+      '@types/node': 20.19.10
+
+  '@types/cheerio@0.22.35':
+    dependencies:
       '@types/node': 20.19.10
 
   '@types/connect@3.4.38':

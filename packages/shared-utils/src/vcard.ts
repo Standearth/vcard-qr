@@ -1,5 +1,6 @@
 // packages/shared-utils/src/vcard.ts
 import parsePhoneNumberFromString from 'libphonenumber-js';
+import { formatPhoneNumber } from './phone.js';
 
 // Define a simple type for the data this function needs.
 interface VCardData {
@@ -28,8 +29,11 @@ export function generateVCardString(data: VCardData, useCRLF = false): string {
 
   // Helper to format phone numbers
   const formatPhone = (number?: string) => {
+    console.log('------');
+    console.log(number);
     if (!number) return '';
     const phoneNumber = parsePhoneNumberFromString(number, 'US'); // Assume US for 10-digit numbers
+    console.log(phoneNumber);
     return phoneNumber ? phoneNumber.format('E.164') : '';
   };
 
@@ -42,12 +46,12 @@ export function generateVCardString(data: VCardData, useCRLF = false): string {
     data.title ? `TITLE:${data.title}` : '',
     data.email ? `EMAIL:${data.email}` : '',
     data.officePhone
-      ? `TEL;TYPE=WORK,VOICE:${formatPhone(data.officePhone)}${data.extension ? `;ext=${data.extension}` : ''}`
+      ? `TEL;TYPE=WORK,VOICE:${formatPhoneNumber(data.officePhone)}${data.extension ? `;ext=${data.extension}` : ''}`
       : '',
     data.workPhone
-      ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhone(data.workPhone)}`
+      ? `TEL;TYPE=WORK,VOICE,MSG,PREF:${formatPhoneNumber(data.workPhone)}`
       : '',
-    data.cellPhone ? `TEL;TYPE=CELL:${formatPhone(data.cellPhone)}` : '',
+    data.cellPhone ? `TEL;TYPE=CELL:${formatPhoneNumber(data.cellPhone)}` : '',
     data.website ? `URL:${data.website}` : '',
     data.linkedin ? `URL:${data.linkedin}` : '',
     data.notes ? `NOTE:${data.notes.replace(/\n/g, '\\n')}` : '',

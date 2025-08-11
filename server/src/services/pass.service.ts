@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import parsePhoneNumberFromString from 'libphonenumber-js';
 import { loadCertificates } from '../config/certificates.js';
 import { PassData } from '../types/index.js';
-import { generateVCardString } from '@vcard-qr/shared-utils';
+import { generateVCardString, formatPhoneNumber } from '@vcard-qr/shared-utils';
 
 /**
  * Generates a .pkpass file buffer from user data and an optional photo.
@@ -77,14 +77,14 @@ export async function generatePassBuffer(
   pass.secondaryFields.push({
     key: 'work_phone',
     label: 'Direct Line',
-    value: formatPhoneForDisplay(data.workPhone),
+    value: formatPhoneNumber(data.workPhone, 'NATIONAL'),
   });
 
   pass.secondaryFields.push({
     key: 'office_phone',
     label: 'Office Phone',
     value: data.officePhone
-      ? `${formatPhoneForDisplay(data.officePhone)} x${data.extension}`
+      ? `${formatPhoneNumber(data.officePhone, 'NATIONAL')} x${data.extension}`
       : '',
   });
 
@@ -98,7 +98,7 @@ export async function generatePassBuffer(
     {
       key: 'cell_phone',
       label: 'Cell Phone',
-      value: formatPhoneForDisplay(data.cellPhone),
+      value: formatPhoneNumber(data.cellPhone, 'NATIONAL'),
     }
   );
 

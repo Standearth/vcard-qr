@@ -1,0 +1,5 @@
+{
+  "watch": ["server/src", "packages/shared-utils/src"],
+  "ext": "ts,json",
+  "exec": "pnpm build && node --enable-source-maps --env-file=.env server/dist/dev-server.js"
+}

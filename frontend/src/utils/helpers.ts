@@ -43,15 +43,6 @@ export function calculateAndApplyOptimalQrCodeSize(
   uiManager.updateDimensions(newSize, newSize);
 }
 
-export function formatPhoneNumberForVCard(phoneNumber: string): string {
-  if (!phoneNumber) return '';
-  let cleanedNumber = phoneNumber.replace(/[^0-9,+]/g, '');
-  if (/^\d{10}$/.test(cleanedNumber)) {
-    cleanedNumber = `+1${cleanedNumber}`;
-  }
-  return cleanedNumber;
-}
-
 export function sanitizeFilename(name: string): string {
   if (!name) return '';
   return name

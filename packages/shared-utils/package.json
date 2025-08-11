@@ -9,16 +9,16 @@
   "dependencies": {
     "libphonenumber-js": "^1.11.4"
   },
-  "main": "./dist/vcard.js",
-  "types": "./dist/vcard.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
-      "import": "./dist/vcard.js",
-      "types": "./dist/vcard.d.ts",
-      "source": "./src/vcard.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts"
     }
   }
 }

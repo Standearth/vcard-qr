@@ -1,5 +1,0 @@
-{
-  "watch": ["dist"],
-  "ext": "js,json",
-  "exec": "node --enable-source-maps --env-file=../.env dist/dev-server.js"
-}

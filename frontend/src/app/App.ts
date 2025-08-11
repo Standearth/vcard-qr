@@ -183,9 +183,7 @@ export class App {
   updateQRCode = async (): Promise<void> => {
     const data = this.getQRCodeData();
     const config = this.buildQrConfig(data);
-    const currentMode = this.ui.getCurrentMode();
     let isQrCodeValid = true;
-    let qrCodeContent = data;
 
     try {
       const image = await this.loadImageAsync();
@@ -199,20 +197,11 @@ export class App {
       console.error('QR Code generation error:', error);
       qrCode.update({ ...config, data: '' });
       isQrCodeValid = false;
-      if (
-        typeof error === 'string' &&
-        error.startsWith('code length overflow')
-      ) {
-        qrCodeContent =
-          data +
-          '\n\n' +
-          'Invalid settings combination. The contents are too long for the selected QR code type and error correction level.';
-      } else {
-        qrCodeContent = data + '\n\n' + 'Invalid settings combination.';
-      }
     }
 
-    stateService.updateState(currentMode, { qrCodeContent, isQrCodeValid });
+    // The state update for qrCodeContent is now handled in EventManager
+    // so we only update the validity status here.
+    stateService.updateState(this.ui.getCurrentMode(), { isQrCodeValid });
   };
 
   /**
@@ -238,6 +227,9 @@ export class App {
       anniversaryLogo:
         urlState.anniversaryLogo ?? currentTabState?.anniversaryLogo ?? false,
     };
+
+    // Explicitly generate the QR code content for the initial state
+    mergedState.qrCodeContent = generateQRCodeData(mergedState, newMode);
 
     this.ui.getFormManager().setFormControlValues(mergedState);
     stateService.updateState(this.ui.getCurrentMode(), mergedState);

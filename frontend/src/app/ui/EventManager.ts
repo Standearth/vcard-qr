@@ -6,7 +6,7 @@ import { UIManager } from '../UIManager';
 import {
   generateFilename,
   calculateAndApplyOptimalQrCodeSize,
-  generateQRCodeData, // Import the function here
+  generateQRCodeData,
 } from '../../utils/helpers';
 import { stateService } from '../StateService';
 import {
@@ -33,22 +33,21 @@ export class EventManager {
     const currentMode = this.uiManager.getCurrentMode();
     const newValues = this.uiManager.getFormControlValues();
 
-    // Create a temporary state object to pass to the data generator
     const currentState = stateService.getState(currentMode) || {};
     const tempStateForGeneration: TabState = { ...currentState, ...newValues };
+
     const newQrCodeContent = generateQRCodeData(
       tempStateForGeneration,
       currentMode
     );
 
-    // Now, update the state with all new information at once
+    const isQrCodeValid = await this.app.updateQRCode();
+
     stateService.updateState(currentMode, {
       ...newValues,
       qrCodeContent: newQrCodeContent,
+      isQrCodeValid,
     });
-
-    // The state update above will trigger the UI render. Now, update the QR code image.
-    await this.app.updateQRCode();
 
     this.uiManager
       .getUrlHandler()

@@ -1,6 +1,21 @@
 import { defineConfig, ServerOptions, loadEnv } from 'vite';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+
+// Function to get local network IPs
+const getLocalNetworkIPs = (): string[] => {
+  const nets = os.networkInterfaces();
+  const results: string[] = [];
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]!) {
+      if (net.family === 'IPv4' && !net.internal) {
+        results.push(net.address);
+      }
+    }
+  }
+  return results;
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -29,6 +44,17 @@ export default defineConfig(({ command, mode }) => {
     };
   }
 
+  // Determine the API base URL
+  let apiBaseUrl = '';
+  if (isProduction) {
+    apiBaseUrl = `https://${env.BACKEND_DOMAIN}`;
+  } else {
+    // For development, dynamically determine the local IP
+    const localIp = getLocalNetworkIPs()[0] || 'localhost';
+    const backendPort = env.PORT || 3000;
+    apiBaseUrl = `https://${localIp}:${backendPort}`;
+  }
+
   return {
     envDir: '../',
     base: '/',
@@ -37,9 +63,7 @@ export default defineConfig(({ command, mode }) => {
     },
     server, // Use the configured server object
     define: {
-      'import.meta.env.VITE_API_BASE_URL': isProduction
-        ? JSON.stringify(`https://${env.BACKEND_DOMAIN}`)
-        : JSON.stringify(''),
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
     },
   };
 });

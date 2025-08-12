@@ -6,7 +6,6 @@ import { UIManager } from '../UIManager';
 import {
   generateFilename,
   calculateAndApplyOptimalQrCodeSize,
-  generateQRCodeData,
 } from '../../utils/helpers';
 import { stateService } from '../StateService';
 import {
@@ -15,12 +14,9 @@ import {
   DEFAULT_ADVANCED_OPTIONS,
   TAB_SPECIFIC_DEFAULTS,
   TabState,
+  DESKTOP_BREAKPOINT_PX,
 } from '../../config/constants';
-import {
-  formatPhoneNumber,
-  parsePhoneNumber,
-  PhoneNumber,
-} from '@vcard-qr/shared-utils';
+import { formatPhoneNumber } from '@vcard-qr/shared-utils';
 
 export class EventManager {
   private app: App;
@@ -38,11 +34,8 @@ export class EventManager {
     const currentMode = this.uiManager.getCurrentMode();
     const newValues = this.uiManager.getFormControlValues();
 
-    // The only job of this function is to update the state.
-    // The StateService will then trigger the UIManager to render.
     stateService.updateState(currentMode, newValues);
 
-    // After the state is updated, regenerate the QR code and update the URL
     await this.app.updateQRCode();
     this.uiManager
       .getUrlHandler()
@@ -58,8 +51,31 @@ export class EventManager {
       input.value = formattedValue;
     }
 
-    // After formatting the field, trigger a single, authoritative update
     this.handleStateUpdate();
+  };
+
+  /**
+   * Handles the click event on the QR code, scrolling the view back to its natural starting position.
+   */
+  private _handleQrCodeClick = (): void => {
+    const header = document.querySelector('.header-section') as HTMLElement;
+    if (!header) return;
+
+    const headerRect = header.getBoundingClientRect();
+    const headerStyle = window.getComputedStyle(header);
+    const headerMarginBottom = parseFloat(headerStyle.marginBottom);
+
+    let targetScrollY = headerRect.bottom + window.scrollY + headerMarginBottom;
+
+    // On desktop, account for the 0.5rem (8px) sticky offset.
+    if (window.innerWidth >= DESKTOP_BREAKPOINT_PX) {
+      targetScrollY -= 8;
+    }
+
+    window.scrollTo({
+      top: targetScrollY,
+      behavior: 'smooth',
+    });
   };
 
   private setupEventListeners(): void {
@@ -76,7 +92,6 @@ export class EventManager {
       );
     });
 
-    // Add specific listeners for text-based phone fields
     const phoneTextFields = [
       dom.formFields.workPhone,
       dom.formFields.cellPhone,
@@ -88,18 +103,16 @@ export class EventManager {
       field.addEventListener('blur', this.handlePhoneBlur);
     });
 
-    // Add the correct 'change' listener for the office phone dropdown
     dom.formFields.officePhone.addEventListener(
       'change',
       this.handleStateUpdate
     );
 
-    // Handle all other form fields
     Object.values(dom.formFields).forEach((field) => {
       if (
         field instanceof HTMLElement &&
         !phoneTextFields.includes(field as any) &&
-        field.id !== 'office_phone' // Exclude the office phone to avoid double-binding
+        field.id !== 'office_phone'
       ) {
         field.addEventListener('input', this.handleStateUpdate);
       }
@@ -110,6 +123,8 @@ export class EventManager {
   }
 
   private setupButtonEventListeners(): void {
+    dom.canvasContainer?.addEventListener('click', this._handleQrCodeClick);
+
     dom.buttons.downloadPng.addEventListener('click', () =>
       this.app.getQrCode().download({
         name: generateFilename(this.uiManager.getCurrentMode()),
@@ -144,19 +159,16 @@ export class EventManager {
       if (currentState) {
         const newVisibility = !currentState.isAdvancedControlsVisible;
 
-        // This is a UI-only change, so it doesn't need the full handleStateUpdate
         Object.values(MODES).forEach((mode) => {
           stateService.updateState(mode, {
             isAdvancedControlsVisible: newVisibility,
           });
         });
 
-        // Manually trigger the render to reflect the visibility change
         this.uiManager.renderUIFromState(
           stateService.getState(this.uiManager.getCurrentMode())!
         );
 
-        // Adjust sticky behavior after the DOM has been updated
         setTimeout(() => {
           this.uiManager.getStickyManager().handleStickyBehavior();
         }, 0);
@@ -238,7 +250,6 @@ export class EventManager {
           eventType = 'change';
         }
 
-        // Re-introduce special handling for the optimization controls
         if (
           key === 'width' ||
           key === 'height' ||
@@ -287,7 +298,6 @@ export class EventManager {
             }
           });
         } else {
-          // All other controls use the standard handler
           field.addEventListener(eventType, this.handleStateUpdate);
         }
       }

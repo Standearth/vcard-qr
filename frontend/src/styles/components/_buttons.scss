@@ -97,9 +97,7 @@
   justify-content: center;
   gap: 0 0.75rem;
   container-type: inline-size;
-  // max-width: 550px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto; /* Remove the margin-top */
 }
 
 .button-break {

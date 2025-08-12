@@ -1,10 +1,31 @@
 .qr-sticky-container {
   @media (min-width: 48rem) {
     width: 100%;
-    overflow: auto; /* Added for sticky context */
+    position: relative; /* Acts as the anchor for the sticky element */
+  }
+}
+
+.qr-sticky-container.is-full-sticky {
+  @media (min-width: 48rem) {
     position: sticky;
-    top: 2rem;
-    z-index: 100; /* Increased z-index to ensure it stacks above other elements */
+    top: 0.5rem; /* Aligns with the other sticky top value */
+  }
+}
+
+.qr-canvas-placeholder {
+  display: block;
+  width: 100%;
+  height: 0; /* Starts with no height */
+  transition: height 0.1s ease-out; /* Smooth transition for height changes */
+}
+
+.qr-canvas-wrapper.is-sticky {
+  @media (min-width: 48rem) {
+    position: fixed;
+    top: 0.5rem;
+    right: auto;
+    transform-origin: top center;
+    z-index: 100;
   }
 }
 
@@ -13,8 +34,12 @@
   width: 100%;
   overflow: auto;
   position: sticky;
-  top: 2rem;
-  z-index: 100; /* Increased z-index to ensure it stacks above other elements */
+  top: 0;
+  z-index: 100;
+}
+
+.content-wrapper > .qr-canvas-wrapper.is-mobile-transformed {
+  transform-origin: top center;
 }
 
 .sticky-footer {
@@ -25,7 +50,7 @@
 
 .qr-canvas-wrapper {
   display: flex;
-  justify-content: center;
+  justify-content: center; /* This handles the initial centering */
   max-width: 100%;
 
   canvas,
@@ -35,7 +60,6 @@
     max-height: 50vh;
     border: 1px solid var(--color-primary-dark);
     background-color: white;
-    margin-bottom: 1rem;
   }
 }
 

@@ -42,73 +42,74 @@
 
         <div class="main-grid">
           <div id="qr-preview-column">
+            <div id="qr-canvas-placeholder"></div>
             <div class="qr-sticky-container">
               <div id="canvas" class="qr-canvas-wrapper"></div>
-              <div id="qr-preview-column-footer">
-                <div class="buttons-section">
-                  <button id="download-png" class="button button-primary">
-                    <i class="fas fa-download" aria-hidden="true"></i> PNG
-                  </button>
-                  <button id="download-jpg" class="button button-primary">
-                    <i class="fas fa-download" aria-hidden="true"></i> JPG
-                  </button>
-                  <button id="download-svg" class="button button-primary">
-                    <i class="fas fa-download" aria-hidden="true"></i> SVG
-                  </button>
-                  <button id="download-vcard" class="button button-primary">
-                    <i class="fas fa-download" aria-hidden="true"></i> vCard
-                  </button>
-                  <button
-                    id="send-to-phone-button"
-                    class="button button-secondary"
-                  >
-                    <i class="fas fa-mobile-alt" aria-hidden="true"></i> Send to
-                    my phone
-                  </button>
-                  <div id="wallet-button-wrapper" class="button-wrapper">
-                    <button
-                      id="add-to-wallet"
-                      class="button button-apple"
-                      disabled
-                    >
-                      <i class="fab fa-apple" aria-hidden="true"></i> Add to
-                      Apple Wallet
-                    </button>
-                    <div id="wallet-tooltip" class="tooltip hidden">
-                      Name is required to add to Apple Wallet.
-                    </div>
-                  </div>
-                  <button
-                    id="toggle-advanced-controls"
-                    class="button button-special"
-                  >
-                    <i class="fas fa-cog" aria-hidden="true"></i
-                    ><span id="toggle-advanced-text">
-                      Show Advanced Controls</span
-                    >
-                  </button>
-                  <button id="reset-styles-button" class="button button-cancel">
-                    <i class="fas fa-undo" aria-hidden="true"></i> Reset Style
-                  </button>
-                </div>
-                <div
-                  class="checkbox-container"
-                  id="anniversary-logo-checkbox-container"
+            </div>
+            <div id="qr-preview-column-footer">
+              <div class="buttons-section">
+                <button id="download-png" class="button button-primary">
+                  <i class="fas fa-download" aria-hidden="true"></i> PNG
+                </button>
+                <button id="download-jpg" class="button button-primary">
+                  <i class="fas fa-download" aria-hidden="true"></i> JPG
+                </button>
+                <button id="download-svg" class="button button-primary">
+                  <i class="fas fa-download" aria-hidden="true"></i> SVG
+                </button>
+                <button id="download-vcard" class="button button-primary">
+                  <i class="fas fa-download" aria-hidden="true"></i> vCard
+                </button>
+                <button
+                  id="send-to-phone-button"
+                  class="button button-secondary"
                 >
-                  <input
-                    type="checkbox"
-                    id="anniversary_logo"
-                    class="form-checkbox"
-                    checked
-                  />
-                  <label for="anniversary_logo" class="form-label-checkbox"
-                    >Use 25th Anniversary Logo</label
+                  <i class="fas fa-mobile-alt" aria-hidden="true"></i> Send to
+                  my phone
+                </button>
+                <div id="wallet-button-wrapper" class="button-wrapper">
+                  <button
+                    id="add-to-wallet"
+                    class="button button-apple"
+                    disabled
                   >
+                    <i class="fab fa-apple" aria-hidden="true"></i> Add to Apple
+                    Wallet
+                  </button>
+                  <div id="wallet-tooltip" class="tooltip hidden">
+                    Name is required to add to Apple Wallet.
+                  </div>
                 </div>
-                <div class="qrcode-text-container">
-                  <h3 class="qrcode-text-heading">QR Code Contents</h3>
-                  <div id="qrcode-text-output" class="qrcode-text-output"></div>
-                </div>
+                <button
+                  id="toggle-advanced-controls"
+                  class="button button-special"
+                >
+                  <i class="fas fa-cog" aria-hidden="true"></i
+                  ><span id="toggle-advanced-text">
+                    Show Advanced Controls</span
+                  >
+                </button>
+                <button id="reset-styles-button" class="button button-cancel">
+                  <i class="fas fa-undo" aria-hidden="true"></i> Reset Style
+                </button>
+              </div>
+              <div
+                class="checkbox-container"
+                id="anniversary-logo-checkbox-container"
+              >
+                <input
+                  type="checkbox"
+                  id="anniversary_logo"
+                  class="form-checkbox"
+                  checked
+                />
+                <label for="anniversary_logo" class="form-label-checkbox"
+                  >Use 25th Anniversary Logo</label
+                >
+              </div>
+              <div class="qrcode-text-container">
+                <h3 class="qrcode-text-heading">QR Code Contents</h3>
+                <div id="qrcode-text-output" class="qrcode-text-output"></div>
               </div>
             </div>
           </div>

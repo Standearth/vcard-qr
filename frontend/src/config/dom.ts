@@ -28,6 +28,9 @@ export function initializeDomElements() {
     qrStickyContainer: document.querySelector(
       '.qr-sticky-container'
     ) as HTMLDivElement,
+    qrCanvasPlaceholder: document.getElementById(
+      'qr-canvas-placeholder'
+    ) as HTMLDivElement,
     qrPreviewColumnFooter: document.getElementById(
       'qr-preview-column-footer'
     ) as HTMLDivElement,

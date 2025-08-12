@@ -83,6 +83,10 @@ export class UIManager {
   /** Gets the StickyManager instance. */
   getStickyManager = (): StickyManager => this.stickyManager;
 
+  /** Re-calculates the dimensions for the sticky manager. */
+  reinitializeStickyDimensions = (): void =>
+    this.stickyManager.reInitializeDimensions();
+
   /** Gets the state for the current tab from the StateService. */
   getTabState = (): TabState | undefined =>
     stateService.getState(this.currentMode);
@@ -145,6 +149,16 @@ export class UIManager {
     dom.toggleAdvancedText.textContent = state.isAdvancedControlsVisible
       ? 'Hide Advanced Controls'
       : 'Show Advanced Controls';
+
+    /*
+     * ADD THIS LINE:
+     * This toggles our new class on the main grid container, ensuring
+     * the grid layout adapts when the controls are hidden.
+     */
+    dom.mainGrid.classList.toggle(
+      'advanced-hidden',
+      !state.isAdvancedControlsVisible
+    );
 
     dom.modal.overlay.classList.toggle('hidden', !state.isModalVisible);
 

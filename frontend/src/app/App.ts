@@ -182,11 +182,17 @@ export class App {
     // Now, trigger a single, authoritative update to sync the rest of the app
     await this.ui.getEventManager().handleStateUpdate();
 
+    // After the first render, re-calculate the sticky container's final position.
+    this.ui.reinitializeStickyDimensions();
+
     if (this.ui.getCurrentMode() === MODES.WIFI) {
       dom.formFields.wifiEncryption.dispatchEvent(new Event('change'));
     }
 
     this.handleDownloadFromUrl(downloadType);
+
+    // Manually trigger the scroll handler to correct layout on a scrolled page load.
+    this.ui.getStickyManager().handleStickyBehavior();
   };
 
   private handleDownloadFromUrl(downloadType: string | null): void {

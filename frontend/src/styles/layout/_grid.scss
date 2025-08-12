@@ -2,6 +2,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
+  margin-top: 0.5rem;
 }
 
 .form-column {
@@ -27,6 +28,10 @@
     gap: 1.5rem;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto 1fr;
+  }
+
+  .main-grid.advanced-hidden {
+    grid-template-rows: auto;
   }
 
   .form-column {

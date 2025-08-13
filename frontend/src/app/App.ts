@@ -37,6 +37,7 @@ export class App {
     this.ui = new UIManager(this);
     stateService.initialize(this.ui);
     this.initializeIcons();
+    this.populateOfficePhones();
 
     const defaultState =
       stateService.getState(this.ui.getCurrentMode()) ||
@@ -60,6 +61,29 @@ export class App {
   private initializeIcons(): void {
     library.add(faDownload, faMobileAlt, faCog, faUndo, faApple as any);
     faDom.watch();
+  }
+
+  private populateOfficePhones(): void {
+    const phoneSelect = dom.formFields.officePhone;
+    if (!phoneSelect) return;
+
+    // Start with a blank option
+    phoneSelect.add(new Option('', ''));
+
+    try {
+      const options = JSON.parse(
+        import.meta.env.VITE_OFFICE_PHONE_OPTIONS || '[]'
+      );
+      if (Array.isArray(options)) {
+        options.forEach((option) => {
+          if (option.display && option.value) {
+            phoneSelect.add(new Option(option.display, option.value));
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error parsing VITE_OFFICE_PHONE_OPTIONS:', error);
+    }
   }
 
   getQRCodeData = (): string => {

@@ -47,6 +47,7 @@ jobs:
         env:
           VITE_ORG_NAME: ${{ secrets.VITE_ORG_NAME }}
           VITE_ORG_WEBSITE: ${{ secrets.VITE_ORG_WEBSITE }}
+          VITE_OFFICE_PHONE_OPTIONS: ${{ secrets.VITE_OFFICE_PHONE_OPTIONS }}
           BACKEND_DOMAIN: ${{ secrets.BACKEND_DOMAIN }}
       - name: Create CNAME file
         run: echo "${{ secrets.FRONTEND_DOMAIN }}" > ./frontend/dist/CNAME

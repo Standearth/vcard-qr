@@ -66,6 +66,7 @@ The frontend is configured at build time. You must set the following as **Reposi
 
 - `VITE_ORG_NAME`
 - `VITE_ORG_WEBSITE`
+- `VITE_OFFICE_PHONE_OPTIONS`
 - `FRONTEND_DOMAIN`
 - `BACKEND_DOMAIN`
 

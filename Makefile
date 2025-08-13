@@ -1,19 +1,56 @@
 # --- Configuration File ---
 TFFILE := terraform.tfvars
 
+# Require the .env file and export its variables.
+# Make will now fail immediately if the .env file is not found.
+include .env
+export
+
+# Define all variables required to be in the .env file for the setup to succeed.
+REQUIRED_ENV_VARS := \
+    FRONTEND_DOMAIN \
+    BACKEND_DOMAIN \
+    GITHUB_REPO \
+    VITE_ORG_NAME \
+    VITE_ORG_WEBSITE \
+    VITE_OFFICE_PHONE_OPTIONS \
+    PASS_TEAM_ID \
+    PASS_TYPE_ID \
+    PASS_DESCRIPTION \
+    PASS_FOREGROUND \
+    PASS_BACKGROUND \
+    PASS_LABEL \
+    PHOTO_SERVICE_URL
+
+# Immediately check if all required variables are defined. If not, stop and show an error.
+$(foreach var,$(REQUIRED_ENV_VARS), \
+  $(if $(value $(var)),, \
+    $(error ❌ Missing required variable in .env file: '$(var)'. Please define it and try again.) \
+  ) \
+)
+
 # --- Configuration ---
 PROJECT_ID      := $(shell cat $(TFFILE) 2>/dev/null | grep 'gcp_project_id' | cut -d'=' -f2 | tr -d ' "')
 BILLING_ACCOUNT  = $(shell gcloud billing accounts list --format='value(ACCOUNT_ID)' --filter='OPEN=true' | head -n 1)
 PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&1 && echo 1)
 ADC_FILE        = $(HOME)/.config/gcloud/application_default_credentials.json
 
-# --- Argument Parsing ---
+# --- Argument Parsing & Target Validation ---
 KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
 
-# This allows passing named arguments like `make target email=foo@bar.com`
-$(foreach v, $(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS)), $(eval $(v)))
 # This captures the first unlabelled argument passed after the target
-ARG := $(firstword $(filter-out $(KNOWN_TARGETS) $(patsubst %-,-%,$(filter-out $(KNOWN_TARGETS),$(MAKECMDGOALS))),$(MAKECMDGOALS)))
+ARG := $(firstword $(filter-out $(KNOWN_TARGETS) $(MAKECMDGOALS),$(MAKECMDGOALS)))
+# This allows passing named arguments like `make target email=foo@bar.com`
+$(eval $(filter %=%, $(MAKECMDGOALS)))
+
+# Validate that the user is running a known target
+.DEFAULT_GOAL := help
+FIRST_GOAL := $(firstword $(filter-out %=%,$(MAKECMDGOALS)))
+ifneq ($(strip $(FIRST_GOAL)),)
+  ifneq ($(filter $(FIRST_GOAL), $(KNOWN_TARGETS)), $(FIRST_GOAL))
+    $(error Unknown target: '$(FIRST_GOAL)'. Run 'make help' for a list of valid targets.)
+  endif
+endif
 
 # --- Certificate Filenames ---
 SIGNER_KEY_FILE     = signerKey.key
@@ -24,9 +61,6 @@ LOCALHOST_CERT_FILE = localhost.pem
 
 # --- Other variables ---
 PROJECT_NUM           = $(shell gcloud projects describe $(PROJECT_ID) --format="value(projectNumber)" 2>/dev/null)
-FRONTEND_DOMAIN       = $(shell grep FRONTEND_DOMAIN .env 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
-BACKEND_DOMAIN        = $(shell grep BACKEND_DOMAIN .env 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
-GITHUB_REPO           = $(shell grep GITHUB_REPO .env 2>/dev/null | cut -d'=' -f2 | tr -d ' "')
 REGION                = us-central1
 SERVICE_NAME          = pkpass-server
 SERVICE_ACCOUNT_NAME  = github-actions-runner
@@ -108,15 +142,15 @@ _setup_tasks: create-project setup-project create-service-account create-workloa
 update-tfvars:
 	@echo "🔄 Syncing .env to terraform.tfvars..."
 	@grep 'gcp_project_id' $(TFFILE) > $(TFFILE).tmp
-	@grep 'FRONTEND_DOMAIN' .env | sed 's/FRONTEND_DOMAIN/frontend_domain/' >> $(TFFILE).tmp
-	@grep 'VITE_ORG_NAME' .env | sed 's/VITE_ORG_NAME/org_name/' >> $(TFFILE).tmp
-	@grep 'PASS_TEAM_ID' .env | sed 's/PASS_TEAM_ID/pass_team_id/' >> $(TFFILE).tmp
-	@grep 'PASS_TYPE_ID' .env | sed 's/PASS_TYPE_ID/pass_type_id/' >> $(TFFILE).tmp
-	@grep 'PASS_DESCRIPTION' .env | sed 's/PASS_DESCRIPTION/pass_description/' >> $(TFFILE).tmp
-	@grep 'PASS_FOREGROUND' .env | sed 's/PASS_FOREGROUND/pass_foreground/' >> $(TFFILE).tmp
-	@grep 'PASS_BACKGROUND' .env | sed 's/PASS_BACKGROUND/pass_background/' >> $(TFFILE).tmp
-	@grep 'PASS_LABEL' .env | sed 's/PASS_LABEL/pass_label/' >> $(TFFILE).tmp
-	@grep 'PHOTO_SERVICE_URL' .env | sed 's/PHOTO_SERVICE_URL/photo_service_url/' >> $(TFFILE).tmp
+	@echo "FRONTEND_DOMAIN = $(FRONTEND_DOMAIN)" >> $(TFFILE).tmp
+	@echo "VITE_ORG_NAME = $(VITE_ORG_NAME)" >> $(TFFILE).tmp
+	@echo "PASS_TEAM_ID = $(PASS_TEAM_ID)" >> $(TFFILE).tmp
+	@echo "PASS_TYPE_ID = $(PASS_TYPE_ID)" >> $(TFFILE).tmp
+	@echo "PASS_DESCRIPTION = $(PASS_DESCRIPTION)" >> $(TFFILE).tmp
+	@echo "PASS_FOREGROUND = $(PASS_FOREGROUND)" >> $(TFFILE).tmp
+	@echo "PASS_BACKGROUND = $(PASS_BACKGROUND)" >> $(TFFILE).tmp
+	@echo "PASS_LABEL = $(PASS_LABEL)" >> $(TFFILE).tmp
+	@echo "PHOTO_SERVICE_URL = $(PHOTO_SERVICE_URL)" >> $(TFFILE).tmp
 	@mv $(TFFILE).tmp $(TFFILE)
 
 create-project: check-auth
@@ -330,8 +364,14 @@ show-github-secrets: check-gcp-project check-env-vars
 	@echo " Name: BACKEND_DOMAIN"
 	@echo "Value: $(BACKEND_DOMAIN)"
 	@echo ""
-	@echo " Name: GITHUB_REPO"
-	@echo "Value: $(GITHUB_REPO)"
+	@echo " Name: VITE_ORG_NAME"
+	@echo "Value: $(VITE_ORG_NAME)"
+	@echo ""
+	@echo " Name: VITE_ORG_WEBSITE"
+	@echo "Value: $(VITE_ORG_WEBSITE)"
+	@echo ""
+	@echo " Name: VITE_OFFICE_PHONE_OPTIONS"
+	@printf "Value: %s\n" "$$(echo "$$VITE_OFFICE_PHONE_OPTIONS" | cut -c 2- | rev | cut -c 2- | rev)"
 	@echo ""
 	@echo "********************************************************************************"
 	@echo ""

@@ -18,12 +18,6 @@ export const LOGO_URLS = {
   WIFI: '/Stand_WiFi.svg',
 };
 
-export const OFFICE_PHONE_ALIASES: { [key: string]: string } = {
-  SF: '+14158634563',
-  BHAM: '+13607342951',
-  VAN: '+16043316201',
-};
-
 export type TabState = Partial<Options> & {
   anniversaryLogo: boolean;
   optimizeSize?: boolean;

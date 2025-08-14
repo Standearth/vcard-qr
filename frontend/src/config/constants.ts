@@ -71,6 +71,7 @@ export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
   [MODES.WIFI]: {
     qrOptions: { errorCorrectionLevel: 'H' },
     anniversaryLogo: false,
+    imageOptions: { margin: 10 },
   },
 };
 

@@ -23,6 +23,7 @@ export class EventManager {
   private uiManager: UIManager;
   private isOptimizing = false;
   private previousWidth = 0;
+  private qrUpdateTimeout?: number;
 
   constructor(app: App, uiManager: UIManager) {
     this.app = app;
@@ -31,6 +32,9 @@ export class EventManager {
   }
 
   public handleStateUpdate = async (): Promise<void> => {
+    // Clear any pending debounced update, as we are performing a full update now.
+    clearTimeout(this.qrUpdateTimeout);
+
     const currentMode = this.uiManager.getCurrentMode();
     const newValues = this.uiManager.getFormControlValues();
 
@@ -42,6 +46,30 @@ export class EventManager {
       .updateUrlFromState(stateService.getState(currentMode)!);
   };
 
+  /**
+   * Handles user input by updating the UI immediately but debouncing the
+   * expensive QR code regeneration.
+   */
+  private handleFormInput = (): void => {
+    const currentMode = this.uiManager.getCurrentMode();
+    const newValues = this.uiManager.getFormControlValues();
+
+    // Update state and URL immediately for responsive feedback.
+    stateService.updateState(currentMode, newValues);
+    this.uiManager
+      .getUrlHandler()
+      .updateUrlFromState(stateService.getState(currentMode)!);
+
+    // Trigger a fast, live preview render.
+    this.app.updateQRCode(true);
+
+    // Debounce the final, high-quality render.
+    clearTimeout(this.qrUpdateTimeout);
+    this.qrUpdateTimeout = window.setTimeout(() => {
+      this.app.updateQRCode(false);
+    }, 300); // 300ms delay
+  };
+
   private handlePhoneBlur = (event: Event): void => {
     const input = event.target as HTMLInputElement;
     const currentValue = input.value;
@@ -51,7 +79,7 @@ export class EventManager {
       input.value = formattedValue;
     }
 
-    this.handleStateUpdate();
+    this.handleFormInput();
   };
 
   /**
@@ -99,14 +127,11 @@ export class EventManager {
     ];
 
     phoneTextFields.forEach((field) => {
-      field.addEventListener('input', this.handleStateUpdate);
+      field.addEventListener('input', this.handleFormInput);
       field.addEventListener('blur', this.handlePhoneBlur);
     });
 
-    dom.formFields.officePhone.addEventListener(
-      'change',
-      this.handleStateUpdate
-    );
+    dom.formFields.officePhone.addEventListener('change', this.handleFormInput);
 
     Object.values(dom.formFields).forEach((field) => {
       if (
@@ -114,7 +139,7 @@ export class EventManager {
         !phoneTextFields.includes(field as any) &&
         field.id !== 'office_phone'
       ) {
-        field.addEventListener('input', this.handleStateUpdate);
+        field.addEventListener('input', this.handleFormInput);
       }
     });
 
@@ -270,35 +295,35 @@ export class EventManager {
                   const increment = newValue > this.previousWidth ? 1 : -1;
                   await this.handleOptimization(increment);
                 } else {
-                  await this.handleStateUpdate();
+                  this.handleFormInput();
                 }
                 break;
               case 'form-optimize-size':
                 if (advancedControls.optimizeSize.checked) {
                   advancedControls.roundSize.checked = true;
                 }
-                await this.handleStateUpdate();
                 await this.handleOptimization(0);
                 break;
               case 'form-round-size':
                 if (!advancedControls.roundSize.checked) {
                   advancedControls.optimizeSize.checked = false;
                 }
-                await this.handleStateUpdate();
+                this.handleFormInput();
                 break;
               case 'form-margin':
-                await this.handleStateUpdate();
                 if (isOptimized) {
                   await this.handleOptimization(0);
+                } else {
+                  this.handleFormInput();
                 }
                 break;
               default:
-                await this.handleStateUpdate();
+                this.handleFormInput();
                 break;
             }
           });
         } else {
-          field.addEventListener(eventType, this.handleStateUpdate);
+          field.addEventListener(eventType, this.handleFormInput);
         }
       }
     });

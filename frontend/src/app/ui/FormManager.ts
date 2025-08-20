@@ -78,8 +78,11 @@ export class FormManager {
         type: advancedControls.cornersDotType.value as CornerDotType,
         color: advancedControls.cornersDotColor.value,
       },
+      dotHidingMode: advancedControls.hideBackgroundDots.value as
+        | 'box'
+        | 'shape'
+        | 'off',
       imageOptions: {
-        hideBackgroundDots: advancedControls.hideBackgroundDots.checked,
         imageSize: parseFloat(advancedControls.imageSize.value),
         margin: parseInt(advancedControls.imageMargin.value),
       },
@@ -107,6 +110,7 @@ export class FormManager {
       whatsapp: formFields.whatsapp.value,
       notes: formFields.notes.value,
       linkUrl: formFields.linkUrl.value,
+      logoUrl: advancedControls.logoUrl.value,
       wifiSsid: formFields.wifiSsid.value,
       wifiPassword: formFields.wifiPassword.value,
       wifiEncryption: formFields.wifiEncryption.value,
@@ -181,14 +185,21 @@ export class FormManager {
     }
 
     if (values.imageOptions) {
-      advancedControls.hideBackgroundDots.checked =
-        values.imageOptions.hideBackgroundDots ?? true;
+      advancedControls.hideBackgroundDots.value =
+        values.dotHidingMode ??
+        DEFAULT_ADVANCED_OPTIONS.dotHidingMode ??
+        'shape';
       advancedControls.imageSize.value = String(
         values.imageOptions.imageSize ?? 0.4
       );
       advancedControls.imageMargin.value = String(
         values.imageOptions.margin ?? 5
       );
+    }
+
+    if (advancedControls.logoUrl) {
+      advancedControls.logoUrl.value =
+        values.logoUrl ?? DEFAULT_ADVANCED_OPTIONS.logoUrl;
     }
 
     if (values.qrOptions) {

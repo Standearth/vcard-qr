@@ -28,36 +28,50 @@ class AsyncQRCodeStyling extends QRCodeStyling {
     super(options);
   }
 
-  public override async update(options?: Partial<Options>): Promise<void> {
+  public override async update(
+    options?: Partial<Options> & { dotHidingMode?: 'box' | 'shape' | 'off' }
+  ): Promise<void> {
     const dotType = options?.dotsOptions?.type;
-    this._shouldApplyCustomLogic =
-      isSvg(options?.image) &&
-      !!options?.imageOptions?.hideBackgroundDots &&
-      (dotType === 'dots' || dotType === 'square');
+    const dotHidingMode = options?.dotHidingMode ?? 'shape';
 
+    // Determine if we can and should use the custom shape-based hiding logic
+    const canUseCustomLogic =
+      isSvg(options?.image) && (dotType === 'dots' || dotType === 'square');
+    this._shouldApplyCustomLogic =
+      dotHidingMode === 'shape' && canUseCustomLogic;
+
+    // Prepare a clean options object for the parent class
+    const sanatizedOptions = { ...options };
+    if (sanatizedOptions.imageOptions) {
+      if (dotHidingMode === 'off') {
+        sanatizedOptions.imageOptions.hideBackgroundDots = false;
+      } else if (dotHidingMode === 'box') {
+        sanatizedOptions.imageOptions.hideBackgroundDots = true;
+      } else if (dotHidingMode === 'shape') {
+        // If we can't use our custom logic, fall back to the library's "box" hiding.
+        // If we CAN use our custom logic, we disable the library's hiding because we'll do it ourselves.
+        sanatizedOptions.imageOptions.hideBackgroundDots = !canUseCustomLogic;
+      }
+    }
+
+    // If we are using custom logic, we need to generate the outline.
     if (this._shouldApplyCustomLogic && options?.image) {
       try {
         this._customOutlineResult = await this.createImageOutline(
           options.image,
           options.imageOptions?.margin || 0
         );
-      } catch (error) {
+      } catch {
+        // If outline generation fails, we must fallback.
         this._customOutlineResult = null;
-        this._shouldApplyCustomLogic = false; // Fallback if outline fails
+        this._shouldApplyCustomLogic = false;
+        // And since we are falling back, we must enable the library's box hiding.
+        if (sanatizedOptions.imageOptions) {
+          sanatizedOptions.imageOptions.hideBackgroundDots = true;
+        }
       }
     } else {
       this._customOutlineResult = null;
-    }
-
-    const sanatizedOptions = { ...options };
-
-    // If using custom logic, disable the library's built-in dot removal.
-    // Otherwise, let the library handle it normally.
-    if (this._shouldApplyCustomLogic && sanatizedOptions.imageOptions) {
-      sanatizedOptions.imageOptions = {
-        ...sanatizedOptions.imageOptions,
-        hideBackgroundDots: false,
-      };
     }
 
     (this as any)._extension = (svg: SVGElement) => {

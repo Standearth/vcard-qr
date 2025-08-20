@@ -125,11 +125,12 @@ export class UrlHandler {
       cornersDotType: 'cornersDotOptions.type',
       cornersDotColor: 'cornersDotOptions.color',
       backgroundColor: 'backgroundOptions.color',
-      hideBackgroundDots: 'imageOptions.hideBackgroundDots',
+      hideBackgroundDots: 'dotHidingMode',
       imageSize: 'imageOptions.imageSize',
       imageMargin: 'imageOptions.margin',
       qrTypeNumber: 'qrOptions.typeNumber',
       qrErrorCorrectionLevel: 'qrOptions.errorCorrectionLevel',
+      logoUrl: 'logoUrl',
     };
 
     for (const key in statePathMap) {
@@ -199,11 +200,8 @@ export class UrlHandler {
       case 'backgroundColor':
         state.backgroundOptions = { ...state.backgroundOptions, color: value };
         break;
-      case 'hideBackgroundDots':
-        state.imageOptions = {
-          ...state.imageOptions,
-          hideBackgroundDots: boolValue,
-        };
+      case 'hideBackgroundDots': // This key comes from dom.advancedControls
+        state.dotHidingMode = value as any;
         break;
       case 'imageSize':
         if (!isNaN(numValue))
@@ -222,6 +220,9 @@ export class UrlHandler {
           ...state.qrOptions,
           errorCorrectionLevel: value as any,
         };
+        break;
+      case 'logoUrl':
+        state.logoUrl = value;
         break;
     }
   }

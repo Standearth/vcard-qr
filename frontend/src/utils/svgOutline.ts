@@ -11,7 +11,6 @@ import {
 import paper, { Path, Shape, Item } from 'paper';
 
 type PaperPath = InstanceType<typeof Path>;
-type PaperShape = InstanceType<typeof Shape>;
 type PaperItem = InstanceType<typeof Item>;
 
 const SCALE = 10000;

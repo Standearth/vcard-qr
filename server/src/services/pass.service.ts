@@ -1,4 +1,3 @@
-// src/services/pass.service.ts
 import { PKPass } from 'passkit-generator';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -9,39 +8,37 @@ import {
   formatPhoneNumber,
   generateWhatsAppLink,
 } from '@vcard-qr/shared-utils';
+import {
+  loadPassConfig,
+  getTemplateForEmail,
+} from '../config/pass-templates.js';
 
-/**
- * Generates a .pkpass file buffer from user data and an optional photo.
- * This service encapsulates all logic for creating and populating the pass.
- * @param data The user information for the pass.
- * @param photoBuffer A buffer containing the user's photo, or null.
- * @returns A promise that resolves with the generated .pkpass file as a Buffer.
- */
 export async function generatePassBuffer(
   data: PassData,
   photoBuffer: Buffer | null
 ): Promise<Buffer> {
-  // Load necessary certificates from the config module
   const certs = await loadCertificates();
+  const config = await loadPassConfig();
+  const template = getTemplateForEmail(data.email, config);
 
-  // Define pass options with fallbacks for the new environment variables
   const passOptions = {
-    passTypeIdentifier: process.env.PASS_TYPE_ID || 'pass.com.example.vcard',
-    teamIdentifier: process.env.PASS_TEAM_ID || 'A1B2C3D4E5',
-    organizationName: process.env.VITE_ORG_NAME || 'Example Organization',
-    description: process.env.PASS_DESCRIPTION || 'Example Business Card',
+    passTypeIdentifier: template.passTypeIdentifier,
+    teamIdentifier: template.teamIdentifier,
+    organizationName:
+      data.organization || template.organizationName || 'Organization',
+    description:
+      template.description ||
+      (data.organization ? data.organization + ' Business Card' : false) ||
+      'Business Card',
     serialNumber: Date.now().toString(),
-    foregroundColor: process.env.PASS_FOREGROUND || 'rgba(159, 51, 69, 1)',
-    backgroundColor: process.env.PASS_BACKGROUND || 'rgb(245, 244, 237)',
-    labelColor: process.env.PASS_LABEL || 'rgb(16, 16, 18)',
+    foregroundColor: template.foregroundColor,
+    backgroundColor: template.backgroundColor,
+    labelColor: template.labelColor,
   };
 
-  // Get the directory of the current module
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  // Construct an absolute path to the model directory
-  const modelPath = path.join(__dirname, '../../models/vcard');
+  const modelPath = path.join(__dirname, `../../models/${template.model}`);
 
-  // Create the pass from the template model.
   const pass = await PKPass.from(
     {
       model: modelPath,
@@ -50,7 +47,7 @@ export async function generatePassBuffer(
     passOptions
   );
 
-  // --- Populate Pass Fields ---
+  // ... (rest of your field population logic remains the same)
 
   // Primary Field (Name & Title)
   if (data.firstName || data.lastName) {
@@ -146,12 +143,10 @@ export async function generatePassBuffer(
     });
   }
 
-  // Add the photo to the pass if it exists
   if (photoBuffer) {
     pass.addBuffer('thumbnail.png', photoBuffer);
   }
 
-  // --- Build and set the QR code ---
   const vCardString = generateVCardString(data, true);
 
   pass.setBarcodes({
@@ -160,6 +155,5 @@ export async function generatePassBuffer(
     messageEncoding: 'iso-8859-1',
   });
 
-  // Return the final pass as a buffer
   return pass.getAsBuffer();
 }

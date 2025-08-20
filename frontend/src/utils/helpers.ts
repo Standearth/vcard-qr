@@ -58,11 +58,11 @@ export function generateFilename(currentMode: Mode): string {
       .map(sanitizeFilename)
       .filter(Boolean)
       .join('-');
-    return `Stand-QR-vCard${namePart ? `-${namePart}` : ''}`;
+    return `QR-vCard${namePart ? `-${namePart}` : ''}`;
   }
   if (currentMode === MODES.WIFI) {
     const ssid = sanitizeFilename(dom.formFields.wifiSsid.value);
-    return `Stand-QR-WiFi-${ssid || 'network'}`;
+    return `QR-WiFi-${ssid || 'network'}`;
   }
   if (currentMode === MODES.LINK) {
     try {
@@ -70,9 +70,9 @@ export function generateFilename(currentMode: Mode): string {
       if (!/^(https?|ftp):\/\//i.test(urlString))
         urlString = `https://${urlString}`;
       const fqdn = new URL(urlString).hostname;
-      return `Stand-QR-URL-${sanitizeFilename(fqdn) || 'link'}`;
+      return `QR-URL-${sanitizeFilename(fqdn) || 'link'}`;
     } catch {
-      return 'Stand-QR-URL-invalid_link';
+      return 'QR-URL-invalid_link';
     }
   }
   return 'qr-code';

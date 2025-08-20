@@ -1,0 +1,25 @@
+{
+  "default": {
+    "model": "default.pass",
+    "passTypeIdentifier": "pass.com.example.vcard",
+    "teamIdentifier": "A1B2C3D4E5",
+    "organizationName": "Example Company",
+    "description": "Example Business Card",
+    "foregroundColor": "rgb(0, 0, 0)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "labelColor": "rgb(0, 0, 0)"
+  },
+  "templates": [
+    {
+      "domain": "example.org",
+      "model": "example.org.pass",
+      "passTypeIdentifier": "pass.org.example.vcard",
+      "teamIdentifier": "A1B2C3D4E5",
+      "organizationName": "Example Organization",
+      "description": "Example Business Card",
+      "foregroundColor": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "labelColor": "rgb(0, 0, 0)"
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 declare module 'clipper-lib' {
   export interface Point {
     X: number;

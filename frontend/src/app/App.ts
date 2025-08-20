@@ -21,11 +21,7 @@ import {
   TabState,
 } from '../config/constants';
 import { generateQRCodeData } from '../utils/helpers';
-import {
-  formatPhoneNumber,
-  parsePhoneNumber,
-  PhoneNumber,
-} from '@vcard-qr/shared-utils';
+import { formatPhoneNumber } from '@vcard-qr/shared-utils';
 
 export let qrCode: AsyncQRCodeStyling;
 
@@ -93,9 +89,20 @@ export class App {
     return generateQRCodeData(state, currentMode);
   };
 
-  private buildQrConfig = (data: string): Partial<Options> => {
+  private buildQrConfig = (
+    data: string,
+    isLiveUpdate: boolean
+  ): Partial<Options> & { dotHidingMode?: 'box' | 'shape' | 'off' } => {
     const state = stateService.getState(this.ui.getCurrentMode());
     if (!state) return { data };
+
+    let dotHidingMode = state.dotHidingMode;
+    // If it's a live update and the user wants the expensive "shape" mode,
+    // temporarily fall back to the faster "box" mode.
+    if (isLiveUpdate && dotHidingMode === 'shape') {
+      dotHidingMode = 'box';
+    }
+
     return {
       data,
       width: state.width,
@@ -107,7 +114,37 @@ export class App {
       backgroundOptions: state.backgroundOptions,
       cornersSquareOptions: state.cornersSquareOptions,
       cornersDotOptions: state.cornersDotOptions,
+      dotHidingMode: dotHidingMode,
     };
+  };
+
+  private loadDefaultLogo = (): Promise<string | undefined> => {
+    return new Promise((resolve, reject) => {
+      const currentMode = this.ui.getCurrentMode();
+      const state = stateService.getState(currentMode);
+      let imageUrl: string;
+
+      if (currentMode === MODES.WIFI) {
+        imageUrl = LOGO_URLS.WIFI;
+      } else {
+        imageUrl = state?.anniversaryLogo
+          ? LOGO_URLS.ANNIVERSARY
+          : LOGO_URLS.RED;
+      }
+      fetch(imageUrl)
+        .then((response) =>
+          response.ok
+            ? response.blob()
+            : Promise.reject('Logo network response was not ok')
+        )
+        .then((blob) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        })
+        .catch(reject);
+    });
   };
 
   private loadImageAsync = (): Promise<string | undefined> => {
@@ -116,6 +153,7 @@ export class App {
       return Promise.resolve(undefined);
     }
     return new Promise((resolve, reject) => {
+      // Priority 1: User-uploaded file
       if (
         dom.advancedControls.imageFile.files &&
         dom.advancedControls.imageFile.files.length > 0
@@ -124,38 +162,44 @@ export class App {
         reader.onload = (event) => resolve(event.target?.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(dom.advancedControls.imageFile.files[0]);
-      } else {
-        const currentMode = this.ui.getCurrentMode();
-        const state = stateService.getState(currentMode);
-        let imageUrl: string;
-
-        if (currentMode === MODES.WIFI) {
-          imageUrl = LOGO_URLS.WIFI;
-        } else {
-          imageUrl = state?.anniversaryLogo
-            ? LOGO_URLS.ANNIVERSARY
-            : LOGO_URLS.RED;
-        }
-        fetch(imageUrl)
-          .then((response) =>
-            response.ok
-              ? response.blob()
-              : Promise.reject('Logo network response was not ok')
-          )
+      }
+      // Priority 2: Logo from URL parameter
+      else if (state.logoUrl) {
+        fetch(state.logoUrl)
+          .then((response) => {
+            if (!response.ok) {
+              return Promise.reject(
+                `Failed to fetch logo from URL: ${response.statusText}`
+              );
+            }
+            return response.blob();
+          })
           .then((blob) => {
+            if (blob.type !== 'image/svg+xml') {
+              console.error('Logo from URL is not an SVG. Ignoring.');
+              resolve(this.loadDefaultLogo()); // Fallback to default
+              return;
+            }
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsDataURL(blob);
           })
-          .catch(reject);
+          .catch((err) => {
+            console.error(err);
+            resolve(this.loadDefaultLogo()); // Fallback to default on error
+          });
+      }
+      // Priority 3: Default logos
+      else {
+        resolve(this.loadDefaultLogo());
       }
     });
   };
 
-  updateQRCode = async (): Promise<boolean> => {
+  updateQRCode = async (isLiveUpdate = false): Promise<boolean> => {
     const data = this.getQRCodeData();
-    const config = this.buildQrConfig(data);
+    const config = this.buildQrConfig(data, isLiveUpdate);
     try {
       const image = await this.loadImageAsync();
       config.image = image || '';

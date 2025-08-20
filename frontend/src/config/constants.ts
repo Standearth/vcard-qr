@@ -23,6 +23,7 @@ export type TabState = Partial<Options> & {
   optimizeSize?: boolean;
   roundSize?: boolean;
   showImage?: boolean;
+  dotHidingMode?: 'box' | 'shape' | 'off';
   isAdvancedControlsVisible?: boolean;
   isModalVisible?: boolean;
   qrCodeContent?: string;
@@ -40,6 +41,7 @@ export type TabState = Partial<Options> & {
   linkedin?: string;
   notes?: string;
   linkUrl?: string;
+  logoUrl: string;
   whatsapp?: string;
   wifiSsid?: string;
   wifiPassword?: string;
@@ -50,28 +52,27 @@ export type TabState = Partial<Options> & {
 export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   width: 1080,
   height: 1080,
-  margin: 0,
+  margin: 10,
   dotsOptions: { type: 'dots', color: '#000000' },
   cornersSquareOptions: { type: 'rounded', color: '#000000' },
   cornersDotOptions: { type: 'rounded', color: '#e50b12' },
   backgroundOptions: { color: '#ffffff' },
   showImage: true,
-  imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 5 },
-  qrOptions: { typeNumber: 0, errorCorrectionLevel: 'Q' },
+  dotHidingMode: 'shape',
+  imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 10 },
+  qrOptions: { typeNumber: 0, errorCorrectionLevel: 'H' },
   anniversaryLogo: true,
   optimizeSize: false,
   roundSize: true,
+  logoUrl: '',
 };
 
 export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
   [MODES.VCARD]: {},
-  [MODES.LINK]: {
-    qrOptions: { errorCorrectionLevel: 'H' },
-  },
+  [MODES.LINK]: {},
   [MODES.WIFI]: {
-    qrOptions: { errorCorrectionLevel: 'H' },
     anniversaryLogo: false,
-    imageOptions: { margin: 10 },
+    imageOptions: {},
   },
 };
 

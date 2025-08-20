@@ -2,6 +2,7 @@
 
 import { dom } from '../../config/dom';
 import { DESKTOP_BREAKPOINT_PX } from '../../config/constants';
+import { UIManager } from '../UIManager';
 
 /**
  * A structured object to hold all necessary DOM elements and their dimensions (DOMRects).
@@ -16,6 +17,7 @@ type LayoutData = {
     qrPreviewColumn: HTMLElement;
     qrPreviewColumnFooter: HTMLElement;
     formColumn: HTMLElement;
+    activeForm: HTMLElement | null;
     qrcodeTextContainer: HTMLElement;
     advancedControlsContainer: HTMLElement;
   };
@@ -36,8 +38,10 @@ export class StickyManager {
   private initialCanvasHeight = 0;
   private initialCanvasWidth = 0;
   private mobileCanvasTop: number | null = null;
+  private uiManager: UIManager;
 
-  constructor() {
+  constructor(uiManager: UIManager) {
+    this.uiManager = uiManager;
     this.reInitializeDimensions();
     this.setupEventListeners();
   }
@@ -175,7 +179,9 @@ export class StickyManager {
   }
 
   private _updateFullColumnLayout(data: LayoutData): void {
-    const { advancedControlsContainer, qrPreviewColumn } = data.elements;
+    const { advancedControlsContainer, qrPreviewColumn, activeForm } =
+      data.elements;
+    const { previewColumnRect, qrcodeTextContainerRect } = data.rects;
 
     if (advancedControlsContainer.classList.contains('hidden')) {
       advancedControlsContainer.classList.add('both-columns');
@@ -183,16 +189,25 @@ export class StickyManager {
       return;
     }
 
-    const currentScrollY = window.scrollY;
-    const topOffset = 8;
-    const relativeStickyTop = this.stickyContainerTop - currentScrollY;
+    if (activeForm) {
+      // Use the bottom of the text container relative to the top of the column
+      // for a more stable height calculation, preventing layout feedback loops.
+      const previewContentHeight =
+        qrcodeTextContainerRect.bottom - previewColumnRect.top;
+      const formContentHeight = activeForm.offsetHeight;
 
-    if (relativeStickyTop <= topOffset) {
-      advancedControlsContainer.classList.remove('both-columns');
-      qrPreviewColumn.classList.add('both-rows');
-    } else {
-      advancedControlsContainer.classList.add('both-columns');
-      qrPreviewColumn.classList.remove('both-rows');
+      const isPreviewTaller = previewContentHeight > formContentHeight;
+      const isScrolledToTop = this.stickyContainerTop - window.scrollY <= 8;
+
+      // If the preview column is taller OR the user has scrolled the sticky
+      // container to the top, move the advanced controls into the preview column.
+      if (isPreviewTaller || isScrolledToTop) {
+        advancedControlsContainer.classList.remove('both-columns');
+        qrPreviewColumn.classList.add('both-rows');
+      } else {
+        advancedControlsContainer.classList.add('both-columns');
+        qrPreviewColumn.classList.remove('both-rows');
+      }
     }
   }
 
@@ -291,6 +306,10 @@ export class StickyManager {
       return null;
     }
 
+    const currentMode = this.uiManager.getCurrentMode();
+    const activeForm = formColumn.querySelector<HTMLElement>(
+      `#${currentMode}-form`
+    );
     return {
       elements: {
         contentWrapper,
@@ -300,6 +319,7 @@ export class StickyManager {
         qrPreviewColumn,
         qrPreviewColumnFooter,
         formColumn,
+        activeForm,
         qrcodeTextContainer,
         advancedControlsContainer,
       },
@@ -317,12 +337,8 @@ export class StickyManager {
 
   private handleQrCodeResizing(data: LayoutData): void {
     const { elements, rects } = data;
-    const {
-      canvasContainer,
-      qrCanvasPlaceholder,
-      qrPreviewColumn,
-      qrPreviewColumnFooter,
-    } = elements;
+    const { canvasContainer, qrCanvasPlaceholder, qrPreviewColumnFooter } =
+      elements;
 
     const currentScrollY = window.scrollY;
     const topOffset = 8;

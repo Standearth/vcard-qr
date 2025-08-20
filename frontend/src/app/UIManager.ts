@@ -10,11 +10,7 @@ import { WalletManager } from './ui/WalletManager';
 import { stateService } from './StateService';
 import { dom } from '../config/dom';
 import { App } from './App';
-import {
-  generateWhatsAppLink,
-  parsePhoneNumber,
-  PhoneNumber,
-} from '@vcard-qr/shared-utils';
+import { generateWhatsAppLink } from '@vcard-qr/shared-utils';
 
 /**
  * Manages all direct interactions with the DOM. It is responsible for rendering the UI
@@ -28,6 +24,7 @@ export class UIManager {
   private stickyManager: StickyManager;
   private tabManager: TabManager;
   private urlHandler: UrlHandler;
+  private walletManager: WalletManager;
 
   /**
    * Initializes all UI sub-managers.
@@ -35,11 +32,11 @@ export class UIManager {
    */
   constructor(app: App) {
     this.formManager = new FormManager(this);
-    this.eventManager = new EventManager(app, this); // Assign the instance here
-    this.stickyManager = new StickyManager();
+    this.eventManager = new EventManager(app, this);
+    this.stickyManager = new StickyManager(this);
     this.tabManager = new TabManager(app, this);
     this.urlHandler = new UrlHandler(this);
-    new WalletManager(this);
+    this.walletManager = new WalletManager(this);
   }
 
   // Delegated methods
@@ -93,6 +90,9 @@ export class UIManager {
 
   /** Gets the EventManager instance. */
   getEventManager = (): EventManager => this.eventManager;
+
+  /** Gets the WalletManager instance. */
+  getWalletManager = (): WalletManager => this.walletManager; // Add this method
 
   /**
    * Renders the tab and button states (visibility, active states) based on the current application state.

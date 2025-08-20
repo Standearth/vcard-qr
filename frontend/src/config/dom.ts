@@ -152,10 +152,11 @@ export function initializeDomElements() {
       backgroundColor: document.getElementById(
         'form-background-color'
       ) as HTMLInputElement,
+      logoUrl: document.getElementById('form-logo-url') as HTMLInputElement,
       imageFile: document.getElementById('form-image-file') as HTMLInputElement,
       hideBackgroundDots: document.getElementById(
         'form-hide-background-dots'
-      ) as HTMLInputElement,
+      ) as HTMLSelectElement,
       saveAsBlob: document.getElementById(
         'form-save-as-blob'
       ) as HTMLInputElement,

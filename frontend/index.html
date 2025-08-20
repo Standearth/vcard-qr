@@ -390,6 +390,17 @@
                   >
                 </div>
                 <div style="grid-column: span 2">
+                  <label for="form-logo-url" class="form-label"
+                    >Logo URL (SVG only)</label
+                  >
+                  <input
+                    id="form-logo-url"
+                    type="url"
+                    class="form-input"
+                    placeholder="e.g., /my-logo.svg or https://..."
+                  />
+                </div>
+                <div style="grid-column: span 2">
                   <input id="form-image-file" type="file" class="form-input" />
                 </div>
                 <div>
@@ -419,18 +430,15 @@
                     class="form-input"
                   />
                 </div>
-                <div class="checkbox-container">
-                  <input
-                    id="form-hide-background-dots"
-                    type="checkbox"
-                    class="form-checkbox"
-                    checked
-                  />
-                  <label
-                    for="form-hide-background-dots"
-                    class="form-label-checkbox"
+                <div>
+                  <label for="form-hide-background-dots" class="form-label"
                     >Hide Dots</label
                   >
+                  <select id="form-hide-background-dots" class="form-input">
+                    <option value="shape">Hide Shape</option>
+                    <option value="box">Hide Box</option>
+                    <option value="off">Off</option>
+                  </select>
                 </div>
                 <div class="checkbox-container">
                   <input

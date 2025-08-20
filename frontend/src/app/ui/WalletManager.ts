@@ -13,7 +13,6 @@ export class WalletManager {
     this.uiManager = uiManager;
     this.setupEventListeners();
     this.checkWalletVisibility();
-    this.validatePassFields(); // Initial check on page load
   }
 
   private checkWalletVisibility(): void {
@@ -23,7 +22,7 @@ export class WalletManager {
     }
   }
 
-  private validatePassFields = (): void => {
+  public validatePassFields = (): void => {
     const state = stateService.getState(this.uiManager.getCurrentMode());
     const firstName = state?.firstName?.trim();
     const lastName = state?.lastName?.trim();

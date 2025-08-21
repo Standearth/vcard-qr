@@ -150,11 +150,6 @@ export class UIManager {
       ? 'Hide Advanced Controls'
       : 'Show Advanced Controls';
 
-    /*
-     * ADD THIS LINE:
-     * This toggles our new class on the main grid container, ensuring
-     * the grid layout adapts when the controls are hidden.
-     */
     dom.mainGrid.classList.toggle(
       'advanced-hidden',
       !state.isAdvancedControlsVisible
@@ -169,6 +164,23 @@ export class UIManager {
       );
       dom.vcardTextOutput.style.color =
         state.isQrCodeValid === false ? 'red' : '';
+    }
+
+    // Disable the "shape" hiding option if the dot type doesn't support it.
+    const dotsType = state.dotsOptions?.type;
+    const hideDotsSelect = dom.advancedControls.hideBackgroundDots;
+    const shapeOption = hideDotsSelect.querySelector('option[value="shape"]');
+
+    if (shapeOption) {
+      const isShapeHidingSupported =
+        dotsType === 'dots' || dotsType === 'square';
+      (shapeOption as HTMLOptionElement).disabled = !isShapeHidingSupported;
+
+      // If shape hiding is not supported and is currently selected,
+      // visually change the dropdown. The state will sync on the next input event.
+      if (!isShapeHidingSupported && hideDotsSelect.value === 'shape') {
+        hideDotsSelect.value = 'box';
+      }
     }
   };
 

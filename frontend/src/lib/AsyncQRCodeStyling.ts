@@ -48,8 +48,8 @@ class AsyncQRCodeStyling extends QRCodeStyling {
       } else if (dotHidingMode === 'box') {
         sanatizedOptions.imageOptions.hideBackgroundDots = true;
       } else if (dotHidingMode === 'shape') {
-        // If we can't use our custom logic, fall back to the library's "box" hiding.
-        // If we CAN use our custom logic, we disable the library's hiding because we'll do it ourselves.
+        // If we are using our custom logic, disable the library's dot hiding.
+        // If we can't, fall back to the library's "box" hiding.
         sanatizedOptions.imageOptions.hideBackgroundDots = !canUseCustomLogic;
       }
     }

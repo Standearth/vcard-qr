@@ -91,6 +91,18 @@
   }
 }
 
+.button-google {
+  background-color: var(--color-primary-white);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-primary-dark);
+  --focus-ring-color: #4285f4; // Google Blue for focus
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: #f8f9fa; // A light grey for hover
+    }
+  }
+}
+
 .buttons-section {
   display: flex;
   flex-wrap: wrap;

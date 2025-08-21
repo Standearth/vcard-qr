@@ -3,7 +3,7 @@
 import AsyncQRCodeStyling from '../lib/AsyncQRCodeStyling';
 import { Options } from 'qr-code-styling';
 import { library, dom as faDom } from '@fortawesome/fontawesome-svg-core';
-import { faApple } from '@fortawesome/free-brands-svg-icons';
+import { faApple, faGoogle } from '@fortawesome/free-brands-svg-icons';
 import {
   faDownload,
   faMobileAlt,
@@ -55,7 +55,14 @@ export class App {
   getModalQrCode = (): AsyncQRCodeStyling => this.modalQrCode;
 
   private initializeIcons(): void {
-    library.add(faDownload, faMobileAlt, faCog, faUndo, faApple as any);
+    library.add(
+      faDownload,
+      faMobileAlt,
+      faCog,
+      faUndo,
+      faApple as any,
+      faGoogle as any
+    );
     faDom.watch();
   }
 
@@ -223,12 +230,14 @@ export class App {
     this.ui.getTabManager().switchTab(newMode, true);
 
     const urlState = this.ui.getUrlHandler().getStateFromUrl();
-    const currentTabState = stateService.getState(this.ui.getCurrentMode());
+    const currentTabState =
+      stateService.getState(this.ui.getCurrentMode()) || ({} as TabState);
     const mergedState: TabState = {
       ...currentTabState,
       ...urlState,
       anniversaryLogo:
         urlState.anniversaryLogo ?? currentTabState?.anniversaryLogo ?? false,
+      logoUrl: urlState.logoUrl ?? currentTabState?.logoUrl ?? '',
     };
 
     // Set the initial form values from the URL

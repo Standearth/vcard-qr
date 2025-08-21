@@ -442,6 +442,7 @@ export class StickyManager {
       const footerStickBottomPosition = contentWrapperBottomOffset + 32;
       qrPreviewColumnFooter.classList.add('sticky-footer');
       qrPreviewColumnFooter.style.bottom = `${footerStickBottomPosition}px`;
+      qrPreviewColumnFooter.style.width = `${rects.previewColumnRect.width}px`;
     } else {
       qrPreviewColumnFooter.classList.remove('sticky-footer');
       qrPreviewColumnFooter.style.bottom = '';

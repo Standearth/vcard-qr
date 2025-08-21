@@ -1,7 +1,7 @@
 // src/services/google-wallet.service.ts
 import { PassData } from '../types/index.js';
 import { GoogleAuth } from 'google-auth-library';
-import { sign } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken'; // Corrected import
 
 const keyFilePath = 'path/to/your/service-account-key.json'; // Store this securely!
 
@@ -34,7 +34,8 @@ export async function generateGoogleWalletPass(
   };
 
   // The final JWT will be created by signing the pass object
-  const token = sign(claims, credentials.private_key, {
+  const token = jwt.sign(claims, credentials.private_key, {
+    // Corrected usage
     algorithm: 'RS256',
   });
 

@@ -3,7 +3,6 @@
 import AsyncQRCodeStyling from '../lib/AsyncQRCodeStyling';
 import { Options } from 'qr-code-styling';
 import { library, dom as faDom } from '@fortawesome/fontawesome-svg-core';
-import { faApple, faGoogle } from '@fortawesome/free-brands-svg-icons';
 import {
   faDownload,
   faMobileAlt,
@@ -55,14 +54,7 @@ export class App {
   getModalQrCode = (): AsyncQRCodeStyling => this.modalQrCode;
 
   private initializeIcons(): void {
-    library.add(
-      faDownload,
-      faMobileAlt,
-      faCog,
-      faUndo,
-      faApple as any,
-      faGoogle as any
-    );
+    library.add(faDownload, faMobileAlt, faCog, faUndo);
     faDom.watch();
   }
 

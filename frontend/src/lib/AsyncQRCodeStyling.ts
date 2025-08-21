@@ -1,6 +1,16 @@
 import QRCodeStyling, { Options } from 'qr-code-styling';
 import { generateOutlineInBrowser } from '../utils/svgOutline';
-import paper from 'paper';
+
+// Re-defining the paper.js types locally to remove the dependency
+type Point = { x: number; y: number };
+type Matrix = {
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  e: number;
+  f: number;
+};
 
 interface OutlineResult {
   path: string;
@@ -12,6 +22,13 @@ interface OutlineResult {
   };
 }
 
+// Simple cache for outline results
+interface CacheEntry {
+  outline: OutlineResult;
+  vertices?: number[][]; // Vertices can be cached too
+}
+const outlineCache = new Map<string, CacheEntry>();
+
 // Helper to check if an image source is an SVG
 const isSvg = (imageSrc?: string): boolean => {
   if (!imageSrc) return false;
@@ -19,6 +36,28 @@ const isSvg = (imageSrc?: string): boolean => {
     imageSrc.startsWith('data:image/svg+xml') || imageSrc.startsWith('<svg')
   );
 };
+
+/**
+ * A lightweight point-in-polygon implementation.
+ * Checks if a point is inside a polygon using the ray-casting algorithm.
+ * @param point The point to check { x, y }.
+ * @param vs The vertices of the polygon [[x1, y1], [x2, y2], ...].
+ * @returns True if the point is inside the polygon.
+ */
+function isPointInPolygon(point: Point, vs: number[][]): boolean {
+  const { x, y } = point;
+  let inside = false;
+  for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+    const xi = vs[i][0],
+      yi = vs[i][1];
+    const xj = vs[j][0],
+      yj = vs[j][1];
+    const intersect =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
 
 class AsyncQRCodeStyling extends QRCodeStyling {
   private _customOutlineResult: OutlineResult | null = null;
@@ -34,13 +73,11 @@ class AsyncQRCodeStyling extends QRCodeStyling {
     const dotType = options?.dotsOptions?.type;
     const dotHidingMode = options?.dotHidingMode ?? 'shape';
 
-    // Determine if we can and should use the custom shape-based hiding logic
     const canUseCustomLogic =
       isSvg(options?.image) && (dotType === 'dots' || dotType === 'square');
     this._shouldApplyCustomLogic =
       dotHidingMode === 'shape' && canUseCustomLogic;
 
-    // Prepare a clean options object for the parent class
     const sanatizedOptions = { ...options };
     if (sanatizedOptions.imageOptions) {
       if (dotHidingMode === 'off') {
@@ -48,13 +85,10 @@ class AsyncQRCodeStyling extends QRCodeStyling {
       } else if (dotHidingMode === 'box') {
         sanatizedOptions.imageOptions.hideBackgroundDots = true;
       } else if (dotHidingMode === 'shape') {
-        // If we can't use our custom logic, fall back to the library's "box" hiding.
-        // If we CAN use our custom logic, we disable the library's hiding because we'll do it ourselves.
         sanatizedOptions.imageOptions.hideBackgroundDots = !canUseCustomLogic;
       }
     }
 
-    // If we are using custom logic, we need to generate the outline.
     if (this._shouldApplyCustomLogic && options?.image) {
       try {
         this._customOutlineResult = await this.createImageOutline(
@@ -62,10 +96,8 @@ class AsyncQRCodeStyling extends QRCodeStyling {
           options.imageOptions?.margin || 0
         );
       } catch {
-        // If outline generation fails, we must fallback.
         this._customOutlineResult = null;
         this._shouldApplyCustomLogic = false;
-        // And since we are falling back, we must enable the library's box hiding.
         if (sanatizedOptions.imageOptions) {
           sanatizedOptions.imageOptions.hideBackgroundDots = true;
         }
@@ -85,7 +117,6 @@ class AsyncQRCodeStyling extends QRCodeStyling {
     if (!this._shouldApplyCustomLogic || !this._customOutlineResult) {
       return;
     }
-
     if (!(svgElement instanceof SVGSVGElement)) {
       console.error('Custom outline can only be applied to an SVGSVGElement.');
       return;
@@ -96,74 +127,112 @@ class AsyncQRCodeStyling extends QRCodeStyling {
       this._customOutlineResult
     );
 
-    const outlinePath = new paper.Path(this._customOutlineResult.path);
-    const matrix = new paper.Matrix(
-      transform.a,
-      transform.c,
-      transform.b,
-      transform.d,
-      transform.e,
-      transform.f
-    );
-    outlinePath.transform(matrix);
+    // Check cache for vertices first
+    const cacheKey = `${this._customOutlineResult.path}-${JSON.stringify(transform)}`;
+    let cachedEntry = outlineCache.get(this._customOutlineResult.path);
+
+    let vertices: number[][];
+
+    if (cachedEntry && cachedEntry.vertices) {
+      vertices = cachedEntry.vertices;
+    } else {
+      // Convert SVG path data to an array of points for our lightweight algorithm
+      const pathElement = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'path'
+      );
+      pathElement.setAttribute('d', this._customOutlineResult.path);
+      const totalLength = pathElement.getTotalLength();
+      const step = 2; // Sample points along the path. Smaller is more accurate but slower.
+      const newVertices: number[][] = [];
+      for (let i = 0; i < totalLength; i += step) {
+        const p = pathElement.getPointAtLength(i);
+        const transformedPoint = this.applyTransform(
+          { x: p.x, y: p.y },
+          transform
+        );
+        newVertices.push([transformedPoint.x, transformedPoint.y]);
+      }
+      vertices = newVertices;
+      // Store vertices in cache
+      if (cachedEntry) {
+        cachedEntry.vertices = vertices;
+      }
+    }
+
+    // Get the bounding box of the transformed polygon for pre-filtering
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    vertices.forEach((v) => {
+      minX = Math.min(minX, v[0]);
+      minY = Math.min(minY, v[1]);
+      maxX = Math.max(maxX, v[0]);
+      maxY = Math.max(maxY, v[1]);
+    });
+    const polygonBounds = { minX, minY, maxX, maxY };
 
     const dotClipPath = svgElement.querySelector('defs > clipPath[id*="dot"]');
     if (dotClipPath) {
       const dots = dotClipPath.querySelectorAll('rect, circle');
-
-      const itemToElementMap = new Map<paper.Item, Element>();
-      const dotItems: paper.Item[] = [];
-
       dots.forEach((dot) => {
-        let dotPath: paper.Path;
+        let dotBounds: {
+          minX: number;
+          minY: number;
+          maxX: number;
+          maxY: number;
+        };
+
         if (dot.tagName.toLowerCase() === 'circle') {
           const cx = parseFloat(dot.getAttribute('cx') || '0');
           const cy = parseFloat(dot.getAttribute('cy') || '0');
           const r = parseFloat(dot.getAttribute('r') || '0');
-          dotPath = new paper.Path.Circle({
-            center: new paper.Point(cx, cy),
-            radius: r,
-          });
+          dotBounds = {
+            minX: cx - r,
+            minY: cy - r,
+            maxX: cx + r,
+            maxY: cy + r,
+          };
         } else {
           const x = parseFloat(dot.getAttribute('x') || '0');
           const y = parseFloat(dot.getAttribute('y') || '0');
           const width = parseFloat(dot.getAttribute('width') || '0');
           const height = parseFloat(dot.getAttribute('height') || '0');
-          dotPath = new paper.Path.Rectangle({
-            from: new paper.Point(x, y),
-            to: new paper.Point(x + width, y + height),
-          });
+          dotBounds = { minX: x, minY: y, maxX: x + width, maxY: y + height };
         }
-        itemToElementMap.set(dotPath, dot);
-        dotItems.push(dotPath);
-      });
 
-      dotItems.forEach((item) => {
+        // Bounding box check first for performance
         if (
-          outlinePath.intersects(item) ||
-          outlinePath.contains(item.position)
+          dotBounds.maxX > polygonBounds.minX &&
+          dotBounds.minX < polygonBounds.maxX &&
+          dotBounds.maxY > polygonBounds.minY &&
+          dotBounds.minY < polygonBounds.maxY
         ) {
-          const elementToHide = itemToElementMap.get(item);
-          if (elementToHide) {
-            // Use visibility to hide instead of removing to prevent layout shift
-            elementToHide.setAttribute('visibility', 'hidden');
+          // If the bounding boxes overlap, check the four corners of the dot
+          const corners: Point[] = [
+            { x: dotBounds.minX, y: dotBounds.minY }, // Top-left
+            { x: dotBounds.maxX, y: dotBounds.minY }, // Top-right
+            { x: dotBounds.minX, y: dotBounds.maxY }, // Bottom-left
+            { x: dotBounds.maxX, y: dotBounds.maxY }, // Bottom-right
+          ];
+
+          for (const corner of corners) {
+            if (isPointInPolygon(corner, vertices)) {
+              dot.setAttribute('visibility', 'hidden');
+              break; // No need to check other corners if one is inside
+            }
           }
         }
       });
-
-      const oldId = dotClipPath.id;
-      const newId = `${oldId}-modified-${Date.now()}`;
-      dotClipPath.id = newId;
-
-      const dotGroup = svgElement.querySelector(
-        `[clip-path="url('#${oldId}')"]`
-      ) as SVGElement | null;
-      if (dotGroup) {
-        dotGroup.setAttribute('clip-path', `url('#${newId}')`);
-      }
     }
+  }
 
-    paper.project.clear();
+  private applyTransform(point: Point, matrix: Matrix): Point {
+    return {
+      x: matrix.a * point.x + matrix.c * point.y + matrix.e,
+      y: matrix.b * point.x + matrix.d * point.y + matrix.f,
+    };
   }
 
   private getOutlineTransform(
@@ -189,25 +258,26 @@ class AsyncQRCodeStyling extends QRCodeStyling {
       finalLogoHeight / outlineResult.viewBox.height
     );
 
-    const scaledOutlineWidth = outlineResult.viewBox.width * scale;
-    const scaledOutlineHeight = outlineResult.viewBox.height * scale;
-
     const translateX =
       finalLogoStartX +
-      (finalLogoWidth - scaledOutlineWidth) / 2 -
+      (finalLogoWidth - outlineResult.viewBox.width * scale) / 2 -
       outlineResult.viewBox.x * scale;
     const translateY =
       finalLogoStartY +
-      (finalLogoHeight - scaledOutlineHeight) / 2 -
+      (finalLogoHeight - outlineResult.viewBox.height * scale) / 2 -
       outlineResult.viewBox.y * scale;
 
-    const transformMatrix = new DOMMatrix()
-      .translate(translateX, translateY)
-      .scale(scale);
+    const transformMatrix = {
+      a: scale,
+      b: 0,
+      c: 0,
+      d: scale,
+      e: translateX,
+      f: translateY,
+    };
 
     return {
       transform: transformMatrix,
-      transformString: `translate(${translateX} ${translateY}) scale(${scale})`,
     };
   }
 
@@ -215,6 +285,12 @@ class AsyncQRCodeStyling extends QRCodeStyling {
     imageUrl: string,
     margin = 0
   ): Promise<OutlineResult> {
+    const cacheKey = `${imageUrl}-${margin}`;
+    const cached = outlineCache.get(cacheKey);
+    if (cached) {
+      return cached.outline;
+    }
+
     let svgText: string;
 
     if (imageUrl.startsWith('data:image/svg+xml;base64,')) {
@@ -237,7 +313,10 @@ class AsyncQRCodeStyling extends QRCodeStyling {
 
     const [x, y, width, height] = viewBoxAttr.split(' ').map(parseFloat);
     const path = await generateOutlineInBrowser(svgText, margin, width, height);
-    return { path, viewBox: { x, y, width, height } };
+
+    const outline: OutlineResult = { path, viewBox: { x, y, width, height } };
+    outlineCache.set(cacheKey, { outline }); // Store the new outline in the cache
+    return outline;
   }
 }
 

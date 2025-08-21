@@ -68,7 +68,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
 };
 
 export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
-  [MODES.VCARD]: {},
+  [MODES.VCARD]: { margin: 0 },
   [MODES.LINK]: {},
   [MODES.WIFI]: {
     anniversaryLogo: false,

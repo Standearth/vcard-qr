@@ -1,4 +1,5 @@
-import passConfigData from './pass-templates.json' with { type: 'json' };
+// Remove the static import from the top of the file
+// import passConfigData from './pass-templates.json' with { type: 'json' };
 
 // Define interfaces for type safety
 interface PassStyle {
@@ -39,9 +40,19 @@ export async function loadPassConfig(): Promise<PassConfig> {
     }
   }
 
-  // For development, use the imported JSON file
-  config = passConfigData as PassConfig;
-  return config;
+  // For development, dynamically import the JSON file
+  try {
+    const passConfigModule = await import('./pass-templates.json', {
+      with: { type: 'json' },
+    });
+    config = passConfigModule.default as PassConfig;
+    return config;
+  } catch (error) {
+    console.error(
+      'Could not load pass-templates.json. Did you create it from the example?'
+    );
+    throw error;
+  }
 }
 
 export function getTemplateForEmail(

@@ -48,8 +48,8 @@ class AsyncQRCodeStyling extends QRCodeStyling {
       } else if (dotHidingMode === 'box') {
         sanatizedOptions.imageOptions.hideBackgroundDots = true;
       } else if (dotHidingMode === 'shape') {
-        // If we are using our custom logic, disable the library's dot hiding.
-        // If we can't, fall back to the library's "box" hiding.
+        // If we can't use our custom logic, fall back to the library's "box" hiding.
+        // If we CAN use our custom logic, we disable the library's hiding because we'll do it ourselves.
         sanatizedOptions.imageOptions.hideBackgroundDots = !canUseCustomLogic;
       }
     }
@@ -143,9 +143,10 @@ class AsyncQRCodeStyling extends QRCodeStyling {
           outlinePath.intersects(item) ||
           outlinePath.contains(item.position)
         ) {
-          const elementToRemove = itemToElementMap.get(item);
-          if (elementToRemove) {
-            elementToRemove.remove();
+          const elementToHide = itemToElementMap.get(item);
+          if (elementToHide) {
+            // Use visibility to hide instead of removing to prevent layout shift
+            elementToHide.setAttribute('visibility', 'hidden');
           }
         }
       });

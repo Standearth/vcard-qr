@@ -110,7 +110,9 @@ class AsyncQRCodeStyling extends QRCodeStyling {
       this.applyCustomizations(svg);
     };
 
-    super.update(sanatizedOptions);
+    setTimeout(() => {
+      super.update(sanatizedOptions);
+    }, 250);
   }
 
   private applyCustomizations(svgElement: SVGElement): void {

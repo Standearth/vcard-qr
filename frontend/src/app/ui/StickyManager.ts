@@ -4,6 +4,8 @@ import { dom } from '../../config/dom';
 import { DESKTOP_BREAKPOINT_PX } from '../../config/constants';
 import { UIManager } from '../UIManager';
 
+const topOffset = 8;
+
 /**
  * A structured object to hold all necessary DOM elements and their dimensions (DOMRects).
  * This avoids repetitive DOM queries and layout calculations.
@@ -39,11 +41,16 @@ export class StickyManager {
   private initialCanvasWidth = 0;
   private mobileCanvasTop: number | null = null;
   private uiManager: UIManager;
+  private logCounter = 0; // Renamed from logCount for clarity
 
   constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
-    this.reInitializeDimensions();
+    // DO NOT initialize dimensions here. The EventManager will call reInitializeDimensions()
+    // via a callback after the first QR code render is complete.
     this.setupEventListeners();
+    setTimeout(() => {
+      this.reInitializeDimensions();
+    }, 500);
   }
 
   public reInitializeDimensions(): void {
@@ -60,6 +67,12 @@ export class StickyManager {
    * Main handler that orchestrates all sticky behaviors.
    */
   public handleStickyBehavior = (isResizeEvent = false): void => {
+    // Add a guard clause to prevent this function from running until the
+    // dimensions have been properly initialized after the first render.
+    if (this.initialCanvasHeight === 0 && !isResizeEvent) {
+      return;
+    }
+
     const isMobile = window.innerWidth < DESKTOP_BREAKPOINT_PX;
 
     if (isMobile) {
@@ -78,7 +91,9 @@ export class StickyManager {
         return;
       }
       const contentExceedsViewport =
-        this.initialCanvasHeight + layoutData.rects.previewFooterRect.height >
+        this.initialCanvasHeight +
+          layoutData.rects.previewFooterRect.height +
+          topOffset >
         window.innerHeight;
 
       if (contentExceedsViewport) {
@@ -88,6 +103,7 @@ export class StickyManager {
         this.handleStickyFooter(layoutData);
         this.handleQrCodeResizing(layoutData);
       } else {
+        // this.handleQrCodeResizing(layoutData);
         this._handleStickyFullColumn(layoutData);
         this._updateFullColumnLayout(layoutData);
       }
@@ -179,9 +195,7 @@ export class StickyManager {
   }
 
   private _updateFullColumnLayout(data: LayoutData): void {
-    const { advancedControlsContainer, qrPreviewColumn, activeForm } =
-      data.elements;
-    const { previewColumnRect, qrcodeTextContainerRect } = data.rects;
+    const { advancedControlsContainer, qrPreviewColumn } = data.elements;
 
     if (advancedControlsContainer.classList.contains('hidden')) {
       advancedControlsContainer.classList.add('both-columns');
@@ -189,29 +203,21 @@ export class StickyManager {
       return;
     }
 
-    if (activeForm) {
-      // Use the bottom of the text container relative to the top of the column
-      // for a more stable height calculation, preventing layout feedback loops.
-      const previewContentHeight =
-        qrcodeTextContainerRect.bottom - previewColumnRect.top;
-      const formContentHeight = activeForm.offsetHeight;
+    const currentScrollY = window.scrollY;
+    const relativeStickyTop = this.stickyContainerTop - currentScrollY;
 
-      const isPreviewTaller = previewContentHeight > formContentHeight;
-      const isScrolledToTop = this.stickyContainerTop - window.scrollY <= 8;
-
-      // If the preview column is taller OR the user has scrolled the sticky
-      // container to the top, move the advanced controls into the preview column.
-      if (isPreviewTaller || isScrolledToTop) {
-        advancedControlsContainer.classList.remove('both-columns');
-        qrPreviewColumn.classList.add('both-rows');
-      } else {
-        advancedControlsContainer.classList.add('both-columns');
-        qrPreviewColumn.classList.remove('both-rows');
-      }
+    if (relativeStickyTop <= topOffset) {
+      advancedControlsContainer.classList.remove('both-columns');
+      qrPreviewColumn.classList.add('both-rows');
+    } else {
+      advancedControlsContainer.classList.add('both-columns');
+      qrPreviewColumn.classList.remove('both-rows');
     }
   }
 
   private _handleStickyFullColumn(data: LayoutData): void {
+    const { qrPreviewColumn, qrCanvasPlaceholder, formColumn } = data.elements;
+
     const { qrStickyContainer, qrPreviewColumnFooter, canvasContainer } =
       data.elements;
     const { contentWrapperRect, previewFooterRect } = data.rects;
@@ -220,25 +226,39 @@ export class StickyManager {
       qrStickyContainer.appendChild(qrPreviewColumnFooter);
     }
     qrStickyContainer.classList.add('is-full-sticky');
+
     this._resetShrinkingColumnStyles(data);
 
     const topOffset = 8;
-    const bottomIntrusion = Math.max(
-      0,
-      window.innerHeight - contentWrapperRect.bottom
-    );
+    const bottomOffset = 32;
+
     const fullStickyElementHeight =
       this.initialCanvasHeight + previewFooterRect.height;
-    const availableHeight = window.innerHeight - topOffset - bottomIntrusion;
 
-    if (fullStickyElementHeight > availableHeight) {
-      const newCanvasHeight = availableHeight - previewFooterRect.height;
-      let scaleFactor = newCanvasHeight / this.initialCanvasHeight;
+    const colHeightDiff = formColumn.offsetHeight - fullStickyElementHeight;
+
+    const previewColumnTop = qrPreviewColumn.getBoundingClientRect().top;
+
+    let bottomIntrusion = colHeightDiff + previewColumnTop - topOffset;
+    bottomIntrusion = bottomIntrusion < 0 ? -bottomIntrusion : 0;
+
+    const currentScrollY = window.scrollY;
+    const relativeStickyTop = this.stickyContainerTop - currentScrollY;
+
+    const shouldShrink = bottomIntrusion > 0;
+
+    if (shouldShrink) {
+      const availableQrHeight =
+        qrPreviewColumnFooter.getBoundingClientRect().top - topOffset;
+      const minHeight = window.innerHeight * 0.33;
+      const clampedHeight = Math.max(minHeight, availableQrHeight);
+      const finalHeight = Math.min(clampedHeight, this.initialCanvasHeight);
+
+      let scaleFactor = finalHeight / this.initialCanvasHeight;
 
       if (scaleFactor > 1) scaleFactor = 1;
       if (scaleFactor < 0) scaleFactor = 0;
-
-      canvasContainer.style.transformOrigin = 'top center';
+      canvasContainer.style.transformOrigin = 'bottom center';
       canvasContainer.style.transform = `scale(${scaleFactor})`;
     } else {
       canvasContainer.style.transform = 'scale(1)';
@@ -342,41 +362,44 @@ export class StickyManager {
 
     const currentScrollY = window.scrollY;
     const topOffset = 8;
-    const bottomOffset = window.innerHeight - rects.previewFooterRect.bottom;
     const relativeStickyTop = this.stickyContainerTop - currentScrollY;
+    const shouldBeSticky = relativeStickyTop <= topOffset;
 
-    if (relativeStickyTop <= topOffset) {
-      canvasContainer.classList.add('is-sticky');
-      qrCanvasPlaceholder.style.height = `${this.initialCanvasHeight}px`;
+    if (shouldBeSticky) {
+      if (!canvasContainer.classList.contains('is-sticky')) {
+        canvasContainer.classList.add('is-sticky');
+        qrCanvasPlaceholder.style.height = `${this.initialCanvasHeight}px`;
+      }
 
       const scrollPast = topOffset - relativeStickyTop;
       const newHeight = this.initialCanvasHeight - scrollPast;
-      const minHeight = window.innerHeight * 0.25;
+      const minHeight = window.innerHeight * 0.33;
       const availableHeight =
         rects.previewFooterRect.top - rects.canvasRect.top;
+      const bottomOffset = window.innerHeight - rects.previewFooterRect.bottom;
       const availableFullCol =
         window.innerHeight -
         qrPreviewColumnFooter.offsetHeight -
         topOffset -
         bottomOffset;
-
       const clampedHeight = Math.max(
         minHeight,
         availableHeight,
         newHeight,
         availableFullCol
       );
-
       let scaleFactor = clampedHeight / this.initialCanvasHeight;
       if (scaleFactor > 1) scaleFactor = 1;
 
       canvasContainer.style.transform = `scale(${scaleFactor})`;
       canvasContainer.style.width = `${rects.previewColumnRect.width}px`;
     } else {
-      canvasContainer.classList.remove('is-sticky');
-      qrCanvasPlaceholder.style.height = '0px';
-      canvasContainer.style.transform = 'scale(1)';
-      canvasContainer.style.width = '';
+      if (canvasContainer.classList.contains('is-sticky')) {
+        canvasContainer.classList.remove('is-sticky');
+        qrCanvasPlaceholder.style.height = '0px';
+        canvasContainer.style.transform = 'scale(1)';
+        canvasContainer.style.width = '';
+      }
     }
   }
 
@@ -403,14 +426,14 @@ export class StickyManager {
 
   private handleStickyFooter(data: LayoutData): void {
     const { elements, rects } = data;
-    const { canvasContainer, qrPreviewColumnFooter } = elements;
+    const { qrPreviewColumnFooter } = elements;
 
     const contentExceedsViewport =
       this.initialCanvasHeight + rects.previewFooterRect.height >
       window.innerHeight;
 
     const calculatedPreviewFooterRectTop =
-      rects.previewColumnRect.top + canvasContainer.offsetHeight;
+      rects.previewColumnRect.top + this.initialCanvasHeight;
     const overlap =
       rects.canvasRect.top +
       this.initialCanvasHeight -
@@ -442,10 +465,19 @@ export class StickyManager {
       const footerStickBottomPosition = contentWrapperBottomOffset + 32;
       qrPreviewColumnFooter.classList.add('sticky-footer');
       qrPreviewColumnFooter.style.bottom = `${footerStickBottomPosition}px`;
-      qrPreviewColumnFooter.style.width = `${rects.previewColumnRect.width}px`;
+
+      const rootFontSize = parseFloat(
+        getComputedStyle(document.documentElement).fontSize
+      );
+      const remInPx = 2.75 * rootFontSize;
+      const containerWidth = rects.contentWrapperRect.width;
+      const footerWidth = containerWidth / 2 - remInPx;
+
+      qrPreviewColumnFooter.style.width = `${footerWidth}px`;
     } else {
       qrPreviewColumnFooter.classList.remove('sticky-footer');
       qrPreviewColumnFooter.style.bottom = '';
+      qrPreviewColumnFooter.style.width = '';
     }
   }
 

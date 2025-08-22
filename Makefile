@@ -14,12 +14,6 @@ REQUIRED_ENV_VARS := \
     VITE_ORG_NAME \
     VITE_ORG_WEBSITE \
     VITE_OFFICE_PHONE_OPTIONS \
-    PASS_TEAM_ID \
-    PASS_TYPE_ID \
-    PASS_DESCRIPTION \
-    PASS_FOREGROUND \
-    PASS_BACKGROUND \
-    PASS_LABEL \
     PHOTO_SERVICE_URL
 
 # Immediately check if all required variables are defined. If not, stop and show an error.
@@ -36,7 +30,7 @@ PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&
 ADC_FILE        = $(HOME)/.config/gcloud/application_default_credentials.json
 
 # --- Argument Parsing & Target Validation ---
-KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
+KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars update-tfvars
 
 # This captures the first unlabelled argument passed after the target
 ARG := $(firstword $(filter-out $(KNOWN_TARGETS) $(MAKECMDGOALS),$(MAKECMDGOALS)))
@@ -140,17 +134,17 @@ _setup_tasks: create-project setup-project create-service-account create-workloa
 ## --------------------------------------
 
 update-tfvars:
-	@echo "🔄 Syncing .env to terraform.tfvars..."
+	@echo "🔄 Syncing .env and pass-templates.json to terraform.tfvars..."
+	@# Preserve gcp_project_id
 	@grep 'gcp_project_id' $(TFFILE) > $(TFFILE).tmp
-	@echo "FRONTEND_DOMAIN = $(FRONTEND_DOMAIN)" >> $(TFFILE).tmp
-	@echo "VITE_ORG_NAME = $(VITE_ORG_NAME)" >> $(TFFILE).tmp
-	@echo "PASS_TEAM_ID = $(PASS_TEAM_ID)" >> $(TFFILE).tmp
-	@echo "PASS_TYPE_ID = $(PASS_TYPE_ID)" >> $(TFFILE).tmp
-	@echo "PASS_DESCRIPTION = $(PASS_DESCRIPTION)" >> $(TFFILE).tmp
-	@echo "PASS_FOREGROUND = $(PASS_FOREGROUND)" >> $(TFFILE).tmp
-	@echo "PASS_BACKGROUND = $(PASS_BACKGROUND)" >> $(TFFILE).tmp
-	@echo "PASS_LABEL = $(PASS_LABEL)" >> $(TFFILE).tmp
-	@echo "PHOTO_SERVICE_URL = $(PHOTO_SERVICE_URL)" >> $(TFFILE).tmp
+	@# Add variables from .env
+	@echo "frontend_domain = \"$(FRONTEND_DOMAIN)\"" >> $(TFFILE).tmp
+	@echo "vite_org_name = \"$(VITE_ORG_NAME)\"" >> $(TFFILE).tmp
+	@echo "photo_service_url = \"$(PHOTO_SERVICE_URL)\"" >> $(TFFILE).tmp
+	@# Add pass_config from json file
+	@echo 'pass_config = <<EOT' >> $(TFFILE).tmp
+	@node -e 'try { console.log(JSON.stringify(JSON.parse(require("fs").readFileSync("server/src/config/pass-templates.json", "utf-8")))) } catch (e) { console.error("Error: Could not read or parse server/src/config/pass-templates.json. Make sure it exists and is valid JSON."); process.exit(1); }' >> $(TFFILE).tmp
+	@echo 'EOT' >> $(TFFILE).tmp
 	@mv $(TFFILE).tmp $(TFFILE)
 
 create-project: check-auth

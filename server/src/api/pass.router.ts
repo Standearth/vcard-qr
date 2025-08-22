@@ -1,6 +1,7 @@
 // src/api/pass.router.ts
 import { Router, Request } from 'express';
 import { generatePassBuffer } from '../services/pass.service.js';
+import { generateGoogleWalletPass } from '../services/google-wallet.service.js'; // New service
 import { PassData } from '../types/index.js';
 import api, { getPhotoServiceUrl } from '../services/api.service.js';
 
@@ -61,6 +62,17 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error generating pass:', error);
     res.status(500).send('Failed to generate pass.');
+  }
+});
+
+router.post('/google', async (req, res) => {
+  try {
+    const passData: PassData = req.body;
+    const jwt = await generateGoogleWalletPass(passData);
+    res.json({ jwt });
+  } catch (error) {
+    console.error('Error generating Google Wallet pass:', error);
+    res.status(500).send('Failed to generate Google Wallet pass.');
   }
 });
 

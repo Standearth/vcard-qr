@@ -26,12 +26,10 @@ export class WalletManager {
     const state = stateService.getState(this.uiManager.getCurrentMode());
     const firstName = state?.firstName?.trim();
     const lastName = state?.lastName?.trim();
+    const isDisabled = !firstName && !lastName;
 
-    if (firstName || lastName) {
-      dom.buttons.addToWallet.disabled = false;
-    } else {
-      dom.buttons.addToWallet.disabled = true;
-    }
+    dom.buttons.addToWallet.disabled = isDisabled;
+    dom.buttons.addToGoogleWallet.disabled = isDisabled;
   };
 
   private showTooltip(): void {
@@ -56,7 +54,17 @@ export class WalletManager {
           this.showTooltip();
           return;
         }
-        this.createPass();
+        this.createApplePass();
+      });
+    }
+
+    if (dom.buttons.addToGoogleWallet) {
+      dom.buttons.addToGoogleWallet.addEventListener('click', () => {
+        if (dom.buttons.addToGoogleWallet.disabled) {
+          this.showTooltip();
+          return;
+        }
+        this.createGooglePass();
       });
     }
 
@@ -64,16 +72,16 @@ export class WalletManager {
     stateService.subscribe(this.validatePassFields);
   }
 
-  private async createPass(): Promise<void> {
+  private getPassDataFromState() {
     const currentMode = this.uiManager.getCurrentMode();
     const state = stateService.getState(currentMode);
 
     if (!state) {
       console.error('No state available to generate pass.');
-      return;
+      return null;
     }
 
-    const passData = {
+    return {
       firstName: state.firstName || '',
       lastName: state.lastName || '',
       organization: state.org || '',
@@ -90,6 +98,11 @@ export class WalletManager {
       // This property is used on the backend pass.json model
       anniversaryLogo: state.anniversaryLogo || false,
     };
+  }
+
+  private async createApplePass(): Promise<void> {
+    const passData = this.getPassDataFromState();
+    if (!passData) return;
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
@@ -111,7 +124,9 @@ export class WalletManager {
       a.href = url;
 
       // Reuse the centralized filename generation function
-      a.download = `${generateFilename(currentMode)}.pkpass`;
+      a.download = `${generateFilename(
+        this.uiManager.getCurrentMode()
+      )}.pkpass`;
 
       document.body.appendChild(a);
       a.click();
@@ -119,6 +134,34 @@ export class WalletManager {
       a.remove();
     } catch (error) {
       console.error('Error creating Apple Wallet pass:', error);
+    }
+  }
+
+  private async createGooglePass(): Promise<void> {
+    const passData = this.getPassDataFromState();
+    if (!passData) return;
+
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const response = await fetch(`${apiBaseUrl}/api/v1/passes/vcard/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(passData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create Google Wallet pass');
+      }
+
+      const { jwt } = await response.json();
+      const saveUrl = `https://pay.google.com/gp/v/save/${jwt}`;
+
+      // Open the save URL in a new tab
+      window.open(saveUrl, '_blank');
+    } catch (error) {
+      console.error('Error creating Google Wallet pass:', error);
     }
   }
 }

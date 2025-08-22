@@ -80,14 +80,39 @@
   }
 }
 
+.button-apple,
+.button-google {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  height: 48px;
+  width: 150px; /* Provide an explicit width */
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+
+  &:hover {
+    transform: scale(1.02);
+    background-color: transparent;
+  }
+}
+
 .button-apple {
-  background-color: #000000;
-  color: var('color-bg-apple');
-  --focus-ring-color: #000000;
-  @media (hover: hover) and (pointer: fine) {
-    &:hover {
-      background-color: #333333;
-    }
+  background-image: url(/apple-wallet.svg);
+}
+
+.button-google {
+  background-image: url(/google-wallet.png);
+}
+
+.button-wrapper {
+  position: relative;
+  display: inline-flex; // Make the wrapper a flex container
+  cursor: not-allowed;
+  flex-shrink: 0; // Prevent the wrapper from shrinking
+  button {
+    width: 100%;
   }
 }
 
@@ -126,6 +151,12 @@
   }
 }
 
+#wallet-button-container {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+}
+
 .button-wrapper {
   position: relative;
   display: inline-flex;
@@ -147,7 +178,6 @@
   background-color: white;
   color: var(--color-primary-dark);
   padding: 0.25rem 0.5rem;
-  line-height: 1rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
   white-space: nowrap;

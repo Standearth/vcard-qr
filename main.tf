@@ -54,34 +54,15 @@ variable "frontend_domain" {
   type        = string
   description = "The production domain for the frontend."
 }
-variable "org_name" {
+variable "vite_org_name" {
   type        = string
-  description = "The name of the organization."
+  description = "The name of the organization (from VITE_ORG_NAME)."
 }
-variable "pass_team_id" {
+variable "pass_config" {
   type        = string
-  description = "The Apple Developer Team ID."
+  description = "The pkpass configuration (json)."
 }
-variable "pass_type_id" {
-  type        = string
-  description = "The Pass Type ID registered with Apple."
-}
-variable "pass_description" {
-  type        = string
-  description = "The description that appears on the pass."
-}
-variable "pass_foreground" {
-  type        = string
-  description = "The foreground color for the pass."
-}
-variable "pass_background" {
-  type        = string
-  description = "The background color for the pass."
-}
-variable "pass_label" {
-  type        = string
-  description = "The label color for the pass."
-}
+
 variable "photo_service_url" {
   type        = string
   description = "The base URL for the photo lookup service."
@@ -139,31 +120,11 @@ resource "google_cloud_run_v2_service" "default" {
       }
       env {
         name  = "VITE_ORG_NAME"
-        value = var.org_name
+        value = var.vite_org_name
       }
       env {
-        name  = "PASS_TEAM_ID"
-        value = var.pass_team_id
-      }
-      env {
-        name  = "PASS_TYPE_ID"
-        value = var.pass_type_id
-      }
-      env {
-        name  = "PASS_DESCRIPTION"
-        value = var.pass_description
-      }
-      env {
-        name  = "PASS_FOREGROUND"
-        value = var.pass_foreground
-      }
-      env {
-        name  = "PASS_BACKGROUND"
-        value = var.pass_background
-      }
-      env {
-        name  = "PASS_LABEL"
-        value = var.pass_label
+        name  = "PASS_CONFIG"
+        value = var.pass_config
       }
       env {
         name  = "SIGNER_KEY_SECRET"

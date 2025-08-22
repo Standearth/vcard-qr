@@ -224,7 +224,6 @@ export class App {
     const urlState = this.ui.getUrlHandler().getStateFromUrl();
     const currentTabState =
       stateService.getState(this.ui.getCurrentMode()) || ({} as TabState);
-
     const mergedState: TabState = {
       ...currentTabState,
       ...urlState,

@@ -116,6 +116,9 @@ export function initializeDomElements() {
       addToWallet: document.getElementById(
         'add-to-wallet'
       ) as HTMLButtonElement,
+      addToGoogleWallet: document.getElementById(
+        'add-to-google-wallet'
+      ) as HTMLButtonElement,
     },
     walletTooltip: document.getElementById('wallet-tooltip') as HTMLDivElement,
     modal: {

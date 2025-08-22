@@ -9,6 +9,7 @@ import {
   PolyType,
 } from 'clipper-lib';
 import paper, { Path, Shape, Item } from 'paper';
+import { optimize } from 'svgo';
 
 type PaperPath = InstanceType<typeof Path>;
 type PaperItem = InstanceType<typeof Item>;
@@ -59,8 +60,25 @@ function pathToClipper(path: PaperPath): { X: number; Y: number }[] {
  * to ensure Paper.js can read them correctly.
  */
 function preprocessSvg(svgData: string): string {
+  const { data } = optimize(svgData, {
+    plugins: [
+      {
+        name: 'preset-default',
+        params: {
+          overrides: {
+            // Disable plugins that may conflict with our goal
+            removeViewBox: false,
+            cleanupIds: false,
+          },
+        },
+      },
+      // Enable the plugin that moves group attrs to elements separately
+      'moveGroupAttrsToElems',
+    ],
+  });
+
   const parser = new DOMParser();
-  const svgDoc = parser.parseFromString(svgData, 'image/svg+xml');
+  const svgDoc = parser.parseFromString(data, 'image/svg+xml');
   const svgElement = svgDoc.documentElement;
 
   const allElements = svgElement.getElementsByTagName('*');
@@ -150,6 +168,9 @@ export function generateOutlineInBrowser(
   return new Promise((resolve, reject) => {
     const modifiedSvgData = preprocessSvg(svgData);
 
+    const shortestDimension = Math.min(viewBoxWidth, viewBoxHeight);
+    const marginInSvgUnits = (margin / 100) * shortestDimension;
+
     paper.setup(new paper.Size(viewBoxWidth, viewBoxHeight));
 
     paper.project.importSVG(modifiedSvgData, {
@@ -175,7 +196,7 @@ export function generateOutlineInBrowser(
 
           const allOutlinedPaths = createIndividualOutlines(
             visibleItems,
-            margin
+            marginInSvgUnits
           );
 
           // Union all the individual outlines into a single (potentially multi-part) shape

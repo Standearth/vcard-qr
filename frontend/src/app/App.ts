@@ -91,7 +91,10 @@ export class App {
   private buildQrConfig = (
     data: string,
     isLiveUpdate: boolean
-  ): Partial<Options> & { dotHidingMode?: 'box' | 'shape' | 'off' } => {
+  ): Partial<Options> & {
+    dotHidingMode?: 'box' | 'shape' | 'off';
+    wrapSize?: number;
+  } => {
     const state = stateService.getState(this.ui.getCurrentMode());
     if (!state) return { data };
 
@@ -107,13 +110,14 @@ export class App {
       width: state.width,
       height: state.height,
       margin: state.margin,
-      qrOptions: state.qrOptions,
-      imageOptions: state.imageOptions,
+      qrOptions: { ...state.qrOptions },
+      imageOptions: { ...state.imageOptions },
       dotsOptions: { ...state.dotsOptions, roundSize: state.roundSize },
-      backgroundOptions: state.backgroundOptions,
-      cornersSquareOptions: state.cornersSquareOptions,
-      cornersDotOptions: state.cornersDotOptions,
+      backgroundOptions: { ...state.backgroundOptions },
+      cornersSquareOptions: { ...state.cornersSquareOptions },
+      cornersDotOptions: { ...state.cornersDotOptions },
       dotHidingMode: dotHidingMode,
+      wrapSize: state.wrapSize,
     };
   };
 

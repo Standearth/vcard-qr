@@ -438,10 +438,24 @@
                     >Hide Dots</label
                   >
                   <select id="form-hide-background-dots" class="form-input">
-                    <option value="shape">Hide Shape</option>
-                    <option value="box">Hide Box</option>
+                    <option value="shape">Wrap</option>
+                    <option value="box">Box</option>
                     <option value="off">Off</option>
                   </select>
+                </div>
+                <div>
+                  <label for="form-wrap-size" class="form-label"
+                    >Wrap Size</label
+                  >
+                  <input
+                    id="form-wrap-size"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value="0.1"
+                    class="form-input"
+                  />
                 </div>
                 <div class="checkbox-container">
                   <input

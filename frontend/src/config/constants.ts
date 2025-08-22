@@ -24,6 +24,7 @@ export type TabState = Partial<Options> & {
   roundSize?: boolean;
   showImage?: boolean;
   dotHidingMode?: 'box' | 'shape' | 'off';
+  wrapSize?: number;
   isAdvancedControlsVisible?: boolean;
   isModalVisible?: boolean;
   qrCodeContent?: string;
@@ -59,6 +60,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   backgroundOptions: { color: '#ffffff' },
   showImage: true,
   dotHidingMode: 'shape',
+  wrapSize: 0.5,
   imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 10 },
   qrOptions: { typeNumber: 0, errorCorrectionLevel: 'H' },
   anniversaryLogo: true,
@@ -69,7 +71,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
 
 export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
   [MODES.VCARD]: { margin: 0 },
-  [MODES.LINK]: {},
+  [MODES.LINK]: { margin: 10, imageOptions: { margin: 10 } },
   [MODES.WIFI]: {
     anniversaryLogo: false,
     imageOptions: {},

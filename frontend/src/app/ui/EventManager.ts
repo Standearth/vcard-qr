@@ -170,7 +170,9 @@ export class EventManager {
     );
 
     dom.buttons.downloadVCard.addEventListener('click', () => {
-      const blob = new Blob([this.app.getQRCodeData()], { type: 'text/vcard' });
+      const blob = new Blob([this.app.getQRCodeData()], {
+        type: 'text/vcard',
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -204,13 +206,44 @@ export class EventManager {
       const currentMode = this.uiManager.getCurrentMode();
       const currentState = this.uiManager.getTabState();
       if (currentState) {
+        const tabDefaults = TAB_SPECIFIC_DEFAULTS[currentMode] || {};
+
+        // Start with a clean slate of defaults by applying them in order
         const newTabState: TabState = {
           ...currentState,
-          ...DEFAULT_ADVANCED_OPTIONS,
-          ...(TAB_SPECIFIC_DEFAULTS[currentMode] || {}),
+          ...DEFAULT_ADVANCED_OPTIONS, // Base defaults
+          ...tabDefaults, // Tab-specific overrides
           isAdvancedControlsVisible: currentState.isAdvancedControlsVisible,
           isModalVisible: false,
         };
+
+        // Deep-merge all nested option objects to ensure they are fully populated,
+        // preventing partial overrides from breaking the state.
+        newTabState.qrOptions = {
+          ...DEFAULT_ADVANCED_OPTIONS.qrOptions,
+          ...(tabDefaults.qrOptions || {}),
+        };
+        newTabState.imageOptions = {
+          ...DEFAULT_ADVANCED_OPTIONS.imageOptions,
+          ...(tabDefaults.imageOptions || {}),
+        };
+        newTabState.dotsOptions = {
+          ...DEFAULT_ADVANCED_OPTIONS.dotsOptions,
+          ...(tabDefaults.dotsOptions || {}),
+        };
+        newTabState.cornersSquareOptions = {
+          ...DEFAULT_ADVANCED_OPTIONS.cornersSquareOptions,
+          ...(tabDefaults.cornersSquareOptions || {}),
+        };
+        newTabState.cornersDotOptions = {
+          ...DEFAULT_ADVANCED_OPTIONS.cornersDotOptions,
+          ...(tabDefaults.cornersDotOptions || {}),
+        };
+        newTabState.backgroundOptions = {
+          ...DEFAULT_ADVANCED_OPTIONS.backgroundOptions,
+          ...(tabDefaults.backgroundOptions || {}),
+        };
+
         this.uiManager.getFormManager().setFormControlValues(newTabState);
         this.handleStateUpdate();
       }

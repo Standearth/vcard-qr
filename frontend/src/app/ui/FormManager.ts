@@ -82,6 +82,7 @@ export class FormManager {
         | 'box'
         | 'shape'
         | 'off',
+      wrapSize: parseFloat(advancedControls.wrapSize.value),
       imageOptions: {
         imageSize: parseFloat(advancedControls.imageSize.value),
         margin: parseInt(advancedControls.imageMargin.value),
@@ -189,11 +190,16 @@ export class FormManager {
         values.dotHidingMode ??
         DEFAULT_ADVANCED_OPTIONS.dotHidingMode ??
         'shape';
+      advancedControls.wrapSize.value = String(
+        values.wrapSize ?? DEFAULT_ADVANCED_OPTIONS.wrapSize
+      );
       advancedControls.imageSize.value = String(
-        values.imageOptions.imageSize ?? 0.4
+        values.imageOptions.imageSize ??
+          DEFAULT_ADVANCED_OPTIONS.imageOptions?.imageSize
       );
       advancedControls.imageMargin.value = String(
-        values.imageOptions.margin ?? 5
+        values.imageOptions.margin ??
+          DEFAULT_ADVANCED_OPTIONS.imageOptions?.margin
       );
     }
 

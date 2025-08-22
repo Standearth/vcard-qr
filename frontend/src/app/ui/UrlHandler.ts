@@ -20,6 +20,7 @@ export class UrlHandler {
     const params = new URLSearchParams(window.location.hash.split('?')[1]);
     const state: Partial<TabState> = {};
 
+    // First, handle all simple form fields
     for (const key in DEFAULT_FORM_FIELDS) {
       const fieldKey = key as keyof typeof DEFAULT_FORM_FIELDS;
       const paramName = key.replace(/([A-Z])/g, '_$1').toLowerCase();
@@ -34,6 +35,7 @@ export class UrlHandler {
       }
     }
 
+    // Then, handle advanced and nested controls
     const keys = Object.keys(dom.advancedControls) as Array<
       keyof typeof dom.advancedControls
     >;
@@ -52,31 +54,10 @@ export class UrlHandler {
     const newUrlParams = new URLSearchParams();
     const currentMode = this.uiManager.getCurrentMode();
 
-    const activeFormFields = this.uiManager
-      .getFormManager()
-      .getActiveFormFields();
-    for (const fieldKey of Object.keys(activeFormFields) as Array<
-      keyof typeof activeFormFields
-    >) {
-      const element = activeFormFields[fieldKey];
-      if (!element) continue;
-
-      const value =
-        element instanceof HTMLInputElement && element.type === 'checkbox'
-          ? element.checked
-          : element.value;
-
-      const defaultValue = DEFAULT_FORM_FIELDS[fieldKey];
-
-      if (String(value) !== String(defaultValue)) {
-        const paramName = fieldKey.replace(/([A-Z])/g, '_$1').toLowerCase();
-        newUrlParams.set(paramName, String(value));
-      }
-    }
-
     const tabSpecifics = TAB_SPECIFIC_DEFAULTS[currentMode] || {};
     const defaultTabState: TabState = {
       ...DEFAULT_ADVANCED_OPTIONS,
+      ...DEFAULT_FORM_FIELDS,
       ...tabSpecifics,
       qrOptions: {
         ...DEFAULT_ADVANCED_OPTIONS.qrOptions,
@@ -110,7 +91,30 @@ export class UrlHandler {
         .reduce((p, c) => (p && p[c] !== undefined ? p[c] : null), obj);
     };
 
+    // A comprehensive map of all state properties to their URL parameter names
     const statePathMap: { [k: string]: string } = {
+      // vCard fields
+      firstName: 'firstName',
+      lastName: 'lastName',
+      org: 'org',
+      title: 'title',
+      email: 'email',
+      officePhone: 'officePhone',
+      extension: 'extension',
+      workPhone: 'workPhone',
+      cellPhone: 'cellPhone',
+      website: 'website',
+      linkedin: 'linkedin',
+      whatsapp: 'whatsapp',
+      notes: 'notes',
+      // Link fields
+      linkUrl: 'linkUrl',
+      // WiFi fields
+      wifiSsid: 'wifiSsid',
+      wifiPassword: 'wifiPassword',
+      wifiEncryption: 'wifiEncryption',
+      wifiHidden: 'wifiHidden',
+      // Advanced Controls
       width: 'width',
       height: 'height',
       margin: 'margin',
@@ -126,6 +130,7 @@ export class UrlHandler {
       cornersDotColor: 'cornersDotOptions.color',
       backgroundColor: 'backgroundOptions.color',
       hideBackgroundDots: 'dotHidingMode',
+      wrapSize: 'wrapSize',
       imageSize: 'imageOptions.imageSize',
       imageMargin: 'imageOptions.margin',
       qrTypeNumber: 'qrOptions.typeNumber',
@@ -146,7 +151,9 @@ export class UrlHandler {
       }
     }
 
-    const newUrl = `${window.location.pathname}#/${currentMode}/?${newUrlParams.toString()}`;
+    const newUrl = `${
+      window.location.pathname
+    }#/${currentMode}/?${newUrlParams.toString()}`;
     history.replaceState(null, '', newUrl);
   }
 
@@ -157,12 +164,13 @@ export class UrlHandler {
   ): void {
     const boolValue = value === 'true';
     const numValue = parseFloat(value);
+    const intValue = parseInt(value, 10);
 
     switch (key) {
       case 'width':
       case 'height':
       case 'margin':
-        if (!isNaN(numValue)) state[key] = numValue;
+        if (!isNaN(intValue)) state[key] = intValue;
         break;
       case 'anniversaryLogo':
       case 'optimizeSize':
@@ -203,17 +211,20 @@ export class UrlHandler {
       case 'hideBackgroundDots': // This key comes from dom.advancedControls
         state.dotHidingMode = value as any;
         break;
+      case 'wrapSize':
+        if (!isNaN(numValue)) state.wrapSize = numValue;
+        break;
       case 'imageSize':
         if (!isNaN(numValue))
           state.imageOptions = { ...state.imageOptions, imageSize: numValue };
         break;
       case 'imageMargin':
-        if (!isNaN(numValue))
-          state.imageOptions = { ...state.imageOptions, margin: numValue };
+        if (!isNaN(intValue))
+          state.imageOptions = { ...state.imageOptions, margin: intValue };
         break;
       case 'qrTypeNumber':
-        if (!isNaN(numValue))
-          state.qrOptions = { ...state.qrOptions, typeNumber: numValue as any };
+        if (!isNaN(intValue))
+          state.qrOptions = { ...state.qrOptions, typeNumber: intValue as any };
         break;
       case 'qrErrorCorrectionLevel':
         state.qrOptions = {

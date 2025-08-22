@@ -54,7 +54,7 @@ class StateService {
           ...defaults.imageOptions,
           ...(specifics.imageOptions || {}),
         },
-        showImage: defaults.showImage,
+        showImage: specifics.showImage ?? defaults.showImage,
         isAdvancedControlsVisible: false,
         isModalVisible: false,
         qrCodeContent: '',

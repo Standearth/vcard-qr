@@ -131,7 +131,7 @@ class AsyncQRCodeStyling extends QRCodeStyling {
 
     // Check cache for vertices first
     const cacheKey = `${this._customOutlineResult.path}-${JSON.stringify(transform)}`;
-    let cachedEntry = outlineCache.get(this._customOutlineResult.path);
+    let cachedEntry = outlineCache.get(cacheKey);
 
     let vertices: number[][];
 

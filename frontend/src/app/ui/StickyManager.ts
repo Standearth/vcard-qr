@@ -41,7 +41,6 @@ export class StickyManager {
   private initialCanvasWidth = 0;
   private mobileCanvasTop: number | null = null;
   private uiManager: UIManager;
-  private logCounter = 0; // Renamed from logCount for clarity
 
   constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
@@ -216,11 +215,11 @@ export class StickyManager {
   }
 
   private _handleStickyFullColumn(data: LayoutData): void {
-    const { qrPreviewColumn, qrCanvasPlaceholder, formColumn } = data.elements;
+    const { qrPreviewColumn, formColumn } = data.elements;
 
     const { qrStickyContainer, qrPreviewColumnFooter, canvasContainer } =
       data.elements;
-    const { contentWrapperRect, previewFooterRect } = data.rects;
+    const { previewFooterRect } = data.rects;
 
     if (!qrStickyContainer.contains(qrPreviewColumnFooter)) {
       qrStickyContainer.appendChild(qrPreviewColumnFooter);
@@ -230,7 +229,6 @@ export class StickyManager {
     this._resetShrinkingColumnStyles(data);
 
     const topOffset = 8;
-    const bottomOffset = 32;
 
     const fullStickyElementHeight =
       this.initialCanvasHeight + previewFooterRect.height;
@@ -241,9 +239,6 @@ export class StickyManager {
 
     let bottomIntrusion = colHeightDiff + previewColumnTop - topOffset;
     bottomIntrusion = bottomIntrusion < 0 ? -bottomIntrusion : 0;
-
-    const currentScrollY = window.scrollY;
-    const relativeStickyTop = this.stickyContainerTop - currentScrollY;
 
     const shouldShrink = bottomIntrusion > 0;
 

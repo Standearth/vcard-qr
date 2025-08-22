@@ -42,7 +42,9 @@ export async function loadPassConfig(): Promise<PassConfig> {
 
   // For development, dynamically import the JSON file
   try {
-    const passConfigModule = await import('./pass-templates.json', {
+    // Use a variable to hold the path, preventing TSC from resolving it at build time
+    const configPath = './pass-templates.json';
+    const passConfigModule = await import(configPath, {
       with: { type: 'json' },
     });
     config = passConfigModule.default as PassConfig;

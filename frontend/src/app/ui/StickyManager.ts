@@ -1,7 +1,7 @@
 // src/app/ui/StickyManager.ts
 
 import { dom } from '../../config/dom';
-import { DESKTOP_BREAKPOINT_PX } from '../../config/constants';
+import { DESKTOP_BREAKPOINT_PX, Mode } from '../../config/constants';
 import { UIManager } from '../UIManager';
 
 const TOP_OFFSET = 8;
@@ -37,6 +37,7 @@ export class StickyManager {
   private initialCanvasWidth = 0;
   private mobileCanvasTop: number | null = null;
   private uiManager: UIManager;
+  private advancedControlsMoved: Partial<Record<Mode, boolean>> = {};
 
   constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
@@ -51,6 +52,7 @@ export class StickyManager {
       this.initialCanvasHeight = canvasContainer.offsetHeight;
       this.initialCanvasWidth = canvasContainer.offsetWidth;
       this.mobileCanvasTop = null;
+      this.advancedControlsMoved = {};
     }
   }
 
@@ -89,6 +91,8 @@ export class StickyManager {
       return;
     }
 
+    this.manageAdvancedControlsLayout(layoutData);
+
     const contentExceedsViewport =
       this.initialCanvasHeight +
         layoutData.rects.previewFooterRect.height +
@@ -99,6 +103,39 @@ export class StickyManager {
       this.manageShrinkingColumn(layoutData);
     } else {
       this.manageFullStickyColumn(layoutData);
+    }
+  }
+
+  private manageAdvancedControlsLayout(layoutData: LayoutData): void {
+    const { elements, rects } = layoutData;
+    const {
+      advancedControlsContainer,
+      activeForm,
+      canvasContainer,
+      qrPreviewColumnFooter,
+      qrPreviewColumn,
+    } = elements;
+    const currentMode = this.uiManager.getCurrentMode();
+
+    if (
+      advancedControlsContainer.classList.contains('hidden') ||
+      this.advancedControlsMoved[currentMode]
+    ) {
+      return;
+    }
+
+    const previewContentHeight =
+      canvasContainer.offsetHeight + qrPreviewColumnFooter.offsetHeight;
+    const formHeight = activeForm?.offsetHeight || 0;
+    const advancedControlsBottom = rects.advancedControlsRect.bottom;
+
+    if (
+      formHeight < previewContentHeight &&
+      advancedControlsBottom > window.innerHeight
+    ) {
+      advancedControlsContainer.classList.remove('both-columns');
+      qrPreviewColumn.classList.add('both-rows');
+      this.advancedControlsMoved[currentMode] = true;
     }
   }
 
@@ -116,7 +153,12 @@ export class StickyManager {
   }
 
   private resetDesktopStyles(): void {
-    const { canvasContainer, qrCanvasPlaceholder, qrPreviewColumnFooter, qrStickyContainer } = dom;
+    const {
+      canvasContainer,
+      qrCanvasPlaceholder,
+      qrPreviewColumnFooter,
+      qrStickyContainer,
+    } = dom;
     if (canvasContainer) {
       canvasContainer.classList.remove('is-sticky');
       Object.assign(canvasContainer.style, {
@@ -215,6 +257,11 @@ export class StickyManager {
 
   private updateFullColumnLayout(data: LayoutData): void {
     const { advancedControlsContainer, qrPreviewColumn } = data.elements;
+    const currentMode = this.uiManager.getCurrentMode();
+
+    if (this.advancedControlsMoved[currentMode]) {
+      return;
+    }
 
     if (advancedControlsContainer.classList.contains('hidden')) {
       advancedControlsContainer.classList.add('both-columns');
@@ -408,6 +455,11 @@ export class StickyManager {
     const { elements, rects } = data;
     const { advancedControlsContainer, qrPreviewColumn } = elements;
     const isScrollingDown = window.scrollY > this.lastScrollY;
+    const currentMode = this.uiManager.getCurrentMode();
+
+    if (this.advancedControlsMoved[currentMode]) {
+      return;
+    }
 
     if (
       isScrollingDown &&

@@ -21,6 +21,7 @@ export class TabManager {
       stateService.updateState(currentMode, newValues);
     }
 
+    this.uiManager.getStickyManager().reInitializeDimensions();
     this.uiManager.setCurrentMode(newMode);
 
     const newTabState = stateService.getState(newMode);

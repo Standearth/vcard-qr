@@ -1,4 +1,4 @@
-// src/app/ui/EventManager.ts
+// standearth/vcard-qr/vcard-qr-dot-removal-caching/frontend/src/app/ui/EventManager.ts
 
 import { dom } from '../../config/dom';
 import { App } from '../App';
@@ -106,6 +106,49 @@ export class EventManager {
     });
   };
 
+  /**
+   * A custom smooth scroll function that recalculates the target position
+   * during the animation, accommodating for layout reflows.
+   * @param getTargetY A function that returns the target Y scroll position.
+   * @param onComplete An optional callback to run when the scroll is finished.
+   */
+  private smoothScrollWithReflow(
+    getTargetY: () => number,
+    onComplete?: () => void
+  ) {
+    const startY = window.scrollY;
+    let targetY = getTargetY();
+    const startTime = performance.now();
+    const duration = 500; // Animation duration in ms
+
+    const easeInOutQuad = (t: number) =>
+      t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+    const scrollStep = (currentTime: number) => {
+      const elapsedTime = currentTime - startTime;
+      const progress = Math.min(elapsedTime / duration, 1);
+
+      // Recalculate targetY in each step
+      targetY = getTargetY();
+
+      const newY = startY + (targetY - startY) * easeInOutQuad(progress);
+
+      window.scrollTo(0, newY);
+
+      if (progress < 1) {
+        requestAnimationFrame(scrollStep);
+      } else {
+        // One final scroll to ensure it's at the precise end position
+        window.scrollTo(0, getTargetY());
+        if (onComplete) {
+          onComplete();
+        }
+      }
+    };
+
+    requestAnimationFrame(scrollStep);
+  }
+
   private setupEventListeners(): void {
     this.previousWidth = parseInt(dom.advancedControls.width.value);
     window.addEventListener('hashchange', this.app.handleRouteChange);
@@ -198,7 +241,22 @@ export class EventManager {
 
         setTimeout(() => {
           this.uiManager.getStickyManager().handleStickyBehavior();
-        }, 0);
+
+          if (newVisibility) {
+            const getTargetScrollY = () => {
+              const isMobile = window.innerWidth < DESKTOP_BREAKPOINT_PX;
+              const advancedControlsEl = dom.advancedControls.container;
+              if (isMobile) {
+                return advancedControlsEl.offsetTop - window.innerHeight / 3;
+              } else {
+                const stickyHeaderOffset = 8; // As defined in StickyManager
+                return advancedControlsEl.offsetTop - stickyHeaderOffset;
+              }
+            };
+
+            this.smoothScrollWithReflow(getTargetScrollY);
+          }
+        }, 100); // A minimal delay for the DOM to update
       }
     });
 

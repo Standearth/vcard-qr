@@ -99,10 +99,12 @@ export class App {
     if (!state) return { data };
 
     let dotHidingMode = state.dotHidingMode;
+    let imageMargin = state.imageOptions?.margin;
     // If it's a live update and the user wants the expensive "shape" mode,
     // temporarily fall back to the faster "box" mode.
     if (isLiveUpdate && dotHidingMode === 'shape') {
       dotHidingMode = 'box';
+      imageMargin = 0;
     }
 
     return {
@@ -111,7 +113,7 @@ export class App {
       height: state.height,
       margin: state.margin,
       qrOptions: { ...state.qrOptions },
-      imageOptions: { ...state.imageOptions },
+      imageOptions: { ...state.imageOptions, margin: imageMargin },
       dotsOptions: { ...state.dotsOptions, roundSize: state.roundSize },
       backgroundOptions: { ...state.backgroundOptions },
       cornersSquareOptions: { ...state.cornersSquareOptions },

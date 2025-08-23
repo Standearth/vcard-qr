@@ -9,7 +9,7 @@ import {
   PolyType,
 } from 'clipper-lib';
 import paper, { Path, Shape, Item } from 'paper';
-import { optimize } from 'svgo';
+import { optimize } from 'svgo/dist/svgo.browser.js';
 
 type PaperPath = InstanceType<typeof Path>;
 type PaperItem = InstanceType<typeof Item>;

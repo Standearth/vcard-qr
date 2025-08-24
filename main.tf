@@ -68,6 +68,11 @@ variable "photo_service_url" {
   description = "The base URL for the photo lookup service."
 }
 
+variable "google_issuer_id" {
+  type        = string
+  description = "The Google Wallet Issuer ID."
+}
+
 # --- Resources ---
 
 # Enable all necessary APIs
@@ -77,7 +82,8 @@ resource "google_project_service" "apis" {
     "secretmanager.googleapis.com",
     "artifactregistry.googleapis.com",
     "iam.googleapis.com",
-    "iamcredentials.googleapis.com"
+    "iamcredentials.googleapis.com",
+    "walletobjects.googleapis.com"
   ])
   service            = each.key
   disable_on_destroy = false
@@ -142,6 +148,14 @@ resource "google_cloud_run_v2_service" "default" {
         name  = "PHOTO_SERVICE_URL"
         value = var.photo_service_url
       }
+      env {
+        name  = "GOOGLE_WALLET_SA_KEY"
+        value = "projects/${var.gcp_project_id}/secrets/google-wallet-sa-key/versions/latest"
+      }
+      env {
+        name  = "GOOGLE_ISSUER_ID"
+        value = var.google_issuer_id
+      }
     }
   }
 
@@ -163,7 +177,8 @@ resource "google_secret_manager_secret_iam_member" "secret_access" {
   for_each = toset([
     "apple-wallet-signer-key",
     "apple-wallet-signer-cert",
-    "apple-wallet-wwdr-cert"
+    "apple-wallet-wwdr-cert",
+    "google-wallet-sa-key"
   ])
   project    = var.gcp_project_id
   secret_id  = each.key

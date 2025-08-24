@@ -30,7 +30,7 @@ PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&
 ADC_FILE        = $(HOME)/.config/gcloud/application_default_credentials.json
 
 # --- Argument Parsing & Target Validation ---
-KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars update-tfvars
+KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars update-tfvars upload-google-wallet-sa-key
 
 # This captures the first unlabelled argument passed after the target
 ARG := $(firstword $(filter-out $(KNOWN_TARGETS) $(MAKECMDGOALS),$(MAKECMDGOALS)))
@@ -64,6 +64,7 @@ WORKLOAD_PROVIDER_ID  = github-provider
 SECRET_KEY            = apple-wallet-signer-key
 SECRET_CERT           = apple-wallet-signer-cert
 SECRET_WWDR           = apple-wallet-wwdr-cert
+SECRET_GOOGLE_WALLET_SA_KEY = google-wallet-sa-key
 REPO_NAME             = $(SERVICE_NAME)-repo
 
 .PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
@@ -141,6 +142,7 @@ update-tfvars:
 	@echo "frontend_domain = \"$(FRONTEND_DOMAIN)\"" >> $(TFFILE).tmp
 	@echo "vite_org_name = \"$(VITE_ORG_NAME)\"" >> $(TFFILE).tmp
 	@echo "photo_service_url = \"$(PHOTO_SERVICE_URL)\"" >> $(TFFILE).tmp
+	@echo "google_issuer_id = \"$(GOOGLE_ISSUER_ID)\"" >> $(TFFILE).tmp
 	@# Add pass_config from json file
 	@echo 'pass_config = <<EOT' >> $(TFFILE).tmp
 	@node -e 'try { console.log(JSON.stringify(JSON.parse(require("fs").readFileSync("server/src/config/pass-templates.json", "utf-8")))) } catch (e) { console.error("Error: Could not read or parse server/src/config/pass-templates.json. Make sure it exists and is valid JSON."); process.exit(1); }' >> $(TFFILE).tmp
@@ -180,6 +182,7 @@ setup-project: check-gcp-project
 		secretmanager.googleapis.com \
 		iamcredentials.googleapis.com \
 		compute.googleapis.com \
+		walletobjects.googleapis.com \
 		cloudresourcemanager.googleapis.com \
 		--project=$(PROJECT_ID)
 
@@ -240,7 +243,7 @@ create-workload-identity: check-gcp-project
 
 create-secrets: check-gcp-project
 	@echo "🔑 Checking for required secrets..."
-	@for secret in $(SECRET_KEY) $(SECRET_CERT) $(SECRET_WWDR); do \
+	@for secret in $(SECRET_KEY) $(SECRET_CERT) $(SECRET_WWDR) $(SECRET_GOOGLE_WALLET_SA_KEY); do \
 		if gcloud secrets describe $$secret --project=$(PROJECT_ID) > /dev/null 2>&1; then \
 			echo "✅ Secret '$$secret' already exists."; \
 		else \
@@ -365,7 +368,10 @@ show-github-secrets: check-gcp-project check-env-vars
 	@echo "Value: $(VITE_ORG_WEBSITE)"
 	@echo ""
 	@echo " Name: VITE_OFFICE_PHONE_OPTIONS"
-	@printf "Value: %s\n" "$$(echo "$$VITE_OFFICE_PHONE_OPTIONS" | cut -c 2- | rev | cut -c 2- | rev)"
+	@printf "Value: %s\n" "$(echo "$VITE_OFFICE_PHONE_OPTIONS" | cut -c 2- | rev | cut -c 2- | rev)"
+	@echo ""
+	@echo " Name: GOOGLE_ISSUER_ID"
+	@echo "Value: $(GOOGLE_ISSUER_ID)"
 	@echo ""
 	@echo "********************************************************************************"
 	@echo ""
@@ -401,6 +407,15 @@ upload-wwdr-cert: check-gcp-project
 	echo "   -> Uploading new version to $(SECRET_WWDR) from '$$arg'..."; \
 	gcloud secrets versions add $(SECRET_WWDR) --data-file="$$arg" --project=$(PROJECT_ID)
 
+upload-google-wallet-sa-key: check-gcp-project
+	@arg='$(ARG)'; \
+	if [ -z "$$arg" ]; then \
+		read -p "Enter the local file path for the Google Wallet Service Account Key (e.g., /path/to/google-wallet-sa-key.json): " arg; \
+	fi; \
+	if [ ! -f "$$arg" ]; then echo "Error: File not found at '$$arg'" ; exit 1; fi; \
+	echo "   -> Uploading new version to $(SECRET_GOOGLE_WALLET_SA_KEY) from '$$arg'..."; \
+	gcloud secrets versions add $(SECRET_GOOGLE_WALLET_SA_KEY) --data-file="$$arg" --project=$(PROJECT_ID)
+
 ## --------------------------------------
 ## Infrastructure Management
 ## --------------------------------------
@@ -415,7 +430,7 @@ create-state-bucket: check-gcp-project
 		gsutil versioning set on gs://$(PROJECT_ID)-tfstate; \
 	fi
 
-terraform-apply: check-gcp-project create-state-bucket update-tfvars
+terraform-apply: check-gcp-project create-secrets create-state-bucket update-tfvars
 	@echo "🏗️   Applying Terraform configuration for project $(PROJECT_ID)..."
 	@terraform init -backend-config="bucket=$(PROJECT_ID)-tfstate"
 	@terraform apply -auto-approve
@@ -492,6 +507,7 @@ help:
 	@echo "  upload-signer-key [path]   Upload a new version for the private key secret."
 	@echo "  upload-signer-cert [path]  Upload a new version for the public certificate secret."
 	@echo "  upload-wwdr-cert [path]    Upload a new version for the Apple WWDR certificate secret."
+	@echo "  upload-google-wallet-sa-key [path] Upload a new version for the Google Wallet service account key secret."
 	@echo ""
 	@echo "--- INDIVIDUAL SETUP STEPS ---"
 	@echo "  create-project             Creates and configures a new GCP project if it doesn't exist."

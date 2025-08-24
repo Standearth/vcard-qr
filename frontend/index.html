@@ -139,14 +139,26 @@
                 <input type="email" id="email" class="form-input" />
               </div>
 
-              <div class="office-phone-group">
-                <div>
-                  <label for="office_phone" class="form-label"
-                    >Office Phone</label
-                  >
-                  <select id="office_phone" class="form-input"></select>
+              <div class="office-phone-grid">
+                <div id="office-phone-field-container">
+                  <div id="office-phone-select-wrapper">
+                    <label for="office_phone" class="form-label"
+                      >Office Phone</label
+                    >
+                    <select id="office_phone" class="form-input"></select>
+                  </div>
+                  <div id="office-phone-input-wrapper" class="hidden">
+                    <label for="office_phone_input" class="form-label"
+                      >Office Phone</label
+                    >
+                    <input
+                      type="tel"
+                      id="office_phone_input"
+                      class="form-input"
+                    />
+                  </div>
                 </div>
-                <div>
+                <div id="extension-wrapper">
                   <label for="extension" class="form-label">Extension</label>
                   <input
                     type="text"

@@ -59,6 +59,7 @@ export class UrlHandler {
       ...DEFAULT_ADVANCED_OPTIONS,
       ...DEFAULT_FORM_FIELDS,
       ...tabSpecifics,
+      officePhoneFieldType: 'select',
       qrOptions: {
         ...DEFAULT_ADVANCED_OPTIONS.qrOptions,
         ...(tabSpecifics.qrOptions || {}),
@@ -140,14 +141,12 @@ export class UrlHandler {
 
     for (const key in statePathMap) {
       const statePath = statePathMap[key];
+      const paramName = key.replace(/([A-Z])/g, '_$1').toLowerCase();
       const currentValue = getNestedValue(state, statePath);
       const defaultValue = getNestedValue(defaultTabState, statePath);
 
       if (String(currentValue) !== String(defaultValue)) {
-        newUrlParams.set(
-          key.replace(/([A-Z])/g, '_$1').toLowerCase(),
-          String(currentValue)
-        );
+        newUrlParams.set(paramName, String(currentValue));
       }
     }
 

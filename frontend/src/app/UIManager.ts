@@ -92,7 +92,7 @@ export class UIManager {
   getEventManager = (): EventManager => this.eventManager;
 
   /** Gets the WalletManager instance. */
-  getWalletManager = (): WalletManager => this.walletManager; // Add this method
+  getWalletManager = (): WalletManager => this.walletManager;
 
   /**
    * Renders the tab and button states (visibility, active states) based on the current application state.
@@ -104,10 +104,16 @@ export class UIManager {
     Object.keys(dom.tabLinks).forEach((key) => {
       const modeKey = key as Mode;
       const isActive = modeKey === currentMode;
-      dom.tabLinks[modeKey].classList.toggle('active', isActive);
-      dom.formContainers[modeKey].classList.toggle('active', isActive);
-      dom.formContainers[modeKey].classList.toggle('hidden', !isActive);
-      dom.subHeadings[modeKey].classList.toggle('hidden', !isActive);
+      if (dom.tabLinks[modeKey]) {
+        dom.tabLinks[modeKey].classList.toggle('active', isActive);
+      }
+      if (dom.formContainers[modeKey]) {
+        dom.formContainers[modeKey].classList.toggle('active', isActive);
+        dom.formContainers[modeKey].classList.toggle('hidden', !isActive);
+      }
+      if (dom.subHeadings[modeKey]) {
+        dom.subHeadings[modeKey].classList.toggle('hidden', !isActive);
+      }
     });
 
     const isVCard = currentMode === MODES.VCARD;
@@ -115,14 +121,29 @@ export class UIManager {
     const areButtonsVisible = state.isQrCodeValid ?? true;
     const buttonDisplay = areButtonsVisible ? 'inline-flex' : 'none';
 
-    dom.buttons.downloadPng.style.display = buttonDisplay;
-    dom.buttons.downloadJpg.style.display = buttonDisplay;
-    dom.buttons.downloadSvg.style.display = buttonDisplay;
-    dom.buttons.downloadVCard.style.display =
-      isVCard && areButtonsVisible ? 'inline-flex' : 'none';
-    dom.buttons.addToWallet.style.display =
-      isVCard && areButtonsVisible ? 'inline-flex' : 'none';
-    dom.anniversaryLogoContainer.style.display = isWifi ? 'none' : 'flex';
+    if (dom.buttons.downloadPng)
+      dom.buttons.downloadPng.style.display = buttonDisplay;
+    if (dom.buttons.downloadJpg)
+      dom.buttons.downloadJpg.style.display = buttonDisplay;
+    if (dom.buttons.downloadSvg)
+      dom.buttons.downloadSvg.style.display = buttonDisplay;
+    if (dom.buttons.downloadVCard)
+      dom.buttons.downloadVCard.style.display =
+        isVCard && areButtonsVisible ? 'inline-flex' : 'none';
+    if (dom.buttons.addToWallet)
+      dom.buttons.addToWallet.style.display =
+        isVCard && areButtonsVisible ? 'inline-flex' : 'none';
+    if (dom.anniversaryLogoContainer)
+      dom.anniversaryLogoContainer.style.display = isWifi ? 'none' : 'flex';
+
+    // Handle office phone field visibility
+    if (state.officePhoneFieldType === 'text') {
+      dom.officePhoneSelectWrapper?.classList.add('hidden');
+      dom.officePhoneInputWrapper?.classList.remove('hidden');
+    } else {
+      dom.officePhoneSelectWrapper?.classList.remove('hidden');
+      dom.officePhoneInputWrapper?.classList.add('hidden');
+    }
   }
 
   /**
@@ -135,27 +156,37 @@ export class UIManager {
 
     // Use the shared utility to generate and display the link
     const whatsAppLink = generateWhatsAppLink(state.whatsapp);
-    if (whatsAppLink) {
-      dom.whatsappLink.textContent = `WhatsApp Link: ${whatsAppLink}`;
-      dom.whatsappLink.classList.remove('hidden');
-    } else {
-      dom.whatsappLink.classList.add('hidden');
+    if (dom.whatsappLink) {
+      if (whatsAppLink) {
+        dom.whatsappLink.textContent = `WhatsApp Link: ${whatsAppLink}`;
+        dom.whatsappLink.classList.remove('hidden');
+      } else {
+        dom.whatsappLink.classList.add('hidden');
+      }
     }
 
-    dom.advancedControls.container.classList.toggle(
-      'hidden',
-      !state.isAdvancedControlsVisible
-    );
-    dom.toggleAdvancedText.textContent = state.isAdvancedControlsVisible
-      ? 'Hide Advanced Controls'
-      : 'Show Advanced Controls';
+    if (dom.advancedControls.container) {
+      dom.advancedControls.container.classList.toggle(
+        'hidden',
+        !state.isAdvancedControlsVisible
+      );
+    }
+    if (dom.toggleAdvancedText) {
+      dom.toggleAdvancedText.textContent = state.isAdvancedControlsVisible
+        ? 'Hide Advanced Controls'
+        : 'Show Advanced Controls';
+    }
 
-    dom.mainGrid.classList.toggle(
-      'advanced-hidden',
-      !state.isAdvancedControlsVisible
-    );
+    if (dom.mainGrid) {
+      dom.mainGrid.classList.toggle(
+        'advanced-hidden',
+        !state.isAdvancedControlsVisible
+      );
+    }
 
-    dom.modal.overlay.classList.toggle('hidden', !state.isModalVisible);
+    if (dom.modal.overlay) {
+      dom.modal.overlay.classList.toggle('hidden', !state.isModalVisible);
+    }
 
     if (dom.vcardTextOutput) {
       dom.vcardTextOutput.innerHTML = (state.qrCodeContent || '').replace(
@@ -169,17 +200,19 @@ export class UIManager {
     // Disable the "shape" hiding option if the dot type doesn't support it.
     const dotsType = state.dotsOptions?.type;
     const hideDotsSelect = dom.advancedControls.hideBackgroundDots;
-    const shapeOption = hideDotsSelect.querySelector('option[value="shape"]');
+    if (hideDotsSelect) {
+      const shapeOption = hideDotsSelect.querySelector('option[value="shape"]');
 
-    if (shapeOption) {
-      const isShapeHidingSupported =
-        dotsType === 'dots' || dotsType === 'square';
-      (shapeOption as HTMLOptionElement).disabled = !isShapeHidingSupported;
+      if (shapeOption) {
+        const isShapeHidingSupported =
+          dotsType === 'dots' || dotsType === 'square';
+        (shapeOption as HTMLOptionElement).disabled = !isShapeHidingSupported;
 
-      // If shape hiding is not supported and is currently selected,
-      // visually change the dropdown. The state will sync on the next input event.
-      if (!isShapeHidingSupported && hideDotsSelect.value === 'shape') {
-        hideDotsSelect.value = 'box';
+        // If shape hiding is not supported and is currently selected,
+        // visually change the dropdown. The state will sync on the next input event.
+        if (!isShapeHidingSupported && hideDotsSelect.value === 'shape') {
+          hideDotsSelect.value = 'box';
+        }
       }
     }
   };

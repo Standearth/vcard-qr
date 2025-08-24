@@ -17,9 +17,11 @@ import {
   MODES,
   LOGO_URLS,
   DEFAULT_ADVANCED_OPTIONS,
+  DEFAULT_FORM_FIELDS,
   TabState,
 } from '../config/constants';
 import { generateQRCodeData } from '../utils/helpers';
+
 import { formatPhoneNumber } from '@vcard-qr/shared-utils';
 
 export let qrCode: AsyncQRCodeStyling;
@@ -32,7 +34,6 @@ export class App {
     this.ui = new UIManager(this);
     stateService.initialize(this.ui);
     this.initializeIcons();
-    this.populateOfficePhones();
 
     const defaultState =
       stateService.getState(this.ui.getCurrentMode()) ||
@@ -58,26 +59,75 @@ export class App {
     faDom.watch();
   }
 
-  private populateOfficePhones(): void {
+  public handleOrgChange = (): void => {
+    const org = dom.formFields.org.value;
+    this.updateOfficePhoneField(org);
+  };
+
+  private updateOfficePhoneField(organization: string): void {
     const phoneSelect = dom.formFields.officePhone;
     if (!phoneSelect) return;
 
-    // Start with a blank option
-    phoneSelect.add(new Option('', ''));
-
     try {
-      const options = JSON.parse(
-        import.meta.env.VITE_OFFICE_PHONE_OPTIONS || '[]'
-      );
-      if (Array.isArray(options)) {
-        options.forEach((option) => {
+      const rawOptionsString =
+        import.meta.env.VITE_OFFICE_PHONE_OPTIONS || '[]';
+
+      const rawOptions = JSON.parse(rawOptionsString);
+
+      let optionsToDisplay: any = null;
+
+      // 1. Prioritize direct match with organization key
+      if (organization) {
+        optionsToDisplay = rawOptions.find(
+          (set: any) => set.key === organization
+        );
+      }
+
+      // 2. If no direct match, look for a default (keyless or old format)
+      if (!optionsToDisplay) {
+        const defaultOptions = rawOptions.find((set: any) => !set.key);
+        const isOldFormat =
+          Array.isArray(rawOptions) &&
+          rawOptions.length > 0 &&
+          rawOptions[0].display;
+
+        if (isOldFormat) {
+          optionsToDisplay = { phone_options: rawOptions };
+        } else if (defaultOptions) {
+          optionsToDisplay = defaultOptions;
+        }
+      }
+
+      if (optionsToDisplay && Array.isArray(optionsToDisplay.phone_options)) {
+        stateService.updateState(this.ui.getCurrentMode(), {
+          officePhoneFieldType: 'select',
+        });
+
+        const currentValue = phoneSelect.value;
+        phoneSelect.innerHTML = '';
+        phoneSelect.add(new Option('', ''));
+        optionsToDisplay.phone_options.forEach((option: any) => {
           if (option.display && option.value) {
             phoneSelect.add(new Option(option.display, option.value));
           }
         });
+        // Try to preserve selection if the value still exists in the new list
+        if (
+          Array.from(phoneSelect.options).some(
+            (opt) => opt.value === currentValue
+          )
+        ) {
+          phoneSelect.value = currentValue;
+        }
+      } else {
+        stateService.updateState(this.ui.getCurrentMode(), {
+          officePhoneFieldType: 'text',
+        });
       }
     } catch (error) {
-      console.error('Error parsing VITE_OFFICE_PHONE_OPTIONS:', error);
+      stateService.updateState(this.ui.getCurrentMode(), {
+        officePhoneFieldType: 'text',
+      });
     }
   }
 
@@ -230,6 +280,7 @@ export class App {
     const urlState = this.ui.getUrlHandler().getStateFromUrl();
     const currentTabState =
       stateService.getState(this.ui.getCurrentMode()) || ({} as TabState);
+
     const mergedState: TabState = {
       ...currentTabState,
       ...urlState,
@@ -238,8 +289,12 @@ export class App {
       logoUrl: urlState.logoUrl ?? currentTabState?.logoUrl ?? '',
     };
 
-    // Set the initial form values from the URL
-    this.ui.getFormManager().setFormControlValues(mergedState);
+    // Directly update the central state with the merged values.
+    // This will trigger a re-render via the StateService.
+    stateService.updateState(newMode, mergedState);
+
+    // Update the office phone field based on the organization from the state
+    this.updateOfficePhoneField(mergedState.org || DEFAULT_FORM_FIELDS.org);
 
     // Format phone numbers on initial load
     const phoneFields = [
@@ -253,8 +308,9 @@ export class App {
       }
     });
 
-    // Now, trigger a single, authoritative update to sync the rest of the app
-    await this.ui.getEventManager().handleStateUpdate();
+    // Now, trigger the QR code update and URL sync directly
+    await this.updateQRCode();
+    this.ui.getUrlHandler().updateUrlFromState(stateService.getState(newMode)!);
 
     // After the first render, re-calculate the sticky container's final position.
     this.ui.reinitializeStickyDimensions();

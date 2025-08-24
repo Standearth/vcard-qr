@@ -38,17 +38,13 @@ select.form-input {
   margin-top: 0.75rem;
 }
 
-.office-phone-group {
+.office-phone-grid {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 1rem;
   align-items: end;
 
-  > div:first-child {
-    flex-grow: 1;
-  }
-
-  > div:last-child {
+  #extension-wrapper {
     width: 5rem;
   }
 }

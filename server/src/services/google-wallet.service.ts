@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { googleWalletPassClass as passClass } from '../config/google-wallet-templates.js';
+import { v4 as uuidv4 } from 'uuid';
 
 // Helper to get __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -40,11 +41,14 @@ export async function generateGoogleWalletPass(
   const client = await auth.getClient();
   const credentials = await (client as any).getCredentials();
 
+  // Generate a unique ID for the pass object
+  const objectId = `${process.env.GOOGLE_ISSUER_ID}.${uuidv4()}`;
+
   // Define the pass object with the user's data.
   const passObject = {
-    id: `${process.env.GOOGLE_ISSUER_ID}.${data.firstName}-${data.lastName}`,
+    id: objectId,
     classId: passClass.id,
-    genericType: 'GENERIC_TYPE_UNSPECIFIED',
+    genericType: 'GENERIC_TYPE_CONTACT_INFO',
     hexBackgroundColor: '#4285f4',
     logo: {
       sourceUri: {
@@ -83,9 +87,9 @@ export async function generateGoogleWalletPass(
       {
         id: 'phone',
         header: 'Phone',
-        body: data.phone,
+        body: data.officePhone || data.workPhone || data.cellPhone || '',
       },
-    ],
+    ].filter(module => module.body),
   };
 
   const claims = {
@@ -102,6 +106,7 @@ export async function generateGoogleWalletPass(
     algorithm: 'RS256',
   });
 
+  console.log('Generated Google Wallet JWT:', token);
+
   return token;
 }
-

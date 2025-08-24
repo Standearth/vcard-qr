@@ -57,7 +57,6 @@ export class StickyManager {
   }
 
   public handleStickyBehavior = (isResizeEvent = false): void => {
-    console.log('Current scrollY:', window.scrollY);
     if (this.initialCanvasHeight === 0 && !isResizeEvent) return;
 
     const isMobile = window.innerWidth < DESKTOP_BREAKPOINT_PX;

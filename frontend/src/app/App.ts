@@ -68,41 +68,38 @@ export class App {
     const phoneSelect = dom.formFields.officePhone;
     if (!phoneSelect) return;
 
+    const currentState = stateService.getState(this.ui.getCurrentMode());
+    const currentPhoneValue = currentState?.officePhone;
+    const normalizedPhone = currentPhoneValue
+      ? formatPhoneNumber(currentPhoneValue, 'E.164')
+      : '';
+
     try {
-      const rawOptionsString =
-        import.meta.env.VITE_OFFICE_PHONE_OPTIONS || '[]';
-
-      const rawOptions = JSON.parse(rawOptionsString);
-
+      const rawOptions = JSON.parse(
+        import.meta.env.VITE_OFFICE_PHONE_OPTIONS || '[]'
+      );
       let optionsToDisplay: any = null;
+      let newFieldType: 'select' | 'text';
 
-      // 1. Prioritize direct match with organization key
-      if (organization) {
-        optionsToDisplay = rawOptions.find(
-          (set: any) => set.key === organization
-        );
-      }
+      const defaultOptions = rawOptions.find((set: any) => !set.key);
+      const isOldFormat =
+        Array.isArray(rawOptions) &&
+        rawOptions.length > 0 &&
+        rawOptions[0].display;
+      const matchedOptions = rawOptions.find(
+        (set: any) => set.key === organization
+      );
 
-      // 2. If no direct match, look for a default (keyless or old format)
-      if (!optionsToDisplay) {
-        const defaultOptions = rawOptions.find((set: any) => !set.key);
-        const isOldFormat =
-          Array.isArray(rawOptions) &&
-          rawOptions.length > 0 &&
-          rawOptions[0].display;
-
-        if (isOldFormat) {
-          optionsToDisplay = { phone_options: rawOptions };
-        } else if (defaultOptions) {
-          optionsToDisplay = defaultOptions;
-        }
+      if (matchedOptions) {
+        optionsToDisplay = matchedOptions;
+      } else if (isOldFormat) {
+        optionsToDisplay = { phone_options: rawOptions };
+      } else if (defaultOptions) {
+        optionsToDisplay = defaultOptions;
       }
 
       if (optionsToDisplay && Array.isArray(optionsToDisplay.phone_options)) {
-        stateService.updateState(this.ui.getCurrentMode(), {
-          officePhoneFieldType: 'select',
-        });
-
+        newFieldType = 'select';
         const currentValue = phoneSelect.value;
         phoneSelect.innerHTML = '';
         phoneSelect.add(new Option('', ''));
@@ -111,7 +108,6 @@ export class App {
             phoneSelect.add(new Option(option.display, option.value));
           }
         });
-        // Try to preserve selection if the value still exists in the new list
         if (
           Array.from(phoneSelect.options).some(
             (opt) => opt.value === currentValue
@@ -120,14 +116,30 @@ export class App {
           phoneSelect.value = currentValue;
         }
       } else {
-        stateService.updateState(this.ui.getCurrentMode(), {
-          officePhoneFieldType: 'text',
-        });
+        newFieldType = 'text';
+      }
+
+      // If the field type has changed, we need to update the state
+      // and potentially reformat the existing number.
+      if (currentState?.officePhoneFieldType !== newFieldType) {
+        const newState: Partial<TabState> = {
+          officePhoneFieldType: newFieldType,
+        };
+        if (newFieldType === 'text') {
+          newState.officePhone = formatPhoneNumber(normalizedPhone, 'CUSTOM');
+        } else {
+          newState.officePhone = normalizedPhone;
+        }
+        stateService.updateState(this.ui.getCurrentMode(), newState);
       }
     } catch (error) {
-      stateService.updateState(this.ui.getCurrentMode(), {
-        officePhoneFieldType: 'text',
-      });
+      console.error('Error processing VITE_OFFICE_PHONE_OPTIONS:', error);
+      if (currentState?.officePhoneFieldType !== 'text') {
+        stateService.updateState(this.ui.getCurrentMode(), {
+          officePhoneFieldType: 'text',
+          officePhone: formatPhoneNumber(normalizedPhone, 'CUSTOM'),
+        });
+      }
     }
   }
 

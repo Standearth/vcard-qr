@@ -1,58 +1,92 @@
 // src/api/pass.router.ts
 import { Router, Request } from 'express';
 import { generatePassBuffer } from '../services/pass.service.js';
-import { generateGoogleWalletPass } from '../services/google-wallet.service.js'; // New service
+import { generateGoogleWalletPass } from '../services/google-wallet.service.js';
 import { PassData } from '../types/index.js';
-import api, { getPhotoServiceUrl } from '../services/api.service.js';
+import api from '../services/api.service.js';
 
 const router: Router = Router();
 
 /**
- * Looks up a photo from the photo service API.
+ * Looks up a photo from a service, determined by the user's email domain.
  * @param name The full name of the person to look up.
- * @param req The Express Request object, used to construct the API URL.
- * @returns A Buffer of the photo data, or null if not found or an error occurs.
+ * @param email The email address of the person, used for domain-to-service mapping.
+ * @returns A Buffer of the photo data, or null if no match is found or an error occurs.
  */
 const lookupPhoto = async (
   name: string,
-  req: Request
+  email: string | undefined
 ): Promise<Buffer | null> => {
-  let photoBuffer: Buffer | null = null;
-  const photoApiUrl = `${getPhotoServiceUrl(req)}/api/v1/photo`;
+  if (!email) {
+    console.log('No email provided, skipping photo lookup.');
+    return null;
+  }
 
-  // Gracefully fail when no name is included in the pass
-  if (name.trim() == '') {
+  const emailDomain = email.split('@')[1];
+  if (!emailDomain) {
+    console.log(
+      `Could not extract domain from email: "${email}", skipping photo lookup.`
+    );
+    return null;
+  }
+
+  let photoServiceUrl: string | undefined;
+  try {
+    const serviceMappings = JSON.parse(process.env.PHOTO_SERVICE_URL || '{}');
+    photoServiceUrl = serviceMappings[emailDomain];
+  } catch (error) {
+    console.error(
+      'Could not parse PHOTO_SERVICE_URL. It should be a JSON object mapping domains to URLs.',
+      error
+    );
+    return null; // Don't attempt lookup if config is broken
+  }
+
+  if (!photoServiceUrl) {
+    console.log(
+      `No photo service URL configured for domain "${emailDomain}", skipping lookup.`
+    );
+    return null;
+  }
+
+  if (name.trim() === '') {
     console.log('No name provided, skipping photo lookup.');
     return null;
   }
 
+  const photoApiEndpoint = `${photoServiceUrl}/api/v1/photo`;
+
   try {
-    const photoResponse = await api.get(photoApiUrl, {
+    const photoResponse = await api.get(photoApiEndpoint, {
       params: { name },
       responseType: 'arraybuffer',
     });
 
     if (photoResponse.status === 200) {
-      photoBuffer = Buffer.from(photoResponse.data);
+      return Buffer.from(photoResponse.data);
     }
+    // Axios throws for non-2xx statuses, so this part is unlikely to be reached.
+    return null;
   } catch (error: any) {
     if (error.response && error.response.status === 404) {
-      console.log(`Photo not found for "${name}", continuing without it.`);
+      console.log(
+        `Photo not found for "${name}" at ${photoApiEndpoint}, continuing without it.`
+      );
     } else {
       console.error(
-        'An error occurred while fetching the photo via API:',
-        error
+        `An error occurred while fetching the photo from ${photoApiEndpoint}:`,
+        error.message
       );
     }
+    return null;
   }
-  return photoBuffer;
 };
 
 router.post('/', async (req, res) => {
   try {
     const passData: PassData = req.body;
     const fullName = `${passData.firstName} ${passData.lastName}`.trim();
-    const photoBuffer = await lookupPhoto(fullName, req); // Pass req to the helper
+    const photoBuffer = await lookupPhoto(fullName, passData.email);
     const passBuffer = await generatePassBuffer(passData, photoBuffer);
     res.set({
       'Content-Type': 'application/vnd.apple.pkpass',

@@ -6,6 +6,8 @@ import { UIManager } from '../UIManager';
 
 const TOP_OFFSET = 8;
 
+let logcount = 0;
+
 type LayoutData = {
   elements: {
     contentWrapper: HTMLElement;
@@ -52,7 +54,6 @@ export class StickyManager {
       this.initialCanvasHeight = canvasContainer.offsetHeight;
       this.initialCanvasWidth = canvasContainer.offsetWidth;
       this.mobileCanvasTop = null;
-      this.advancedControlsMoved = {};
     }
   }
 
@@ -420,24 +421,27 @@ export class StickyManager {
       }
 
       const scrollPast = TOP_OFFSET - relativeStickyTop;
-      const newHeight = this.initialCanvasHeight - scrollPast;
+      const shrinkingHeight = this.initialCanvasHeight - scrollPast;
       const minHeight = window.innerHeight * 0.33;
-      const availableHeight =
-        rects.previewFooterRect.top - rects.canvasRect.top;
-      const bottomOffset = window.innerHeight - rects.previewFooterRect.bottom;
-      const availableFullCol =
-        window.innerHeight -
-        qrPreviewColumnFooter.offsetHeight -
-        TOP_OFFSET -
-        bottomOffset;
-      const clampedHeight = Math.max(
-        minHeight,
-        availableHeight,
-        newHeight,
-        availableFullCol
-      );
-      let scaleFactor = clampedHeight / this.initialCanvasHeight;
-      scaleFactor = Math.min(1, scaleFactor);
+
+      // *** FINAL FIX: Get the live position of the footer. ***
+      const currentFooterRect = qrPreviewColumnFooter.getBoundingClientRect();
+
+      // The available height is the distance from the fixed sticky top offset
+      // to the current, live position of the footer's top edge.
+      const availableHeight = currentFooterRect.top - TOP_OFFSET;
+
+      // The target height is the smaller of the two constraints: the height
+      // determined by scrolling and the actual available space.
+
+      let targetHeight =
+        shrinkingHeight > availableHeight ? shrinkingHeight : availableHeight;
+
+      // Ensure the QR code doesn't shrink below the minimum allowed height.
+      targetHeight = Math.max(targetHeight, minHeight);
+
+      let scaleFactor = targetHeight / this.initialCanvasHeight;
+      scaleFactor = Math.min(1, Math.max(0, scaleFactor)); // Clamp between 0 and 1
 
       canvasContainer.style.transform = `scale(${scaleFactor})`;
       canvasContainer.style.width = `${rects.previewColumnRect.width}px`;

@@ -24,9 +24,18 @@ export class TabManager {
     this.uiManager.getStickyManager().reInitializeDimensions();
     this.uiManager.setCurrentMode(newMode);
 
-    const newTabState = stateService.getState(newMode);
-    if (newTabState) {
-      this.uiManager.renderUIFromState(newTabState);
+    // On a manual tab switch, trigger an update for the new tab.
+    // This ensures computed state like `qrCodeContent` is regenerated.
+    // The `updateState` method will also handle rendering the UI.
+    if (!isInitialLoad) {
+      stateService.updateState(newMode, {});
+    } else {
+      // On initial load, `handleRouteChange` calls `updateState` later,
+      // so we only need to render the current state here.
+      const newTabState = stateService.getState(newMode);
+      if (newTabState) {
+        this.uiManager.renderUIFromState(newTabState);
+      }
     }
 
     if (!isInitialLoad) {

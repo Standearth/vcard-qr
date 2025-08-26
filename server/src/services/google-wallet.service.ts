@@ -89,7 +89,7 @@ export async function generateGoogleWalletPass(
     hexBackgroundColor: '#f5f1ea', // Stand.earth brand color
     heroImage: {
       sourceUri: {
-        uri: 'https://lh3.googleusercontent.com/d/1sW4seuJpuwvqXVuCSvvj5RP3AkEFnAmv',
+        uri: 'https://qr.stand.earth/Stand-Logo-google-wallet-hero.png',
       },
     },
     textModulesData: [

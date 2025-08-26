@@ -106,6 +106,9 @@ export function initializeDomElements() {
     toggleAdvancedText: document.getElementById(
       'toggle-advanced-text'
     ) as HTMLSpanElement,
+    walletButtonContainer: document.getElementById(
+      'wallet-button-container'
+    ) as HTMLDivElement,
     buttons: {
       downloadVCard: document.getElementById(
         'download-vcard'

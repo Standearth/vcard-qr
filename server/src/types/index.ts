@@ -13,7 +13,6 @@ export interface PassData {
   linkedin?: string;
   whatsapp?: string;
   notes?: string;
-  anniversaryLogo: boolean;
 }
 
 export interface Certs {

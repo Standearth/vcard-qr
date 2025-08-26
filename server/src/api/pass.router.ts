@@ -1,5 +1,5 @@
 // src/api/pass.router.ts
-import { Router, Request } from 'express';
+import { Router } from 'express';
 import { generatePassBuffer } from '../services/pass.service.js';
 import { generateGoogleWalletPass } from '../services/google-wallet.service.js';
 import { PassData } from '../types/index.js';

@@ -8,232 +8,92 @@ interface GoogleWalletTemplate {
   heroImage?: any;
 }
 
-const templates: {
+interface GooglePassConfig {
   default: GoogleWalletTemplate;
-  [key: string]: GoogleWalletTemplate;
-} = {
-  default: {
-    id: `${process.env.GOOGLE_ISSUER_ID}.vCard`,
-    logo: {
-      sourceUri: {
-        uri: 'https://qr.stand.earth/Stand-Logo-google-wallet-logo.png',
-      },
-      contentDescription: {
-        defaultValue: {
-          language: 'en-US',
-          value: 'Stand.earth Logo',
-        },
-      },
-    },
-    hexBackgroundColor: '#f5f1ea',
-    heroImage: {
-      sourceUri: {
-        uri: 'https://qr.stand.earth/Stand-Logo-google-wallet-hero.png',
-      },
-    },
-    class: {
-      id: `${process.env.GOOGLE_ISSUER_ID}.vCard`,
-      classTemplateInfo: {
-        cardTemplateOverride: {
-          cardRowTemplateInfos: [
-            {
-              twoItems: {
-                startItem: {
-                  firstValue: {
-                    fields: [
-                      { fieldPath: "object.textModulesData['direct_line']" },
-                    ],
-                  },
-                },
-                endItem: {
-                  firstValue: {
-                    fields: [
-                      { fieldPath: "object.textModulesData['office_phone']" },
-                    ],
-                  },
-                },
-              },
-            },
-            {
-              twoItems: {
-                startItem: {
-                  firstValue: {
-                    fields: [{ fieldPath: "object.textModulesData['email']" }],
-                  },
-                },
-                endItem: {
-                  firstValue: {
-                    fields: [
-                      { fieldPath: "object.textModulesData['cell_phone']" },
-                    ],
-                  },
-                },
-              },
-            },
-            {
-              oneItem: {
-                item: {
-                  firstValue: {
-                    fields: [{ fieldPath: "object.textModulesData['notes']" }],
-                  },
-                },
-              },
-            },
-          ],
-        },
-      },
-    },
-  },
-  'fossilfueltreaty.org': {
-    id: `${process.env.GOOGLE_ISSUER_ID}.FFT-vCard`,
-    logo: {
-      sourceUri: {
-        uri: 'https://qr.stand.earth/FFT-google-wallet-logo.png',
-      },
-      contentDescription: {
-        defaultValue: {
-          language: 'en-US',
-          value: 'Fossil Fuel Treaty Logo',
-        },
-      },
-    },
-    hexBackgroundColor: '#002346', // Dark blue
-    class: {
-      id: `${process.env.GOOGLE_ISSUER_ID}.FFT-vCard`,
-      // The class template can be the same as default or customized
-      classTemplateInfo: {
-        cardTemplateOverride: {
-          cardRowTemplateInfos: [
-            {
-              twoItems: {
-                startItem: {
-                  firstValue: {
-                    fields: [
-                      { fieldPath: "object.textModulesData['direct_line']" },
-                    ],
-                  },
-                },
-                endItem: {
-                  firstValue: {
-                    fields: [
-                      { fieldPath: "object.textModulesData['office_phone']" },
-                    ],
-                  },
-                },
-              },
-            },
-            {
-              twoItems: {
-                startItem: {
-                  firstValue: {
-                    fields: [{ fieldPath: "object.textModulesData['email']" }],
-                  },
-                },
-                endItem: {
-                  firstValue: {
-                    fields: [
-                      { fieldPath: "object.textModulesData['cell_phone']" },
-                    ],
-                  },
-                },
-              },
-            },
-            {
-              oneItem: {
-                item: {
-                  firstValue: {
-                    fields: [{ fieldPath: "object.textModulesData['notes']" }],
-                  },
-                },
-              },
-            },
-          ],
-        },
-      },
-    },
-  },
-  'stand.earth': {
-    id: `${process.env.GOOGLE_ISSUER_ID}.vCard`,
-    logo: {
-      sourceUri: {
-        uri: 'https://qr.stand.earth/Stand-Logo-google-wallet-logo.png',
-      },
-      contentDescription: {
-        defaultValue: {
-          language: 'en-US',
-          value: 'Stand.earth Logo',
-        },
-      },
-    },
-    hexBackgroundColor: '#f5f1ea',
-    // heroImage: {
-    //   sourceUri: {
-    //     uri: 'https://qr.stand.earth/Stand-Logo-google-wallet-hero.png',
-    //   },
-    // },
-    class: {
-      id: `${process.env.GOOGLE_ISSUER_ID}.vCard`,
-      classTemplateInfo: {
-        cardTemplateOverride: {
-          cardRowTemplateInfos: [
-            {
-              twoItems: {
-                startItem: {
-                  firstValue: {
-                    fields: [
-                      { fieldPath: "object.textModulesData['direct_line']" },
-                    ],
-                  },
-                },
-                endItem: {
-                  firstValue: {
-                    fields: [
-                      { fieldPath: "object.textModulesData['office_phone']" },
-                    ],
-                  },
-                },
-              },
-            },
-            {
-              twoItems: {
-                startItem: {
-                  firstValue: {
-                    fields: [{ fieldPath: "object.textModulesData['email']" }],
-                  },
-                },
-                endItem: {
-                  firstValue: {
-                    fields: [
-                      { fieldPath: "object.textModulesData['cell_phone']" },
-                    ],
-                  },
-                },
-              },
-            },
-            {
-              oneItem: {
-                item: {
-                  firstValue: {
-                    fields: [{ fieldPath: "object.textModulesData['notes']" }],
-                  },
-                },
-              },
-            },
-          ],
-        },
-      },
-    },
-  },
-};
+  templates: { [key: string]: Partial<GoogleWalletTemplate> };
+}
 
-export function getTemplateForEmail(
-  email: string | undefined
-): GoogleWalletTemplate {
-  if (email) {
-    const domain = email.split('@')[1];
-    if (domain && templates[domain]) {
-      return templates[domain];
+let config: GooglePassConfig;
+
+function isObject(item: any): item is { [key: string]: any } {
+  return item && typeof item === 'object' && !Array.isArray(item);
+}
+
+function deepMerge<T extends object, U extends object>(
+  target: T,
+  source: U
+): T & U {
+  const output = { ...target } as T & U;
+
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach((key) => {
+      if (isObject((source as any)[key])) {
+        if (!(key in target)) {
+          Object.assign(output, { [key]: (source as any)[key] });
+        } else {
+          (output as any)[key] = deepMerge(
+            (target as any)[key],
+            (source as any)[key]
+          );
+        }
+      } else {
+        Object.assign(output, { [key]: (source as any)[key] });
+      }
+    });
+  }
+
+  return output;
+}
+
+export async function loadGooglePassConfig(): Promise<GooglePassConfig> {
+  if (config) {
+    return config;
+  }
+
+  let configString: string;
+
+  if (process.env.NODE_ENV === 'production' && process.env.PASS_GOOGLE_CONFIG) {
+    configString = process.env.PASS_GOOGLE_CONFIG;
+  } else {
+    try {
+      const configPath = './google-wallet-templates.json';
+      const passConfigModule = await import(configPath, {
+        with: { type: 'json' },
+      });
+      configString = JSON.stringify(passConfigModule.default);
+    } catch (error) {
+      console.error(
+        'Could not load google-wallet-templates.json. Did you create it from the example?'
+      );
+      throw error;
     }
   }
-  return templates.default;
+
+  // Replace placeholder for issuer ID
+  configString = configString.replace(
+    /{{GOOGLE_ISSUER_ID}}/g,
+    process.env.GOOGLE_ISSUER_ID || ''
+  );
+
+  try {
+    config = JSON.parse(configString) as GooglePassConfig;
+    return config;
+  } catch (error) {
+    console.error('Failed to parse Google Wallet pass configuration:', error);
+    throw new Error('Invalid Google Wallet pass configuration.');
+  }
+}
+
+export function getTemplateForEmail(
+  email: string | undefined,
+  config: GooglePassConfig
+): GoogleWalletTemplate {
+  const domain = email?.split('@')[1];
+  const templateConfig = domain ? config.templates[domain] : undefined;
+
+  if (templateConfig) {
+    return deepMerge(config.default, templateConfig) as GoogleWalletTemplate;
+  }
+
+  return config.default;
 }

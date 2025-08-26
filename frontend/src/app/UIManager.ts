@@ -41,8 +41,9 @@ export class UIManager {
 
   // Delegated methods
   /** Switches the active tab in the UI. */
-  switchTab = (newMode: Mode, isInitialLoad = false): void =>
+  switchTab = (newMode: Mode, isInitialLoad = false): void => {
     this.tabManager.switchTab(newMode, isInitialLoad);
+  };
 
   /** Gets the currently active form fields based on the tab mode. */
   getActiveFormFields = () => this.formManager.getActiveFormFields();
@@ -130,9 +131,10 @@ export class UIManager {
     if (dom.buttons.downloadVCard)
       dom.buttons.downloadVCard.style.display =
         isVCard && areButtonsVisible ? 'inline-flex' : 'none';
-    if (dom.buttons.addToWallet)
-      dom.buttons.addToWallet.style.display =
+    if (dom.walletButtonContainer) {
+      dom.walletButtonContainer.style.display =
         isVCard && areButtonsVisible ? 'inline-flex' : 'none';
+    }
     if (dom.anniversaryLogoContainer)
       dom.anniversaryLogoContainer.style.display = isWifi ? 'none' : 'flex';
 

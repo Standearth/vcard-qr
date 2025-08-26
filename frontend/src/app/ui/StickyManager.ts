@@ -1,12 +1,10 @@
-// src/app/ui/StickyManager.ts
+// frontend/src/app/ui/StickyManager.ts
 
 import { dom } from '../../config/dom';
 import { DESKTOP_BREAKPOINT_PX, Mode } from '../../config/constants';
 import { UIManager } from '../UIManager';
 
 const TOP_OFFSET = 8;
-
-let logcount = 0;
 
 type LayoutData = {
   elements: {
@@ -143,8 +141,9 @@ export class StickyManager {
   private manageShrinkingColumn(layoutData: LayoutData): void {
     this.ensureOriginalDomStructure(layoutData);
     this.unstickFullColumn(layoutData);
-    this.updateShrinkingColumnLayout(layoutData);
+    // Corrected order of operations
     this.handleStickyFooter(layoutData);
+    this.updateShrinkingColumnLayout(layoutData);
     this.resizeQrCodeForShrinkingColumn(layoutData);
   }
 
@@ -457,7 +456,11 @@ export class StickyManager {
 
   private updateShrinkingColumnLayout(data: LayoutData): void {
     const { elements, rects } = data;
-    const { advancedControlsContainer, qrPreviewColumn } = elements;
+    const {
+      advancedControlsContainer,
+      qrPreviewColumn,
+      qrPreviewColumnFooter,
+    } = elements;
     const isScrollingDown = window.scrollY > this.lastScrollY;
     const currentMode = this.uiManager.getCurrentMode();
 
@@ -465,9 +468,13 @@ export class StickyManager {
       return;
     }
 
+    const isFooterSticky =
+      qrPreviewColumnFooter.classList.contains('sticky-footer');
+
     if (
-      isScrollingDown &&
-      rects.qrcodeTextContainerRect.bottom >= rects.formColumnRect.bottom
+      (isScrollingDown &&
+        rects.qrcodeTextContainerRect.bottom >= rects.formColumnRect.bottom) ||
+      isFooterSticky
     ) {
       advancedControlsContainer.classList.remove('both-columns');
       qrPreviewColumn.classList.add('both-rows');

@@ -146,7 +146,7 @@
   }
 
   /* Style the rest of the direct children (the remaining buttons and the wrapper) to be full width */
-  .buttons-section > *:nth-child(n + 5) {
+  .buttons-section > *:nth-child(n + 6) {
     flex-basis: 100%;
   }
 }
@@ -155,6 +155,7 @@
   position: relative;
   display: inline-flex;
   justify-content: center;
+  gap: 0.75rem;
 }
 
 .button-wrapper {
@@ -170,21 +171,7 @@
   cursor: default;
 }
 
-.tooltip {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: white;
-  color: var(--color-primary-dark);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  margin-bottom: 0.25rem;
-  border: 1px solid var(--color-primary-dark);
-  z-index: 10;
-}
+
 
 .button:disabled {
   opacity: 0.5;

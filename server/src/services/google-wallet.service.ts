@@ -4,11 +4,15 @@ import { GoogleAuth, GoogleAuthOptions } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getTemplateForEmail } from '../config/google-wallet-templates.js';
+import {
+  loadGooglePassConfig,
+  getTemplateForEmail,
+} from '../config/google-wallet-templates.js';
 import { v4 as uuidv4 } from 'uuid';
 import {
   generateVCardString,
   generateWhatsAppLink,
+  formatPhoneNumber,
 } from '@vcard-qr/shared-utils';
 
 // Helper to get __dirname in ES modules
@@ -48,7 +52,17 @@ export async function generateGoogleWalletPass(
   const objectId = `${process.env.GOOGLE_ISSUER_ID}.${uuidv4()}`;
   const vCardString = generateVCardString(data, false);
 
-  const template = getTemplateForEmail(data.email);
+  const config = await loadGooglePassConfig();
+  const template = getTemplateForEmail(data.email, config);
+
+  // Format the office phone number
+  let officePhoneWithExt = '';
+  if (data.officePhone) {
+    officePhoneWithExt = formatPhoneNumber(data.officePhone, 'CUSTOM');
+    if (data.extension) {
+      officePhoneWithExt += ` x${data.extension}`;
+    }
+  }
 
   const passObject: any = {
     id: objectId,
@@ -89,19 +103,17 @@ export async function generateGoogleWalletPass(
       {
         id: 'office_phone',
         header: 'Office Phone',
-        body: data.extension
-          ? `${data.officePhone} x${data.extension}`
-          : data.officePhone,
-      },
-      {
-        id: 'email',
-        header: 'Email',
-        body: data.email,
+        body: officePhoneWithExt,
       },
       {
         id: 'cell_phone',
         header: 'Cell Phone',
         body: data.cellPhone,
+      },
+      {
+        id: 'email',
+        header: 'Email',
+        body: data.email,
       },
       {
         id: 'notes',

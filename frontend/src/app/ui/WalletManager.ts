@@ -1,4 +1,4 @@
-// src/app/ui/WalletManager.ts
+// frontend/src/app/ui/WalletManager.ts
 
 import { dom } from '../../config/dom';
 import { UIManager } from '../UIManager';
@@ -7,7 +7,6 @@ import { generateFilename } from '../../utils/helpers.js';
 
 export class WalletManager {
   private uiManager: UIManager;
-  private tooltipTimeout?: number;
 
   constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
@@ -18,32 +17,31 @@ export class WalletManager {
     const state = stateService.getState(this.uiManager.getCurrentMode());
     const firstName = state?.firstName?.trim();
     const lastName = state?.lastName?.trim();
-    const isDisabled = !firstName && !lastName;
+
+    const hasName = firstName || lastName;
+
+    const contactDetails = [
+      state?.email,
+      state?.officePhone,
+      state?.workPhone,
+      state?.cellPhone,
+      state?.website,
+      state?.linkedin,
+      state?.whatsapp,
+    ];
+
+    const hasContactDetails = contactDetails.some((detail) => detail?.trim());
+
+    const isDisabled = !hasName || !hasContactDetails;
 
     dom.buttons.addToWallet.disabled = isDisabled;
     dom.buttons.addToGoogleWallet.disabled = isDisabled;
   };
 
-  private showTooltip(): void {
-    const tooltip = dom.walletTooltip;
-    tooltip.classList.remove('hidden');
-    // Clear any existing timer
-    if (this.tooltipTimeout) {
-      clearTimeout(this.tooltipTimeout);
-    }
-    // Hide the tooltip after 3 seconds
-    this.tooltipTimeout = window.setTimeout(() => {
-      tooltip.classList.add('hidden');
-    }, 3000);
-  }
-
   private setupEventListeners(): void {
-    const walletButtonWrapper = dom.buttons.addToWallet.parentElement;
-
-    if (walletButtonWrapper) {
-      walletButtonWrapper.addEventListener('click', () => {
+    if (dom.buttons.addToWallet) {
+      dom.buttons.addToWallet.addEventListener('click', () => {
         if (dom.buttons.addToWallet.disabled) {
-          this.showTooltip();
           return;
         }
         this.createApplePass();
@@ -51,9 +49,9 @@ export class WalletManager {
     }
 
     if (dom.buttons.addToGoogleWallet) {
-      dom.buttons.addToGoogleWallet.addEventListener('click', () => {
+      dom.buttons.addToGoogleWallet.addEventListener('click', (event) => {
+        event.stopPropagation(); // Prevent event from bubbling up
         if (dom.buttons.addToGoogleWallet.disabled) {
-          this.showTooltip();
           return;
         }
         this.createGooglePass();
@@ -87,8 +85,6 @@ export class WalletManager {
       whatsapp: state.whatsapp || '',
       linkedin: state.linkedin || '',
       notes: state.notes || '',
-      // This property is used on the backend pass.json model
-      anniversaryLogo: state.anniversaryLogo || false,
     };
   }
 

@@ -119,8 +119,6 @@ export class App {
         newFieldType = 'text';
       }
 
-      // If the field type has changed, we need to update the state
-      // and potentially reformat the existing number.
       if (currentState?.officePhoneFieldType !== newFieldType) {
         const newState: Partial<TabState> = {
           officePhoneFieldType: newFieldType,
@@ -162,8 +160,6 @@ export class App {
 
     let dotHidingMode = state.dotHidingMode;
     let imageMargin = state.imageOptions?.margin;
-    // If it's a live update and the user wants the expensive "shape" mode,
-    // temporarily fall back to the faster "box" mode.
     if (isLiveUpdate && dotHidingMode === 'shape') {
       dotHidingMode = 'box';
       imageMargin = 0;
@@ -220,7 +216,6 @@ export class App {
       return Promise.resolve(undefined);
     }
     return new Promise((resolve, reject) => {
-      // Priority 1: User-uploaded file
       if (
         dom.advancedControls.imageFile.files &&
         dom.advancedControls.imageFile.files.length > 0
@@ -229,9 +224,7 @@ export class App {
         reader.onload = (event) => resolve(event.target?.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(dom.advancedControls.imageFile.files[0]);
-      }
-      // Priority 2: Logo from URL parameter
-      else if (state.logoUrl) {
+      } else if (state.logoUrl) {
         fetch(state.logoUrl)
           .then((response) => {
             if (!response.ok) {
@@ -244,7 +237,7 @@ export class App {
           .then((blob) => {
             if (blob.type !== 'image/svg+xml') {
               console.error('Logo from URL is not an SVG. Ignoring.');
-              resolve(this.loadDefaultLogo()); // Fallback to default
+              resolve(this.loadDefaultLogo());
               return;
             }
             const reader = new FileReader();
@@ -254,11 +247,9 @@ export class App {
           })
           .catch((err) => {
             console.error(err);
-            resolve(this.loadDefaultLogo()); // Fallback to default on error
+            resolve(this.loadDefaultLogo());
           });
-      }
-      // Priority 3: Default logos
-      else {
+      } else {
         resolve(this.loadDefaultLogo());
       }
     });
@@ -301,14 +292,27 @@ export class App {
       logoUrl: urlState.logoUrl ?? currentTabState?.logoUrl ?? '',
     };
 
-    // Directly update the central state with the merged values.
-    // This will trigger a re-render via the StateService.
+    if (urlState.officePhone) {
+      const org = mergedState.org || DEFAULT_FORM_FIELDS.org;
+      this.updateOfficePhoneField(org);
+      const updatedState = stateService.getState(newMode);
+      if (updatedState?.officePhoneFieldType === 'text') {
+        mergedState.officePhone = formatPhoneNumber(
+          urlState.officePhone,
+          'CUSTOM'
+        );
+      } else {
+        mergedState.officePhone = formatPhoneNumber(
+          urlState.officePhone,
+          'E.164'
+        );
+      }
+    }
+
     stateService.updateState(newMode, mergedState);
 
-    // Update the office phone field based on the organization from the state
-    this.updateOfficePhoneField(mergedState.org || DEFAULT_FORM_FIELDS.org);
+    this.updateOfficePhoneField(mergedState.org || '');
 
-    // Format phone numbers on initial load
     const phoneFields = [
       dom.formFields.workPhone,
       dom.formFields.cellPhone,
@@ -320,11 +324,9 @@ export class App {
       }
     });
 
-    // Now, trigger the QR code update and URL sync directly
     await this.updateQRCode();
     this.ui.getUrlHandler().updateUrlFromState(stateService.getState(newMode)!);
 
-    // After the first render, re-calculate the sticky container's final position.
     this.ui.reinitializeStickyDimensions();
 
     if (this.ui.getCurrentMode() === MODES.WIFI) {
@@ -333,7 +335,6 @@ export class App {
 
     this.handleDownloadFromUrl(downloadType);
 
-    // Manually trigger the scroll handler to correct layout on a scrolled page load.
     this.ui.getStickyManager().handleStickyBehavior();
   };
 

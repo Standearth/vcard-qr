@@ -9,7 +9,7 @@ dist
 # Certificates
 server/certs/*
 !server/certs/AppleWWDRCAG4.pem
-server/src/config/pass-templates.json
+server/src/config/*.json
 
 # Local Environment Variables
 # Keep sensitive keys and environment-specific settings out of the repo.

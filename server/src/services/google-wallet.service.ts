@@ -4,9 +4,12 @@ import { GoogleAuth, GoogleAuthOptions } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { googleWalletPassClass as passClass } from '../config/google-wallet-templates.js';
+import { getTemplateForEmail } from '../config/google-wallet-templates.js';
 import { v4 as uuidv4 } from 'uuid';
-import { generateVCardString } from '@vcard-qr/shared-utils'; // Import vCard generator
+import {
+  generateVCardString,
+  generateWhatsAppLink,
+} from '@vcard-qr/shared-utils';
 
 // Helper to get __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -43,25 +46,14 @@ export async function generateGoogleWalletPass(
   const client = await auth.getClient();
   const credentials = await (client as any).getCredentials();
   const objectId = `${process.env.GOOGLE_ISSUER_ID}.${uuidv4()}`;
-
-  // Use the utility to generate a vCard string for the QR code
   const vCardString = generateVCardString(data, false);
 
-  // Define the new pass object structure based on the Pass Builder output
-  const passObject = {
+  const template = getTemplateForEmail(data.email);
+
+  const passObject: any = {
     id: objectId,
-    classId: passClass.id,
-    logo: {
-      sourceUri: {
-        uri: 'https://qr.stand.earth/Stand-Logo-google-wallet-logo.png',
-      },
-      contentDescription: {
-        defaultValue: {
-          language: 'en-US',
-          value: 'Stand.earth Logo',
-        },
-      },
-    },
+    classId: template.id,
+    logo: template.logo,
     cardTitle: {
       defaultValue: {
         language: 'en-US',
@@ -80,17 +72,13 @@ export async function generateGoogleWalletPass(
         value: `${data.firstName} ${data.lastName}`.trim(),
       },
     },
-    // The barcode now contains the full vCard data
     barcode: {
       type: 'QR_CODE',
       value: vCardString,
-      alternateText: `vCard for ${data.firstName} ${data.lastName}`.trim(),
     },
-    hexBackgroundColor: '#f5f1ea', // Stand.earth brand color
-    heroImage: {
-      sourceUri: {
-        uri: 'https://qr.stand.earth/Stand-Logo-google-wallet-hero.png',
-      },
+    hexBackgroundColor: template.hexBackgroundColor,
+    linksModuleData: {
+      uris: [],
     },
     textModulesData: [
       {
@@ -115,27 +103,50 @@ export async function generateGoogleWalletPass(
         header: 'Cell Phone',
         body: data.cellPhone,
       },
-    ].filter((module) => module.body), // This will remove any empty fields
+      {
+        id: 'notes',
+        header: 'Notes',
+        body: data.notes,
+      },
+    ].filter((module) => module.body),
   };
+
+  if (template.heroImage) {
+    passObject.heroImage = template.heroImage;
+  }
+
+  if (data.website) {
+    passObject.linksModuleData.uris.push({
+      uri: data.website,
+      description: 'Website',
+      id: 'website',
+    });
+  }
+  if (data.linkedin) {
+    passObject.linksModuleData.uris.push({
+      uri: data.linkedin,
+      description: 'LinkedIn',
+      id: 'linkedin',
+    });
+  }
+  const whatsAppLink = generateWhatsAppLink(data.whatsapp);
+  if (whatsAppLink) {
+    passObject.linksModuleData.uris.push({
+      uri: whatsAppLink,
+      description: 'WhatsApp',
+      id: 'whatsapp',
+    });
+  }
 
   const claims = {
     iss: credentials.client_email,
     aud: 'google',
     typ: 'savetowallet',
     payload: {
-      genericClasses: [passClass],
+      genericClasses: [template.class],
       genericObjects: [passObject],
     },
   };
-
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('--- Google Wallet Local Debug ---');
-    console.log('Service Account Email:', credentials.client_email);
-    console.log('Pass Class ID:', passClass.id);
-    console.log('Full Pass Object:', JSON.stringify(passObject, null, 2));
-    console.log('JWT Claims Payload:', JSON.stringify(claims, null, 2));
-    console.log('---------------------------------');
-  }
 
   const token = jwt.sign(claims, credentials.private_key, {
     algorithm: 'RS256',

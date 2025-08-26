@@ -1,4 +1,4 @@
-// standearth/vcard-qr/vcard-qr-dot-removal-caching/frontend/src/app/ui/EventManager.ts
+// standearth/vcard-qr/vcard-qr-phone-settings/frontend/src/app/ui/EventManager.ts
 
 import { dom } from '../../config/dom';
 import { App } from '../App';
@@ -167,6 +167,7 @@ export class EventManager {
       dom.formFields.workPhone,
       dom.formFields.cellPhone,
       dom.formFields.whatsapp,
+      dom.formFields.officePhoneInput,
     ];
 
     phoneTextFields.forEach((field) => {
@@ -176,11 +177,20 @@ export class EventManager {
 
     dom.formFields.officePhone.addEventListener('change', this.handleFormInput);
 
+    // Special handler for the organization field to trigger phone logic
+    dom.formFields.org.addEventListener('input', () => {
+      // First, update the state with the user's input to prevent race conditions
+      this.handleFormInput();
+      // Then, update the phone field display based on the new organization
+      this.app.handleOrgChange();
+    });
+
     Object.values(dom.formFields).forEach((field) => {
       if (
         field instanceof HTMLElement &&
         !phoneTextFields.includes(field as any) &&
-        field.id !== 'office_phone'
+        field.id !== 'office_phone' &&
+        field.id !== 'org' // Exclude org from this generic handler
       ) {
         field.addEventListener('input', this.handleFormInput);
       }

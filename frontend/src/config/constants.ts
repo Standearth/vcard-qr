@@ -45,6 +45,7 @@ export type TabState = Partial<Options> & {
   logoUrl: string;
   whatsapp?: string;
   wifiSsid?: string;
+  officePhoneFieldType?: 'select' | 'text';
   wifiPassword?: string;
   wifiEncryption?: string;
   wifiHidden?: boolean;
@@ -97,4 +98,5 @@ export const DEFAULT_FORM_FIELDS = {
   wifiPassword: '',
   wifiEncryption: 'WPA',
   wifiHidden: false,
+  officePhoneFieldType: 'select',
 };

@@ -25,6 +25,8 @@ export class FormManager {
   getActiveFormFields() {
     const { formFields } = dom;
     const currentMode = this.uiManager.getCurrentMode();
+    const currentState = this.uiManager.getTabState();
+
     if (currentMode === MODES.LINK) return { linkUrl: formFields.linkUrl };
     if (currentMode === MODES.WIFI)
       return {
@@ -39,7 +41,10 @@ export class FormManager {
       org: formFields.org,
       title: formFields.title,
       email: formFields.email,
-      officePhone: formFields.officePhone,
+      officePhone:
+        currentState?.officePhoneFieldType === 'text'
+          ? formFields.officePhoneInput
+          : formFields.officePhone,
       extension: formFields.extension,
       workPhone: formFields.workPhone,
       cellPhone: formFields.cellPhone,
@@ -51,7 +56,8 @@ export class FormManager {
   }
 
   getFormControlValues(): TabState {
-    const currentState = this.uiManager.getTabState() || {};
+    const currentState =
+      this.uiManager.getTabState() || ({} as Partial<TabState>);
     const { advancedControls, formFields } = dom;
     const typeNumberValue = parseInt(advancedControls.qrTypeNumber.value);
 
@@ -102,10 +108,14 @@ export class FormManager {
       org: formFields.org.value,
       title: formFields.title.value,
       email: formFields.email.value,
-      officePhone: formFields.officePhone.value,
+      officePhone:
+        currentState.officePhoneFieldType === 'text'
+          ? formFields.officePhoneInput.value
+          : formFields.officePhone.value,
       extension: formFields.extension.value,
       workPhone: formFields.workPhone.value,
       cellPhone: formFields.cellPhone.value,
+
       website: formFields.website.value,
       linkedin: formFields.linkedin.value,
       whatsapp: formFields.whatsapp.value,
@@ -113,6 +123,7 @@ export class FormManager {
       linkUrl: formFields.linkUrl.value,
       logoUrl: advancedControls.logoUrl.value,
       wifiSsid: formFields.wifiSsid.value,
+      officePhoneFieldType: currentState.officePhoneFieldType,
       wifiPassword: formFields.wifiPassword.value,
       wifiEncryption: formFields.wifiEncryption.value,
       wifiHidden: formFields.wifiHidden.checked,
@@ -234,10 +245,18 @@ export class FormManager {
     if (formFields.email) {
       formFields.email.value = values.email ?? DEFAULT_FORM_FIELDS.email;
     }
-    if (formFields.officePhone) {
-      formFields.officePhone.value =
-        values.officePhone ?? DEFAULT_FORM_FIELDS.officePhone;
+    if (values.officePhoneFieldType === 'text') {
+      if (formFields.officePhoneInput) {
+        formFields.officePhoneInput.value =
+          values.officePhone ?? DEFAULT_FORM_FIELDS.officePhone;
+      }
+    } else {
+      if (formFields.officePhone) {
+        formFields.officePhone.value =
+          values.officePhone ?? DEFAULT_FORM_FIELDS.officePhone;
+      }
     }
+
     if (formFields.extension) {
       formFields.extension.value =
         values.extension ?? DEFAULT_FORM_FIELDS.extension;

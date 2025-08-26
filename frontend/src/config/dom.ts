@@ -37,6 +37,12 @@ export function initializeDomElements() {
     bottomContentContainer: document.getElementById(
       'bottom-content-container'
     ) as HTMLDivElement,
+    officePhoneSelectWrapper: document.getElementById(
+      'office-phone-select-wrapper'
+    ) as HTMLDivElement,
+    officePhoneInputWrapper: document.getElementById(
+      'office-phone-input-wrapper'
+    ) as HTMLDivElement,
     tabLinks: {
       vcard: document.querySelector(
         '.tab-link[data-tab="vcard"]'
@@ -60,6 +66,9 @@ export function initializeDomElements() {
       title: document.getElementById('title') as HTMLInputElement,
       email: document.getElementById('email') as HTMLInputElement,
       officePhone: document.getElementById('office_phone') as HTMLSelectElement,
+      officePhoneInput: document.getElementById(
+        'office_phone_input'
+      ) as HTMLInputElement,
       extension: document.getElementById('extension') as HTMLInputElement,
       workPhone: document.getElementById('work_phone') as HTMLInputElement,
       cellPhone: document.getElementById('cell_phone') as HTMLInputElement,

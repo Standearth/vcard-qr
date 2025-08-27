@@ -12,14 +12,7 @@ export type Mode = (typeof MODES)[keyof typeof MODES];
 
 export const DESKTOP_BREAKPOINT_PX = 768;
 
-export const LOGO_URLS = {
-  RED: '/Stand_Logo_Block-RGB_Red.svg',
-  ANNIVERSARY: '/Stand.earth_25th-red_logo-teal_accent-RGB.svg',
-  WIFI: '/Stand_WiFi.svg',
-};
-
 export type TabState = Partial<Options> & {
-  anniversaryLogo: boolean;
   optimizeSize?: boolean;
   roundSize?: boolean;
   showImage?: boolean;
@@ -64,7 +57,6 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   wrapSize: 0.5,
   imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 10 },
   qrOptions: { typeNumber: 0, errorCorrectionLevel: 'H' },
-  anniversaryLogo: true,
   optimizeSize: false,
   roundSize: true,
   logoUrl: '',
@@ -74,7 +66,6 @@ export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
   [MODES.VCARD]: { margin: 0 },
   [MODES.LINK]: { margin: 10, imageOptions: { margin: 10 } },
   [MODES.WIFI]: {
-    anniversaryLogo: false,
     imageOptions: {},
   },
 };

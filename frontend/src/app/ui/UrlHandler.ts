@@ -119,7 +119,6 @@ export class UrlHandler {
       width: 'width',
       height: 'height',
       margin: 'margin',
-      anniversaryLogo: 'anniversaryLogo',
       optimizeSize: 'optimizeSize',
       roundSize: 'roundSize',
       showImage: 'showImage',
@@ -171,7 +170,6 @@ export class UrlHandler {
       case 'margin':
         if (!isNaN(intValue)) state[key] = intValue;
         break;
-      case 'anniversaryLogo':
       case 'optimizeSize':
       case 'roundSize':
       case 'showImage':

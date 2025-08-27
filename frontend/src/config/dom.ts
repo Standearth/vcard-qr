@@ -20,8 +20,8 @@ export function initializeDomElements() {
     vcardTextOutput: document.getElementById(
       'qrcode-text-output'
     ) as HTMLPreElement,
-    anniversaryLogoContainer: document.getElementById(
-      'anniversary-logo-checkbox-container'
+    logoSelectionContainer: document.getElementById(
+      'logo-selection-container'
     ) as HTMLDivElement,
     canvasContainer: document.getElementById('canvas') as HTMLDivElement,
     tabs: document.querySelector('.tabs') as HTMLDivElement,
@@ -187,9 +187,6 @@ export function initializeDomElements() {
         'form-qr-error-correction-level'
       ) as HTMLSelectElement,
       showImage: document.getElementById('form-show-image') as HTMLInputElement,
-      anniversaryLogo: document.getElementById(
-        'anniversary_logo'
-      ) as HTMLInputElement,
       container: document.getElementById('advanced-controls') as HTMLDivElement,
     },
   };

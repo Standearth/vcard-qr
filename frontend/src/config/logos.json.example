@@ -1,0 +1,13 @@
+{
+  "default": {
+    "main": ["Logo.svg"],
+    "wifi": ["WiFi_icon.svg"]
+  },
+  "example.com": {
+    "main": ["Example.com-Logo-1.svg", "Example.com-Logo-2.svg"],
+    "wifi": ["Example.com-WiFi.svg"]
+  },
+  "example.org": {
+    "main": ["Example.org-Logo.svg"]
+  }
+}

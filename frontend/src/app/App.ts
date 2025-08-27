@@ -15,12 +15,12 @@ import { dom } from '../config/dom';
 import {
   Mode,
   MODES,
-  LOGO_URLS,
   DEFAULT_ADVANCED_OPTIONS,
   DEFAULT_FORM_FIELDS,
   TabState,
 } from '../config/constants';
 import { generateQRCodeData } from '../utils/helpers';
+import logosConfig from '../../src/config/logos.json';
 
 import { formatPhoneNumber } from '@vcard-qr/shared-utils';
 
@@ -47,7 +47,6 @@ export class App {
       margin: 10,
     });
     this.modalQrCode.append(dom.modal.qrCodeContainer);
-
     this.handleRouteChange();
   }
 
@@ -59,12 +58,56 @@ export class App {
     faDom.watch();
   }
 
-  public handleOrgChange = (): void => {
-    const org = dom.formFields.org.value;
-    this.updateOfficePhoneField(org);
+  public handleWebsiteChange = (): void => {
+    const website = dom.formFields.website.value;
+    this.updateOfficePhoneField(website);
+    this.updateLogoOptions(website);
   };
 
-  private updateOfficePhoneField(organization: string): void {
+  private getLogoOptions(website: string, mode: Mode): string[] {
+    let domain = '';
+    try {
+      const url = new URL(website);
+      domain = url.hostname.replace(/^www\./, '');
+    } catch (e) {
+      // ignore invalid url
+    }
+
+    const domainTemplate =
+      logosConfig[domain as keyof typeof logosConfig] || {};
+    const defaultTemplate = logosConfig.default;
+
+    const logoSet = new Set<string>();
+
+    const addLogos = (template: { main?: string[]; wifi?: string[] }) => {
+      if (mode === 'wifi' && template.wifi) {
+        template.wifi.forEach((logo) => logoSet.add(logo));
+      } else if (template.main) {
+        template.main.forEach((logo) => logoSet.add(logo));
+      }
+    };
+
+    addLogos(domainTemplate);
+    addLogos(defaultTemplate);
+
+    return Array.from(logoSet);
+  }
+
+  private updateLogoOptions(website: string): void {
+    const currentMode = this.ui.getCurrentMode();
+    const logoOptions = this.getLogoOptions(website, currentMode);
+
+    this.ui.renderLogoThumbnails(logoOptions);
+
+    if (logoOptions.length > 0) {
+      dom.advancedControls.logoUrl.value = logoOptions[0];
+    } else {
+      dom.advancedControls.logoUrl.value = '';
+    }
+    this.ui.getEventManager().handleStateUpdate();
+  }
+
+  private updateOfficePhoneField(website: string): void {
     const phoneSelect = dom.formFields.officePhone;
     if (!phoneSelect) return;
 
@@ -86,9 +129,16 @@ export class App {
         Array.isArray(rawOptions) &&
         rawOptions.length > 0 &&
         rawOptions[0].display;
-      const matchedOptions = rawOptions.find(
-        (set: any) => set.key === organization
-      );
+
+      let domain = '';
+      try {
+        const url = new URL(website);
+        domain = url.hostname.replace(/^www\./, '');
+      } catch (e) {
+        // ignore invalid url
+      }
+
+      const matchedOptions = rawOptions.find((set: any) => set.key === domain);
 
       if (matchedOptions) {
         optionsToDisplay = matchedOptions;
@@ -183,16 +233,17 @@ export class App {
 
   private loadDefaultLogo = (): Promise<string | undefined> => {
     return new Promise((resolve, reject) => {
-      const currentMode = this.ui.getCurrentMode();
-      const state = stateService.getState(currentMode);
-      let imageUrl: string;
+      const state = stateService.getState(this.ui.getCurrentMode());
+      const website = state?.website || '';
+      const logoOptions = this.getLogoOptions(
+        website,
+        this.ui.getCurrentMode()
+      );
+      const imageUrl = logoOptions.length > 0 ? logoOptions[0] : undefined;
 
-      if (currentMode === MODES.WIFI) {
-        imageUrl = LOGO_URLS.WIFI;
-      } else {
-        imageUrl = state?.anniversaryLogo
-          ? LOGO_URLS.ANNIVERSARY
-          : LOGO_URLS.RED;
+      if (!imageUrl) {
+        resolve(undefined);
+        return;
       }
       fetch(imageUrl)
         .then((response) =>
@@ -235,9 +286,13 @@ export class App {
             return response.blob();
           })
           .then((blob) => {
-            if (blob.type !== 'image/svg+xml') {
+            if (blob.type !== 'image/svg+xml' && blob.size > 0) {
               console.error('Logo from URL is not an SVG. Ignoring.');
               resolve(this.loadDefaultLogo());
+              return;
+            }
+            if (blob.size === 0) {
+              resolve(undefined);
               return;
             }
             const reader = new FileReader();
@@ -287,14 +342,12 @@ export class App {
     const mergedState: TabState = {
       ...currentTabState,
       ...urlState,
-      anniversaryLogo:
-        urlState.anniversaryLogo ?? currentTabState?.anniversaryLogo ?? false,
       logoUrl: urlState.logoUrl ?? currentTabState?.logoUrl ?? '',
     };
 
     if (urlState.officePhone) {
-      const org = mergedState.org || DEFAULT_FORM_FIELDS.org;
-      this.updateOfficePhoneField(org);
+      const website = mergedState.website || DEFAULT_FORM_FIELDS.website;
+      this.updateOfficePhoneField(website);
       const updatedState = stateService.getState(newMode);
       if (updatedState?.officePhoneFieldType === 'text') {
         mergedState.officePhone = formatPhoneNumber(
@@ -311,7 +364,8 @@ export class App {
 
     stateService.updateState(newMode, mergedState);
 
-    this.updateOfficePhoneField(mergedState.org || '');
+    this.updateOfficePhoneField(mergedState.website || '');
+    this.updateLogoOptions(mergedState.website || '');
 
     const phoneFields = [
       dom.formFields.workPhone,

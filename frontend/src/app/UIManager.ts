@@ -118,7 +118,6 @@ export class UIManager {
     });
 
     const isVCard = currentMode === MODES.VCARD;
-    const isWifi = currentMode === MODES.WIFI;
     const areButtonsVisible = state.isQrCodeValid ?? true;
     const buttonDisplay = areButtonsVisible ? 'inline-flex' : 'none';
 
@@ -135,8 +134,6 @@ export class UIManager {
       dom.walletButtonContainer.style.display =
         isVCard && areButtonsVisible ? 'inline-flex' : 'none';
     }
-    if (dom.anniversaryLogoContainer)
-      dom.anniversaryLogoContainer.style.display = isWifi ? 'none' : 'flex';
 
     // Handle office phone field visibility
     if (state.officePhoneFieldType === 'text') {
@@ -146,6 +143,20 @@ export class UIManager {
       dom.officePhoneSelectWrapper?.classList.remove('hidden');
       dom.officePhoneInputWrapper?.classList.add('hidden');
     }
+  }
+
+  public renderLogoThumbnails(logoUrls: string[]): void {
+    const container = dom.logoSelectionContainer;
+    container.innerHTML = '';
+    logoUrls.forEach((url) => {
+      const button = document.createElement('button');
+      button.className = 'logo-thumbnail';
+      button.setAttribute('data-logo-url', url);
+      const img = document.createElement('img');
+      img.src = url;
+      button.appendChild(img);
+      container.appendChild(button);
+    });
   }
 
   /**

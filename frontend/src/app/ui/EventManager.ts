@@ -177,12 +177,9 @@ export class EventManager {
 
     dom.formFields.officePhone.addEventListener('change', this.handleFormInput);
 
-    // Special handler for the organization field to trigger phone logic
-    dom.formFields.org.addEventListener('input', () => {
-      // First, update the state with the user's input to prevent race conditions
+    dom.formFields.website.addEventListener('input', () => {
       this.handleFormInput();
-      // Then, update the phone field display based on the new organization
-      this.app.handleOrgChange();
+      this.app.handleWebsiteChange();
     });
 
     Object.values(dom.formFields).forEach((field) => {
@@ -190,9 +187,21 @@ export class EventManager {
         field instanceof HTMLElement &&
         !phoneTextFields.includes(field as any) &&
         field.id !== 'office_phone' &&
-        field.id !== 'org' // Exclude org from this generic handler
+        field.id !== 'website'
       ) {
         field.addEventListener('input', this.handleFormInput);
+      }
+    });
+
+    dom.logoSelectionContainer.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      const button = target.closest('.logo-thumbnail');
+      if (button) {
+        const logoUrl = button.getAttribute('data-logo-url');
+        if (logoUrl) {
+          dom.advancedControls.logoUrl.value = logoUrl;
+          this.handleFormInput();
+        }
       }
     });
 

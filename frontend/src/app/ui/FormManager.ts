@@ -66,7 +66,6 @@ export class FormManager {
       height: parseInt(advancedControls.height.value),
       showImage: advancedControls.showImage.checked,
       margin: parseInt(advancedControls.margin.value),
-      anniversaryLogo: advancedControls.anniversaryLogo.checked,
       optimizeSize: advancedControls.optimizeSize.checked,
       roundSize: advancedControls.roundSize.checked,
       dotsOptions: {
@@ -132,7 +131,6 @@ export class FormManager {
     return {
       ...(currentState as TabState),
       ...formValues,
-      anniversaryLogo: formValues.anniversaryLogo ?? false,
     };
   }
 
@@ -147,8 +145,6 @@ export class FormManager {
     advancedControls.margin.value = String(
       values.margin ?? DEFAULT_ADVANCED_OPTIONS.margin
     );
-    advancedControls.anniversaryLogo.checked =
-      values.anniversaryLogo ?? DEFAULT_ADVANCED_OPTIONS.anniversaryLogo;
     advancedControls.optimizeSize.checked =
       values.optimizeSize ?? DEFAULT_ADVANCED_OPTIONS.optimizeSize ?? false;
     advancedControls.roundSize.checked =

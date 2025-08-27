@@ -5,6 +5,9 @@ import { UIManager } from '../UIManager';
 import { stateService } from '../StateService';
 import { generateFilename } from '../../utils/helpers.js';
 
+interface GooglePassResponse {
+  jwt: string;
+}
 export class WalletManager {
   private uiManager: UIManager;
 
@@ -44,7 +47,7 @@ export class WalletManager {
         if (dom.buttons.addToWallet.disabled) {
           return;
         }
-        this.createApplePass();
+        void this.createApplePass();
       });
     }
 
@@ -54,7 +57,7 @@ export class WalletManager {
         if (dom.buttons.addToGoogleWallet.disabled) {
           return;
         }
-        this.createGooglePass();
+        void this.createGooglePass();
       });
     }
 
@@ -93,7 +96,8 @@ export class WalletManager {
     if (!passData) return;
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      // With vite-env.d.ts, this line is now type-safe.
+      const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL || '';
       const response = await fetch(`${apiBaseUrl}/api/v1/passes/vcard`, {
         method: 'POST',
         headers: {
@@ -106,7 +110,8 @@ export class WalletManager {
         throw new Error('Failed to create Apple Wallet pass');
       }
 
-      const pass = await response.blob();
+      // Explicitly typing the variable is cleaner than a type assertion.
+      const pass: Blob = await response.blob();
       const url = window.URL.createObjectURL(pass);
       const a = document.createElement('a');
       a.href = url;
@@ -130,7 +135,8 @@ export class WalletManager {
     if (!passData) return;
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      // With vite-env.d.ts, this line is now type-safe.
+      const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL || '';
       const response = await fetch(`${apiBaseUrl}/api/v1/passes/vcard/google`, {
         method: 'POST',
         headers: {
@@ -143,7 +149,7 @@ export class WalletManager {
         throw new Error('Failed to create Google Wallet pass');
       }
 
-      const { jwt } = await response.json();
+      const { jwt } = (await response.json()) as GooglePassResponse;
       const saveUrl = `https://pay.google.com/gp/v/save/${jwt}`;
 
       // Open the save URL in a new tab

@@ -14,11 +14,62 @@ import {
   generateWhatsAppLink,
   formatPhoneNumber,
 } from '@vcard-qr/shared-utils';
+import { GaxiosPromise } from 'gaxios';
+import {
+  Credentials,
+  JWTInput,
+} from 'google-auth-library/build/src/auth/credentials.js';
 
 // Helper to get __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+interface GoogleCredentials extends Credentials {
+  client_email?: string;
+  private_key?: string;
+}
+
+interface PassObject {
+  id: string;
+  classId: string;
+  logo: Record<string, unknown>;
+  cardTitle: {
+    defaultValue: {
+      language: string;
+      value: string;
+    };
+  };
+  subheader: {
+    defaultValue: {
+      language: string;
+      value: string;
+    };
+  };
+  header: {
+    defaultValue: {
+      language: string;
+      value: string;
+    };
+  };
+  barcode: {
+    type: string;
+    value: string;
+  };
+  hexBackgroundColor: string;
+  linksModuleData: {
+    uris: {
+      uri: string;
+      description: string;
+      id: string;
+    }[];
+  };
+  textModulesData: {
+    id: string;
+    header: string;
+    body?: string;
+  }[];
+  heroImage?: Record<string, unknown> | null;
+}
 export async function generateGoogleWalletPass(
   data: PassData
 ): Promise<string> {
@@ -31,7 +82,9 @@ export async function generateGoogleWalletPass(
       );
     }
     authOptions = {
-      credentials: JSON.parse(process.env.GOOGLE_WALLET_SA_KEY),
+      credentials: JSON.parse(
+        process.env.GOOGLE_WALLET_SA_KEY
+      ) as unknown as JWTInput,
       scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
     };
   } else {
@@ -48,7 +101,9 @@ export async function generateGoogleWalletPass(
 
   const auth = new GoogleAuth(authOptions);
   const client = await auth.getClient();
-  const credentials = await (client as any).getCredentials();
+  const credentials = (await (
+    client as unknown as { getCredentials: () => GaxiosPromise<Credentials> }
+  ).getCredentials()) as GoogleCredentials;
   const objectId = `${process.env.GOOGLE_ISSUER_ID}.${uuidv4()}`;
   const vCardString = generateVCardString(data, false);
 
@@ -64,7 +119,7 @@ export async function generateGoogleWalletPass(
     }
   }
 
-  const passObject: any = {
+  const passObject: PassObject = {
     id: objectId,
     classId: template.id,
     logo: template.logo,
@@ -168,7 +223,7 @@ export async function generateGoogleWalletPass(
     },
   };
 
-  const token = jwt.sign(claims, credentials.private_key, {
+  const token = jwt.sign(claims, credentials.private_key as string, {
     algorithm: 'RS256',
   });
 

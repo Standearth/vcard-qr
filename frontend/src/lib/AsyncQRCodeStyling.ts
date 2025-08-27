@@ -71,12 +71,12 @@ class AsyncQRCodeStyling extends QRCodeStyling {
     super(options);
   }
 
-  public override async update(
+  public override update(
     options?: Partial<Options> & {
       dotHidingMode?: 'box' | 'shape' | 'off';
       wrapSize?: number;
     }
-  ): Promise<void> {
+  ): void {
     const dotType = options?.dotsOptions?.type;
     const dotHidingMode = options?.dotHidingMode ?? 'shape';
     this._wrapSize = options?.wrapSize ?? 0.1;
@@ -90,39 +90,41 @@ class AsyncQRCodeStyling extends QRCodeStyling {
     const originalImageMargin = options?.imageOptions?.margin;
     const sanitizedOptions = { ...options };
 
-    if (this._shouldApplyCustomLogic && options?.image) {
-      try {
-        this._customOutlineResult = await this.createImageOutline(
-          options.image,
-          originalImageMargin
-        );
-      } catch {
-        this._customOutlineResult = null;
-        this._shouldApplyCustomLogic = false;
+    const processUpdate = (): void => {
+      this._extension = (svg: SVGElement): void => {
+        this.applyCustomizations(svg);
+      };
+
+      // Sanitize imageOptions just before passing to the superclass
+      if (sanitizedOptions.imageOptions) {
+        if (dotHidingMode === 'off') {
+          sanitizedOptions.imageOptions.hideBackgroundDots = false;
+        } else if (dotHidingMode === 'box') {
+          sanitizedOptions.imageOptions.hideBackgroundDots = true;
+        } else if (dotHidingMode === 'shape') {
+          // When wrapping, we handle dot hiding manually, so we tell the library not to hide any.
+          sanitizedOptions.imageOptions.hideBackgroundDots = false;
+          // The library should not add any margin, as our outline already includes it.
+          sanitizedOptions.imageOptions.margin = 0;
+        }
       }
+
+      super.update(sanitizedOptions);
+    };
+    if (this._shouldApplyCustomLogic && options?.image) {
+      this.createImageOutline(options.image, originalImageMargin)
+        .then((outlineResult) => {
+          this._customOutlineResult = outlineResult;
+        })
+        .catch(() => {
+          this._customOutlineResult = null;
+          this._shouldApplyCustomLogic = false;
+        })
+        .finally(processUpdate);
     } else {
       this._customOutlineResult = null;
+      processUpdate();
     }
-
-    (this as any)._extension = (svg: SVGElement) => {
-      this.applyCustomizations(svg);
-    };
-
-    // Sanitize imageOptions just before passing to the superclass
-    if (sanitizedOptions.imageOptions) {
-      if (dotHidingMode === 'off') {
-        sanitizedOptions.imageOptions.hideBackgroundDots = false;
-      } else if (dotHidingMode === 'box') {
-        sanitizedOptions.imageOptions.hideBackgroundDots = true;
-      } else if (dotHidingMode === 'shape') {
-        // When wrapping, we handle dot hiding manually, so we tell the library not to hide any.
-        sanitizedOptions.imageOptions.hideBackgroundDots = false;
-        // The library should not add any margin, as our outline already includes it.
-        sanitizedOptions.imageOptions.margin = 0;
-      }
-    }
-
-    super.update(sanitizedOptions);
   }
 
   private applyCustomizations(svgElement: SVGElement): void {
@@ -150,7 +152,7 @@ class AsyncQRCodeStyling extends QRCodeStyling {
     const cacheKey = `${
       this._customOutlineResult.path
     }-${JSON.stringify(transform)}`;
-    let cachedEntry = outlineCache.get(cacheKey);
+    const cachedEntry = outlineCache.get(cacheKey);
     let polygons: number[][][];
 
     if (cachedEntry?.vertices) {

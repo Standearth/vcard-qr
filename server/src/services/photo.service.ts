@@ -43,7 +43,7 @@ export async function findPersonAndPhoto(
       },
     };
 
-    const { data: html } = await axios.get(STAFF_URL, axiosConfig);
+    const { data: html } = await axios.get<string>(STAFF_URL, axiosConfig);
     const $ = cheerio.load(html);
     const staffList: ScrapedPerson[] = [];
 
@@ -82,7 +82,7 @@ export async function findPersonAndPhoto(
     const bestMatch = results[0].item;
 
     // Download and process the image
-    const imageResponse = await axios.get(bestMatch.photoUrl, {
+    const imageResponse = await axios.get<Buffer>(bestMatch.photoUrl, {
       responseType: 'arraybuffer',
     });
 

@@ -44,10 +44,10 @@ export async function loadPassConfig(): Promise<PassConfig> {
   try {
     // Use a variable to hold the path, preventing TSC from resolving it at build time
     const configPath = './pass-templates.json';
-    const passConfigModule = await import(configPath, {
+    const passConfigModule = (await import(configPath, {
       with: { type: 'json' },
-    });
-    config = passConfigModule.default as PassConfig;
+    })) as { default: PassConfig };
+    config = passConfigModule.default;
     return config;
   } catch (error) {
     console.error(
@@ -59,16 +59,16 @@ export async function loadPassConfig(): Promise<PassConfig> {
 
 export function getTemplateForEmail(
   email: string | undefined,
-  config: PassConfig
+  passConfig: PassConfig
 ): PassStyle {
   if (email) {
     const domain = email.split('@')[1];
     if (domain) {
-      const template = config.templates.find((t) => t.domain === domain);
+      const template = passConfig.templates.find((t) => t.domain === domain);
       if (template) {
         return template;
       }
     }
   }
-  return config.default;
+  return passConfig.default;
 }

@@ -18,6 +18,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.21",
     "fuse.js": "^7.1.0",
+    "gaxios": "^6.7.0",
     "google-auth-library": "^10.2.1",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.11.4",

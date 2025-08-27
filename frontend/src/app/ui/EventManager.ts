@@ -64,16 +64,16 @@ export class EventManager {
       .updateUrlFromState(stateService.getState(currentMode)!);
 
     // Trigger a fast, live preview render.
-    this.app.updateQRCode(true);
+    void this.app.updateQRCode(true);
 
     // Debounce the final, high-quality render.
     clearTimeout(this.qrUpdateTimeout);
     this.qrUpdateTimeout = window.setTimeout(() => {
-      this.app.updateQRCode(false);
+      void this.app.updateQRCode(false);
     }, 300); // 300ms delay
   };
 
-  private handleImageInputChange = async (event?: Event): Promise<void> => {
+  private handleImageInputChange = (event?: Event): void => {
     const imageFile = dom.advancedControls.imageFile.files?.[0];
     const logoUrlInput = dom.advancedControls.logoUrl;
 
@@ -214,7 +214,9 @@ export class EventManager {
 
   private setupEventListeners(): void {
     this.previousWidth = parseInt(dom.advancedControls.width.value);
-    window.addEventListener('hashchange', this.app.handleRouteChange);
+    window.addEventListener('hashchange', () => {
+      void this.app.handleRouteChange();
+    });
 
     Object.values(dom.formContainers).forEach((form) => {
       form.addEventListener('submit', (event) => event.preventDefault());
@@ -226,7 +228,7 @@ export class EventManager {
       );
     });
 
-    const phoneTextFields = [
+    const phoneTextFields: (HTMLInputElement | HTMLSelectElement)[] = [
       dom.formFields.workPhone,
       dom.formFields.cellPhone,
       dom.formFields.whatsapp,
@@ -254,7 +256,7 @@ export class EventManager {
     Object.values(dom.formFields).forEach((field) => {
       if (
         field instanceof HTMLElement &&
-        !phoneTextFields.includes(field as any) &&
+        !phoneTextFields.includes(field as HTMLInputElement) &&
         field.id !== 'office_phone' &&
         field.id !== 'website'
       ) {
@@ -340,24 +342,24 @@ export class EventManager {
   private setupButtonEventListeners(): void {
     dom.canvasContainer?.addEventListener('click', this._handleQrCodeClick);
 
-    dom.buttons.downloadPng.addEventListener('click', () =>
-      this.app.getQrCode().download({
+    dom.buttons.downloadPng.addEventListener('click', () => {
+      void this.app.getQrCode().download({
         name: generateFilename(this.uiManager.getCurrentMode()),
         extension: 'png',
-      })
-    );
-    dom.buttons.downloadJpg.addEventListener('click', () =>
-      this.app.getQrCode().download({
+      });
+    });
+    dom.buttons.downloadJpg.addEventListener('click', () => {
+      void this.app.getQrCode().download({
         name: generateFilename(this.uiManager.getCurrentMode()),
         extension: 'jpeg',
-      })
-    );
-    dom.buttons.downloadSvg.addEventListener('click', () =>
-      this.app.getQrCode().download({
+      });
+    });
+    dom.buttons.downloadSvg.addEventListener('click', () => {
+      void this.app.getQrCode().download({
         name: generateFilename(this.uiManager.getCurrentMode()),
         extension: 'svg',
-      })
-    );
+      });
+    });
 
     dom.buttons.downloadVCard.addEventListener('click', () => {
       const blob = new Blob([this.app.getQRCodeData()], {
@@ -450,7 +452,7 @@ export class EventManager {
         };
 
         this.uiManager.getFormManager().setFormControlValues(newTabState);
-        this.handleStateUpdate();
+        void this.handleStateUpdate();
       }
     });
 
@@ -462,7 +464,7 @@ export class EventManager {
         });
         let finalUrl = window.location.href;
         finalUrl += finalUrl.includes('?') ? '&download=png' : '?download=png';
-        this.app.getModalQrCode().update({ data: finalUrl });
+        void this.app.getModalQrCode().update({ data: finalUrl });
       }
     });
 
@@ -520,7 +522,7 @@ export class EventManager {
           key === 'roundSize' ||
           key === 'margin'
         ) {
-          field.addEventListener(eventType, async (event) => {
+          field.addEventListener(eventType, (event) => {
             const target = event.target as HTMLInputElement | HTMLSelectElement;
             const isOptimized = advancedControls.optimizeSize.checked;
 
@@ -531,7 +533,7 @@ export class EventManager {
                   const newValue =
                     parseInt((target as HTMLInputElement).value) || 0;
                   const increment = newValue > this.previousWidth ? 1 : -1;
-                  await this.handleOptimization(increment);
+                  void this.handleOptimization(increment);
                 } else {
                   this.handleFormInput(event);
                 }
@@ -540,7 +542,7 @@ export class EventManager {
                 if (advancedControls.optimizeSize.checked) {
                   advancedControls.roundSize.checked = true;
                 }
-                await this.handleOptimization(0);
+                void this.handleOptimization(0);
                 break;
               case 'form-round-size':
                 if (!advancedControls.roundSize.checked) {
@@ -550,7 +552,7 @@ export class EventManager {
                 break;
               case 'form-margin':
                 if (isOptimized) {
-                  await this.handleOptimization(0);
+                  void this.handleOptimization(0);
                 } else {
                   this.handleFormInput(event);
                 }

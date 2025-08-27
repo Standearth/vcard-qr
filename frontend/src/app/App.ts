@@ -1,4 +1,4 @@
-// src/app/App.ts
+// frontend/src/app/App.ts
 
 import AsyncQRCodeStyling from '../lib/AsyncQRCodeStyling';
 import { Options } from 'qr-code-styling';
@@ -42,15 +42,15 @@ export class App {
       stateService.getState(this.ui.getCurrentMode()) ||
       DEFAULT_ADVANCED_OPTIONS;
     qrCode = new AsyncQRCodeStyling(defaultState);
-    qrCode.append(dom.canvasContainer);
+    void qrCode.append(dom.canvasContainer);
 
     this.modalQrCode = new AsyncQRCodeStyling({
       width: 400,
       height: 400,
       margin: 10,
     });
-    this.modalQrCode.append(dom.modal.qrCodeContainer);
-    this.handleRouteChange();
+    void this.modalQrCode.append(dom.modal.qrCodeContainer);
+    void this.handleRouteChange();
   }
 
   getQrCode = (): AsyncQRCodeStyling => qrCode;
@@ -71,7 +71,7 @@ export class App {
       // When the active tab changes, also trigger these updates
       if (newState.activeMode !== oldState.activeMode) {
         this.handleWebsiteChange(newState.website);
-        this.updateQRCode();
+        void this.updateQRCode();
         this.ui.getUrlHandler().updateUrlFromState(newState);
       }
 
@@ -91,7 +91,7 @@ export class App {
         : `https://${urlString}`;
       const url = new URL(urlWithProtocol);
       return url.hostname.replace(/^www\./, '');
-    } catch (e) {
+    } catch (_e) {
       // Return empty string for invalid URLs
       return '';
     }
@@ -162,13 +162,24 @@ export class App {
       : '';
 
     try {
-      const rawOptions = JSON.parse(
-        import.meta.env.VITE_OFFICE_PHONE_OPTIONS || '[]'
-      );
-      let optionsToDisplay: any = null;
+      const rawOptions: {
+        key?: string;
+        phone_options?: { display: string; value: string }[];
+        display?: string;
+        value?: string;
+      }[] = JSON.parse(import.meta.env.VITE_OFFICE_PHONE_OPTIONS || '[]') as {
+        key?: string;
+        phone_options?: { display: string; value: string }[];
+        display?: string;
+        value?: string;
+      }[];
+
+      let optionsToDisplay: {
+        phone_options?: { display: string; value: string }[];
+      } | null = null;
       let newFieldType: 'select' | 'text';
 
-      const defaultOptions = rawOptions.find((set: any) => !set.key);
+      const defaultOptions = rawOptions.find((set) => !set.key);
       const isOldFormat =
         Array.isArray(rawOptions) &&
         rawOptions.length > 0 &&
@@ -176,12 +187,17 @@ export class App {
 
       const domain = this._getDomainFromUrl(website);
 
-      const matchedOptions = rawOptions.find((set: any) => set.key === domain);
+      const matchedOptions = rawOptions.find((set) => set.key === domain);
 
       if (matchedOptions) {
         optionsToDisplay = matchedOptions;
       } else if (isOldFormat) {
-        optionsToDisplay = { phone_options: rawOptions };
+        optionsToDisplay = {
+          phone_options: rawOptions as unknown as {
+            display: string;
+            value: string;
+          }[],
+        };
       } else if (defaultOptions) {
         optionsToDisplay = defaultOptions;
       }
@@ -191,7 +207,7 @@ export class App {
         const currentValue = phoneSelect.value;
         phoneSelect.innerHTML = '';
         phoneSelect.add(new Option('', ''));
-        optionsToDisplay.phone_options.forEach((option: any) => {
+        optionsToDisplay.phone_options.forEach((option) => {
           if (option.display && option.value) {
             phoneSelect.add(new Option(option.display, option.value));
           }
@@ -317,19 +333,21 @@ export class App {
     });
   };
 
-  updateQRCode = async (isLiveUpdate = false): Promise<boolean> => {
+  updateQRCode = (isLiveUpdate = false): Promise<boolean> => {
     const data = this.getQRCodeData();
     const config = this.buildQrConfig(data, isLiveUpdate);
-    try {
-      const image = await this.loadImageAsync();
-      config.image = image || '';
-      await qrCode.update(config);
-      return true;
-    } catch (error: unknown) {
-      console.error('QR Code generation error:', error);
-      qrCode.update({ ...config, data: '' });
-      return false;
-    }
+
+    return this.loadImageAsync()
+      .then((image) => {
+        config.image = image || '';
+        qrCode.update(config); // This is synchronous
+        return true;
+      })
+      .catch((error: unknown) => {
+        console.error('QR Code generation error:', error);
+        qrCode.update({ ...config, data: '' });
+        return false;
+      });
   };
 
   handleRouteChange = async (): Promise<void> => {
@@ -359,8 +377,9 @@ export class App {
       mergedState.availableLogos = availableLogos;
     }
 
-    if (urlState.officePhone) {
-      const website = mergedState.website || DEFAULT_FORM_FIELDS.website;
+    if (typeof urlState.officePhone === 'string') {
+      const website =
+        mergedState.website || (DEFAULT_FORM_FIELDS.website as string);
       this.updateOfficePhoneField(website);
       const updatedState = stateService.getState(newMode);
       if (updatedState?.officePhoneFieldType === 'text') {

@@ -39,7 +39,9 @@ export function generateVCardString(data: VCardData, useCRLF = false): string {
     data.title ? `TITLE:${data.title}` : '',
     data.email ? `EMAIL:${data.email}` : '',
     data.officePhone
-      ? `TEL;TYPE=office,VOICE:${formatPhoneNumber(data.officePhone)}${data.extension ? `;ext${data.extension}` : ''}`
+      ? `TEL;TYPE=office,VOICE:${formatPhoneNumber(data.officePhone)}${
+          data.extension ? `;ext${data.extension}` : ''
+        }`
       : '',
     data.workPhone
       ? `TEL;TYPE=work,PREF,VOICE,MSG:${formatPhoneNumber(data.workPhone)}`

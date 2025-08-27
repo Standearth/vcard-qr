@@ -2,10 +2,10 @@
 
 interface GoogleWalletTemplate {
   id: string;
-  class: any;
-  logo: any;
+  class: Record<string, unknown>;
+  logo: Record<string, unknown>;
   hexBackgroundColor: string;
-  heroImage?: any;
+  heroImage?: Record<string, unknown> | null;
 }
 
 interface GooglePassConfig {
@@ -15,8 +15,8 @@ interface GooglePassConfig {
 
 let config: GooglePassConfig;
 
-function isObject(item: any): item is { [key: string]: any } {
-  return item && typeof item === 'object' && !Array.isArray(item);
+function isObject(item: unknown): item is Record<string, unknown> {
+  return !!(item && typeof item === 'object' && !Array.isArray(item));
 }
 
 function deepMerge<T extends object, U extends object>(
@@ -27,17 +27,18 @@ function deepMerge<T extends object, U extends object>(
 
   if (isObject(target) && isObject(source)) {
     Object.keys(source).forEach((key) => {
-      if (isObject((source as any)[key])) {
+      const sourceValue = source[key as keyof U];
+      if (isObject(sourceValue)) {
         if (!(key in target)) {
-          Object.assign(output, { [key]: (source as any)[key] });
+          Object.assign(output, { [key]: sourceValue });
         } else {
-          (output as any)[key] = deepMerge(
-            (target as any)[key],
-            (source as any)[key]
+          (output as Record<string, unknown>)[key] = deepMerge(
+            (target as Record<string, unknown>)[key] as T,
+            sourceValue as U
           );
         }
       } else {
-        Object.assign(output, { [key]: (source as any)[key] });
+        Object.assign(output, { [key]: sourceValue });
       }
     });
   }
@@ -57,9 +58,9 @@ export async function loadGooglePassConfig(): Promise<GooglePassConfig> {
   } else {
     try {
       const configPath = './google-wallet-templates.json';
-      const passConfigModule = await import(configPath, {
+      const passConfigModule = (await import(configPath, {
         with: { type: 'json' },
-      });
+      })) as { default: GooglePassConfig };
       configString = JSON.stringify(passConfigModule.default);
     } catch (error) {
       console.error(
@@ -86,14 +87,14 @@ export async function loadGooglePassConfig(): Promise<GooglePassConfig> {
 
 export function getTemplateForEmail(
   email: string | undefined,
-  config: GooglePassConfig
+  passConfig: GooglePassConfig
 ): GoogleWalletTemplate {
   const domain = email?.split('@')[1];
-  const templateConfig = domain ? config.templates[domain] : undefined;
+  const templateConfig = domain ? passConfig.templates[domain] : undefined;
 
   if (templateConfig) {
-    return deepMerge(config.default, templateConfig) as GoogleWalletTemplate;
+    return deepMerge(passConfig.default, templateConfig);
   }
 
-  return config.default;
+  return passConfig.default;
 }

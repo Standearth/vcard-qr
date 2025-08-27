@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-
+// frontend/src/lib/clipper-lib.d.ts
 declare module 'clipper-lib' {
   export interface Point {
     X: number;
@@ -48,6 +47,7 @@ declare module 'clipper-lib' {
     ): boolean;
     static CleanPolygon(polygon: Path, distance?: number): Path;
     static CleanPolygons(polygons: Paths, distance?: number): Paths;
+    static Orientation(path: Path): boolean;
   }
 
   export class ClipperOffset {

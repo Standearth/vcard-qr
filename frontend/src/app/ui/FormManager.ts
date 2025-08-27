@@ -132,7 +132,7 @@ export class FormManager {
     };
 
     return {
-      ...(currentState as TabState),
+      ...currentState,
       ...formValues,
     };
   }
@@ -140,7 +140,10 @@ export class FormManager {
   setFormControlValues(values: TabState, activeElement?: HTMLElement): void {
     const { advancedControls, formFields } = dom;
 
-    const updateField = (field: HTMLElement, value: any) => {
+    const updateField = (
+      field: HTMLElement,
+      value: string | number | boolean | null | undefined
+    ) => {
       if (field === activeElement) return;
 
       if (field instanceof HTMLInputElement && field.type === 'checkbox') {

@@ -74,7 +74,7 @@ export async function generatePassBuffer(
   }
 
   if (data.officePhone) {
-    var officePhoneWithExt = formatPhoneNumber(data.officePhone, 'CUSTOM');
+    let officePhoneWithExt = formatPhoneNumber(data.officePhone, 'CUSTOM');
     if (data.extension) {
       officePhoneWithExt += ` x${data.extension}`;
     }

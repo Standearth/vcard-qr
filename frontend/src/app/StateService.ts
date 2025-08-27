@@ -11,6 +11,9 @@ import {
 import { UIManager } from './UIManager';
 import { generateQRCodeData } from '../utils/helpers'; // Import the helper
 
+// Define a specific type for the subscriber callback
+type StateSubscriber = (newState: TabState, oldState: TabState) => void;
+
 /**
  * Manages the application's state. It is the single source of truth for all tab states
  * and UI-related data. It ensures that state changes are centralized and predictable.
@@ -20,8 +23,7 @@ class StateService {
   private tabStates: Partial<Record<Mode, TabState>> = {}; // Tab-specific config state
   private pixelMultipliers: Partial<Record<Mode, number>> = {};
   private uiManager!: UIManager;
-  private subscribers: ((newState: TabState, oldState: TabState) => void)[] =
-    []; // Array of subscriber callbacks
+  private subscribers: StateSubscriber[] = []; // Array of subscriber callbacks
 
   /**
    * Initializes the default state for all modes when the service is instantiated.
@@ -91,9 +93,7 @@ class StateService {
     return undefined;
   }
 
-  public subscribe(
-    callback: (newState: TabState, oldState: TabState) => void
-  ): void {
+  public subscribe(callback: StateSubscriber): void {
     this.subscribers.push(callback);
   }
 
@@ -105,7 +105,7 @@ class StateService {
   public updateState(
     mode: Mode,
     newState: Partial<TabState>,
-    activeElement?: HTMLElement
+    _activeElement?: HTMLElement
   ): void {
     const oldState = this.getState(mode);
     const currentTabState = this.tabStates[mode];
@@ -118,9 +118,10 @@ class StateService {
       for (const key in newState) {
         const propKey = key as keyof TabState;
         if (propKey in DEFAULT_FORM_FIELDS) {
-          newFormState[propKey] = newState[propKey] as any;
+          (newFormState as Record<string, unknown>)[propKey] =
+            newState[propKey];
         } else {
-          newTabState[propKey] = newState[propKey] as any;
+          (newTabState as Record<string, unknown>)[propKey] = newState[propKey];
         }
       }
 

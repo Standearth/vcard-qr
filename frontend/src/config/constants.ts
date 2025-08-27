@@ -74,8 +74,10 @@ export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
   },
 };
 
-export const DEFAULT_FORM_FIELDS = {
-  activeMode: MODES.VCARD, // Add this line
+export const DEFAULT_FORM_FIELDS: {
+  readonly [key: string]: string | boolean;
+} = {
+  activeMode: MODES.VCARD,
   firstName: '',
   lastName: '',
   org: import.meta.env.VITE_ORG_NAME || 'Example Organization',
@@ -96,4 +98,4 @@ export const DEFAULT_FORM_FIELDS = {
   wifiEncryption: 'WPA',
   wifiHidden: false,
   officePhoneFieldType: 'select',
-} as const;
+};

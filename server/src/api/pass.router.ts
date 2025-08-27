@@ -4,6 +4,7 @@ import { generatePassBuffer } from '../services/pass.service.js';
 import { generateGoogleWalletPass } from '../services/google-wallet.service.js';
 import { PassData } from '../types/index.js';
 import api from '../services/api.service.js';
+import { AxiosError } from 'axios';
 
 const router: Router = Router();
 
@@ -32,7 +33,9 @@ const lookupPhoto = async (
 
   let photoServiceUrl: string | undefined;
   try {
-    const serviceMappings = JSON.parse(process.env.PHOTO_SERVICE_URL || '{}');
+    const serviceMappings = JSON.parse(
+      process.env.PHOTO_SERVICE_URL || '{}'
+    ) as Record<string, string>;
     photoServiceUrl = serviceMappings[emailDomain];
   } catch (error) {
     console.error(
@@ -57,7 +60,7 @@ const lookupPhoto = async (
   const photoApiEndpoint = `${photoServiceUrl}/api/v1/photo`;
 
   try {
-    const photoResponse = await api.get(photoApiEndpoint, {
+    const photoResponse = await api.get<Buffer>(photoApiEndpoint, {
       params: { name },
       responseType: 'arraybuffer',
     });
@@ -67,47 +70,52 @@ const lookupPhoto = async (
     }
     // Axios throws for non-2xx statuses, so this part is unlikely to be reached.
     return null;
-  } catch (error: any) {
-    if (error.response && error.response.status === 404) {
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError;
+    if (axiosError.response && axiosError.response.status === 404) {
       console.log(
         `Photo not found for "${name}" at ${photoApiEndpoint}, continuing without it.`
       );
     } else {
       console.error(
         `An error occurred while fetching the photo from ${photoApiEndpoint}:`,
-        error.message
+        axiosError.message
       );
     }
     return null;
   }
 };
 
-router.post('/', async (req, res) => {
-  try {
-    const passData: PassData = req.body;
-    const fullName = `${passData.firstName} ${passData.lastName}`.trim();
-    const photoBuffer = await lookupPhoto(fullName, passData.email);
-    const passBuffer = await generatePassBuffer(passData, photoBuffer);
-    res.set({
-      'Content-Type': 'application/vnd.apple.pkpass',
-      'Content-Disposition': `attachment; filename="vCard.pkpass"`,
-    });
-    res.status(200).send(passBuffer);
-  } catch (error) {
-    console.error('Error generating pass:', error);
-    res.status(500).send('Failed to generate pass.');
-  }
+router.post('/', (req, res) => {
+  void (async () => {
+    try {
+      const passData: PassData = req.body as PassData;
+      const fullName = `${passData.firstName} ${passData.lastName}`.trim();
+      const photoBuffer = await lookupPhoto(fullName, passData.email);
+      const passBuffer = await generatePassBuffer(passData, photoBuffer);
+      res.set({
+        'Content-Type': 'application/vnd.apple.pkpass',
+        'Content-Disposition': `attachment; filename="vCard.pkpass"`,
+      });
+      res.status(200).send(passBuffer);
+    } catch (error) {
+      console.error('Error generating pass:', error);
+      res.status(500).send('Failed to generate pass.');
+    }
+  })();
 });
 
-router.post('/google', async (req, res) => {
-  try {
-    const passData: PassData = req.body;
-    const jwt = await generateGoogleWalletPass(passData);
-    res.json({ jwt });
-  } catch (error) {
-    console.error('Error generating Google Wallet pass:', error);
-    res.status(500).send('Failed to generate Google Wallet pass.');
-  }
+router.post('/google', (req, res) => {
+  void (async () => {
+    try {
+      const passData: PassData = req.body as PassData;
+      const jwt = await generateGoogleWalletPass(passData);
+      res.json({ jwt });
+    } catch (error) {
+      console.error('Error generating Google Wallet pass:', error);
+      res.status(500).send('Failed to generate Google Wallet pass.');
+    }
+  })();
 });
 
 export default router;

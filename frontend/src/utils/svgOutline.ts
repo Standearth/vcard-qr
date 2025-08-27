@@ -1,3 +1,4 @@
+// frontend/src/utils/svgOutline.ts
 import {
   Clipper,
   ClipType,
@@ -154,7 +155,7 @@ function createIndividualOutlines(
  * Filters out paths that are "holes" by checking their orientation.
  */
 function removeHoles(paths: Paths): Paths {
-  return paths.filter((path) => (Clipper as any).Orientation(path));
+  return paths.filter((path) => Clipper.Orientation(path));
 }
 
 // --- Main Function ---

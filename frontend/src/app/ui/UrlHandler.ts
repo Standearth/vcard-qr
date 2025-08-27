@@ -8,6 +8,15 @@ import {
   DEFAULT_ADVANCED_OPTIONS,
   TAB_SPECIFIC_DEFAULTS,
 } from '../../config/constants';
+import { DotType, CornerDotType, CornerSquareType } from 'qr-code-styling';
+
+type NestedState =
+  | 'dotsOptions'
+  | 'cornersSquareOptions'
+  | 'cornersDotOptions'
+  | 'backgroundOptions'
+  | 'imageOptions'
+  | 'qrOptions';
 
 export class UrlHandler {
   private uiManager: UIManager;
@@ -27,10 +36,11 @@ export class UrlHandler {
       const urlValue = params.get(paramName);
 
       if (urlValue !== null) {
-        if (typeof DEFAULT_FORM_FIELDS[fieldKey] === 'boolean') {
-          (state as any)[fieldKey] = urlValue === 'true';
+        const defaultFieldValue = DEFAULT_FORM_FIELDS[fieldKey];
+        if (typeof defaultFieldValue === 'boolean') {
+          (state as Record<string, unknown>)[fieldKey] = urlValue === 'true';
         } else {
-          (state as any)[fieldKey] = urlValue;
+          (state as Record<string, unknown>)[fieldKey] = urlValue;
         }
       }
     }
@@ -86,10 +96,16 @@ export class UrlHandler {
       },
     };
 
-    const getNestedValue = (obj: any, path: string) => {
-      return path
-        .split('.')
-        .reduce((p, c) => (p && p[c] !== undefined ? p[c] : null), obj);
+    const getNestedValue = (
+      obj: Record<string, unknown>,
+      path: string
+    ): unknown => {
+      return path.split('.').reduce((p: unknown, c: string) => {
+        if (p && typeof p === 'object' && c in p) {
+          return (p as Record<string, unknown>)[c];
+        }
+        return null;
+      }, obj);
     };
 
     // A comprehensive map of all state properties to their URL parameter names
@@ -141,8 +157,14 @@ export class UrlHandler {
     for (const key in statePathMap) {
       const statePath = statePathMap[key];
       const paramName = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      const currentValue = getNestedValue(state, statePath);
-      const defaultValue = getNestedValue(defaultTabState, statePath);
+      const currentValue = getNestedValue(
+        state as unknown as Record<string, unknown>,
+        statePath
+      );
+      const defaultValue = getNestedValue(
+        defaultTabState as unknown as Record<string, unknown>,
+        statePath
+      );
 
       if (String(currentValue) !== String(defaultValue)) {
         newUrlParams.set(paramName, String(currentValue));
@@ -164,6 +186,17 @@ export class UrlHandler {
     const numValue = parseFloat(value);
     const intValue = parseInt(value, 10);
 
+    const updateNestedState = <
+      T extends NestedState,
+      K extends keyof NonNullable<TabState[T]>,
+    >(
+      stateKey: T,
+      prop: K,
+      val: NonNullable<TabState[T]>[K]
+    ) => {
+      state[stateKey] = { ...(state[stateKey] || {}), [prop]: val };
+    };
+
     switch (key) {
       case 'width':
       case 'height':
@@ -176,58 +209,54 @@ export class UrlHandler {
         state[key] = boolValue;
         break;
       case 'dotsType':
-        state.dotsOptions = { ...state.dotsOptions, type: value as any };
+        updateNestedState('dotsOptions', 'type', value as DotType);
         break;
       case 'dotsColor':
-        state.dotsOptions = { ...state.dotsOptions, color: value };
+        updateNestedState('dotsOptions', 'color', value);
         break;
       case 'cornersSquareType':
-        state.cornersSquareOptions = {
-          ...state.cornersSquareOptions,
-          type: value as any,
-        };
+        updateNestedState(
+          'cornersSquareOptions',
+          'type',
+          value as CornerSquareType
+        );
         break;
       case 'cornersSquareColor':
-        state.cornersSquareOptions = {
-          ...state.cornersSquareOptions,
-          color: value,
-        };
+        updateNestedState('cornersSquareOptions', 'color', value);
         break;
       case 'cornersDotType':
-        state.cornersDotOptions = {
-          ...state.cornersDotOptions,
-          type: value as any,
-        };
+        updateNestedState('cornersDotOptions', 'type', value as CornerDotType);
         break;
       case 'cornersDotColor':
-        state.cornersDotOptions = { ...state.cornersDotOptions, color: value };
+        updateNestedState('cornersDotOptions', 'color', value);
         break;
       case 'backgroundColor':
-        state.backgroundOptions = { ...state.backgroundOptions, color: value };
+        updateNestedState('backgroundOptions', 'color', value);
         break;
       case 'hideBackgroundDots': // This key comes from dom.advancedControls
-        state.dotHidingMode = value as any;
+        state.dotHidingMode = value as 'box' | 'shape' | 'off';
         break;
       case 'wrapSize':
         if (!isNaN(numValue)) state.wrapSize = numValue;
         break;
       case 'imageSize':
         if (!isNaN(numValue))
-          state.imageOptions = { ...state.imageOptions, imageSize: numValue };
+          updateNestedState('imageOptions', 'imageSize', numValue);
         break;
       case 'imageMargin':
         if (!isNaN(intValue))
-          state.imageOptions = { ...state.imageOptions, margin: intValue };
+          updateNestedState('imageOptions', 'margin', intValue);
         break;
       case 'qrTypeNumber':
         if (!isNaN(intValue))
-          state.qrOptions = { ...state.qrOptions, typeNumber: intValue as any };
+          updateNestedState('qrOptions', 'typeNumber', intValue as 0);
         break;
       case 'qrErrorCorrectionLevel':
-        state.qrOptions = {
-          ...state.qrOptions,
-          errorCorrectionLevel: value as any,
-        };
+        updateNestedState(
+          'qrOptions',
+          'errorCorrectionLevel',
+          value as 'L' | 'M' | 'Q' | 'H'
+        );
         break;
       case 'logoUrl':
         state.logoUrl = value;

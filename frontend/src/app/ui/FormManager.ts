@@ -134,169 +134,236 @@ export class FormManager {
     };
   }
 
-  setFormControlValues(values: TabState): void {
+  setFormControlValues(values: TabState, activeElement?: HTMLElement): void {
     const { advancedControls, formFields } = dom;
-    advancedControls.width.value = String(
+
+    const updateField = (field: HTMLElement, value: any) => {
+      if (field === activeElement) return;
+
+      if (field instanceof HTMLInputElement && field.type === 'checkbox') {
+        field.checked = !!value;
+      } else if (
+        field instanceof HTMLInputElement ||
+        field instanceof HTMLSelectElement ||
+        field instanceof HTMLTextAreaElement
+      ) {
+        field.value = String(value);
+      }
+    };
+
+    updateField(
+      advancedControls.width,
       values.width ?? DEFAULT_ADVANCED_OPTIONS.width
     );
-    advancedControls.height.value = String(
+    updateField(
+      advancedControls.height,
       values.height ?? DEFAULT_ADVANCED_OPTIONS.height
     );
-    advancedControls.margin.value = String(
+    updateField(
+      advancedControls.margin,
       values.margin ?? DEFAULT_ADVANCED_OPTIONS.margin
     );
-    advancedControls.optimizeSize.checked =
-      values.optimizeSize ?? DEFAULT_ADVANCED_OPTIONS.optimizeSize ?? false;
-    advancedControls.roundSize.checked =
-      values.roundSize ?? DEFAULT_ADVANCED_OPTIONS.roundSize ?? true;
-    advancedControls.showImage.checked =
-      values.showImage ?? DEFAULT_ADVANCED_OPTIONS.showImage ?? true;
+    updateField(
+      advancedControls.optimizeSize,
+      values.optimizeSize ?? DEFAULT_ADVANCED_OPTIONS.optimizeSize ?? false
+    );
+    updateField(
+      advancedControls.roundSize,
+      values.roundSize ?? DEFAULT_ADVANCED_OPTIONS.roundSize ?? true
+    );
+    updateField(
+      advancedControls.showImage,
+      values.showImage ?? DEFAULT_ADVANCED_OPTIONS.showImage ?? true
+    );
 
     if (values.dotsOptions) {
-      advancedControls.dotsType.value =
+      updateField(
+        advancedControls.dotsType,
         values.dotsOptions.type ??
-        DEFAULT_ADVANCED_OPTIONS.dotsOptions?.type ??
-        '';
-      advancedControls.dotsColor.value =
+          DEFAULT_ADVANCED_OPTIONS.dotsOptions?.type ??
+          ''
+      );
+      updateField(
+        advancedControls.dotsColor,
         values.dotsOptions.color ??
-        DEFAULT_ADVANCED_OPTIONS.dotsOptions?.color ??
-        '#000000';
+          DEFAULT_ADVANCED_OPTIONS.dotsOptions?.color ??
+          '#000000'
+      );
     }
 
     if (values.backgroundOptions) {
-      advancedControls.backgroundColor.value =
+      updateField(
+        advancedControls.backgroundColor,
         values.backgroundOptions.color ??
-        DEFAULT_ADVANCED_OPTIONS.backgroundOptions?.color ??
-        '#ffffff';
+          DEFAULT_ADVANCED_OPTIONS.backgroundOptions?.color ??
+          '#ffffff'
+      );
     }
 
     if (values.cornersSquareOptions) {
-      advancedControls.cornersSquareType.value =
+      updateField(
+        advancedControls.cornersSquareType,
         values.cornersSquareOptions.type ??
-        DEFAULT_ADVANCED_OPTIONS.cornersSquareOptions?.type ??
-        '';
-      advancedControls.cornersSquareColor.value =
+          DEFAULT_ADVANCED_OPTIONS.cornersSquareOptions?.type ??
+          ''
+      );
+      updateField(
+        advancedControls.cornersSquareColor,
         values.cornersSquareOptions.color ??
-        DEFAULT_ADVANCED_OPTIONS.cornersSquareOptions?.color ??
-        '#000000';
+          DEFAULT_ADVANCED_OPTIONS.cornersSquareOptions?.color ??
+          '#000000'
+      );
     }
 
     if (values.cornersDotOptions) {
-      advancedControls.cornersDotType.value =
+      updateField(
+        advancedControls.cornersDotType,
         values.cornersDotOptions.type ??
-        DEFAULT_ADVANCED_OPTIONS.cornersDotOptions?.type ??
-        '';
-      advancedControls.cornersDotColor.value =
+          DEFAULT_ADVANCED_OPTIONS.cornersDotOptions?.type ??
+          ''
+      );
+      updateField(
+        advancedControls.cornersDotColor,
         values.cornersDotOptions.color ??
-        DEFAULT_ADVANCED_OPTIONS.cornersDotOptions?.color ??
-        '#e50b12';
+          DEFAULT_ADVANCED_OPTIONS.cornersDotOptions?.color ??
+          '#e50b12'
+      );
     }
 
     if (values.imageOptions) {
-      advancedControls.hideBackgroundDots.value =
+      updateField(
+        advancedControls.hideBackgroundDots,
         values.dotHidingMode ??
-        DEFAULT_ADVANCED_OPTIONS.dotHidingMode ??
-        'shape';
-      advancedControls.wrapSize.value = String(
+          DEFAULT_ADVANCED_OPTIONS.dotHidingMode ??
+          'shape'
+      );
+      updateField(
+        advancedControls.wrapSize,
         values.wrapSize ?? DEFAULT_ADVANCED_OPTIONS.wrapSize
       );
-      advancedControls.imageSize.value = String(
+      updateField(
+        advancedControls.imageSize,
         values.imageOptions.imageSize ??
           DEFAULT_ADVANCED_OPTIONS.imageOptions?.imageSize
       );
-      advancedControls.imageMargin.value = String(
+      updateField(
+        advancedControls.imageMargin,
         values.imageOptions.margin ??
           DEFAULT_ADVANCED_OPTIONS.imageOptions?.margin
       );
     }
 
     if (advancedControls.logoUrl) {
-      advancedControls.logoUrl.value =
-        values.logoUrl ?? DEFAULT_ADVANCED_OPTIONS.logoUrl;
+      updateField(
+        advancedControls.logoUrl,
+        values.logoUrl ?? DEFAULT_ADVANCED_OPTIONS.logoUrl
+      );
     }
 
     if (values.qrOptions) {
-      advancedControls.qrTypeNumber.value = String(
+      updateField(
+        advancedControls.qrTypeNumber,
         values.qrOptions.typeNumber ?? 0
       );
-      advancedControls.qrErrorCorrectionLevel.value =
-        values.qrOptions.errorCorrectionLevel ?? 'Q';
+      updateField(
+        advancedControls.qrErrorCorrectionLevel,
+        values.qrOptions.errorCorrectionLevel ?? 'Q'
+      );
     }
 
     // Set vCard fields
-    if (formFields.firstName) {
-      formFields.firstName.value =
-        values.firstName ?? DEFAULT_FORM_FIELDS.firstName;
-    }
-    if (formFields.lastName) {
-      formFields.lastName.value =
-        values.lastName ?? DEFAULT_FORM_FIELDS.lastName;
-    }
-    if (formFields.org) {
-      formFields.org.value = values.org ?? DEFAULT_FORM_FIELDS.org;
-    }
-    if (formFields.title) {
-      formFields.title.value = values.title ?? DEFAULT_FORM_FIELDS.title;
-    }
-    if (formFields.email) {
-      formFields.email.value = values.email ?? DEFAULT_FORM_FIELDS.email;
-    }
+    if (formFields.firstName)
+      updateField(
+        formFields.firstName,
+        values.firstName ?? DEFAULT_FORM_FIELDS.firstName
+      );
+    if (formFields.lastName)
+      updateField(
+        formFields.lastName,
+        values.lastName ?? DEFAULT_FORM_FIELDS.lastName
+      );
+    if (formFields.org)
+      updateField(formFields.org, values.org ?? DEFAULT_FORM_FIELDS.org);
+    if (formFields.title)
+      updateField(formFields.title, values.title ?? DEFAULT_FORM_FIELDS.title);
+    if (formFields.email)
+      updateField(formFields.email, values.email ?? DEFAULT_FORM_FIELDS.email);
+
     if (values.officePhoneFieldType === 'text') {
-      if (formFields.officePhoneInput) {
-        formFields.officePhoneInput.value =
-          values.officePhone ?? DEFAULT_FORM_FIELDS.officePhone;
-      }
+      if (formFields.officePhoneInput)
+        updateField(
+          formFields.officePhoneInput,
+          values.officePhone ?? DEFAULT_FORM_FIELDS.officePhone
+        );
     } else {
-      if (formFields.officePhone) {
-        formFields.officePhone.value =
-          values.officePhone ?? DEFAULT_FORM_FIELDS.officePhone;
-      }
+      if (formFields.officePhone)
+        updateField(
+          formFields.officePhone,
+          values.officePhone ?? DEFAULT_FORM_FIELDS.officePhone
+        );
     }
 
-    if (formFields.extension) {
-      formFields.extension.value =
-        values.extension ?? DEFAULT_FORM_FIELDS.extension;
-    }
-    if (formFields.workPhone) {
-      formFields.workPhone.value =
-        values.workPhone ?? DEFAULT_FORM_FIELDS.workPhone;
-    }
-    if (formFields.cellPhone) {
-      formFields.cellPhone.value =
-        values.cellPhone ?? DEFAULT_FORM_FIELDS.cellPhone;
-    }
-    if (formFields.website) {
-      formFields.website.value = values.website ?? DEFAULT_FORM_FIELDS.website;
-    }
-    if (formFields.linkedin) {
-      formFields.linkedin.value =
-        values.linkedin ?? DEFAULT_FORM_FIELDS.linkedin;
-    }
-    if (formFields.whatsapp) {
-      formFields.whatsapp.value =
-        values.whatsapp ?? DEFAULT_FORM_FIELDS.whatsapp;
-    }
-    if (formFields.notes) {
-      formFields.notes.value = values.notes ?? DEFAULT_FORM_FIELDS.notes;
-    }
+    if (formFields.extension)
+      updateField(
+        formFields.extension,
+        values.extension ?? DEFAULT_FORM_FIELDS.extension
+      );
+    if (formFields.workPhone)
+      updateField(
+        formFields.workPhone,
+        values.workPhone ?? DEFAULT_FORM_FIELDS.workPhone
+      );
+    if (formFields.cellPhone)
+      updateField(
+        formFields.cellPhone,
+        values.cellPhone ?? DEFAULT_FORM_FIELDS.cellPhone
+      );
+    if (formFields.website)
+      updateField(
+        formFields.website,
+        values.website ?? DEFAULT_FORM_FIELDS.website
+      );
+    if (formFields.linkedin)
+      updateField(
+        formFields.linkedin,
+        values.linkedin ?? DEFAULT_FORM_FIELDS.linkedin
+      );
+    if (formFields.whatsapp)
+      updateField(
+        formFields.whatsapp,
+        values.whatsapp ?? DEFAULT_FORM_FIELDS.whatsapp
+      );
+    if (formFields.notes)
+      updateField(formFields.notes, values.notes ?? DEFAULT_FORM_FIELDS.notes);
 
     // Set Link field
     if (formFields.linkUrl)
-      formFields.linkUrl.value = values.linkUrl ?? DEFAULT_FORM_FIELDS.linkUrl;
+      updateField(
+        formFields.linkUrl,
+        values.linkUrl ?? DEFAULT_FORM_FIELDS.linkUrl
+      );
 
     // Set WiFi fields
     if (formFields.wifiSsid)
-      formFields.wifiSsid.value =
-        values.wifiSsid ?? DEFAULT_FORM_FIELDS.wifiSsid;
+      updateField(
+        formFields.wifiSsid,
+        values.wifiSsid ?? DEFAULT_FORM_FIELDS.wifiSsid
+      );
     if (formFields.wifiPassword)
-      formFields.wifiPassword.value =
-        values.wifiPassword ?? DEFAULT_FORM_FIELDS.wifiPassword;
+      updateField(
+        formFields.wifiPassword,
+        values.wifiPassword ?? DEFAULT_FORM_FIELDS.wifiPassword
+      );
     if (formFields.wifiEncryption)
-      formFields.wifiEncryption.value =
-        values.wifiEncryption ?? DEFAULT_FORM_FIELDS.wifiEncryption;
+      updateField(
+        formFields.wifiEncryption,
+        values.wifiEncryption ?? DEFAULT_FORM_FIELDS.wifiEncryption
+      );
     if (formFields.wifiHidden)
-      formFields.wifiHidden.checked =
-        values.wifiHidden ?? DEFAULT_FORM_FIELDS.wifiHidden;
+      updateField(
+        formFields.wifiHidden,
+        values.wifiHidden ?? DEFAULT_FORM_FIELDS.wifiHidden
+      );
   }
 
   getVCardData(): { [key: string]: string } {

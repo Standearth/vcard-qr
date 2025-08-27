@@ -99,13 +99,18 @@ class StateService {
    * @param mode The tab mode to update.
    * @param newState A partial state object containing the properties to update.
    */
-  public updateState(mode: Mode, newState: Partial<TabState>): void {
+  public updateState(
+    mode: Mode,
+    newState: Partial<TabState>,
+    activeElement?: HTMLElement
+  ): void {
     const currentTabState = this.tabStates[mode];
     if (currentTabState) {
+      // Separate the incoming state changes into formState and tabState
       const newFormState: Partial<TabState> = {};
       const newTabState: Partial<TabState> = {};
 
-      // Separate the incoming state changes into formState and tabState
+      // Separate shared and tab-specific properties
       for (const key in newState) {
         const propKey = key as keyof TabState;
         if (propKey in DEFAULT_FORM_FIELDS) {

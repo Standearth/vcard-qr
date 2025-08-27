@@ -108,12 +108,13 @@ export class App {
 
     this.ui.renderLogoThumbnails(logoOptions);
 
-    if (logoOptions.length > 0) {
-      dom.advancedControls.logoUrl.value = logoOptions[0];
-    } else {
-      dom.advancedControls.logoUrl.value = '';
+    const newLogoUrl = logoOptions.length > 0 ? logoOptions[0] : '';
+
+    // Only update the DOM if the logo URL has actually changed.
+    // The state update will be handled by the main input handler.
+    if (dom.advancedControls.logoUrl.value !== newLogoUrl) {
+      dom.advancedControls.logoUrl.value = newLogoUrl;
     }
-    this.ui.getEventManager().handleStateUpdate();
   }
 
   private updateOfficePhoneField(website: string): void {
@@ -234,81 +235,52 @@ export class App {
     };
   };
 
-  private loadDefaultLogo = (): Promise<string | undefined> => {
-    return new Promise((resolve, reject) => {
-      const state = stateService.getState(this.ui.getCurrentMode());
-      const website = state?.website || '';
-      const logoOptions = this.getLogoOptions(
-        website,
-        this.ui.getCurrentMode()
-      );
-      const imageUrl = logoOptions.length > 0 ? logoOptions[0] : undefined;
-
-      if (!imageUrl) {
-        resolve(undefined);
-        return;
-      }
-      fetch(imageUrl)
-        .then((response) =>
-          response.ok
-            ? response.blob()
-            : Promise.reject('Logo network response was not ok')
-        )
-        .then((blob) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        })
-        .catch(reject);
-    });
-  };
-
   private loadImageAsync = (): Promise<string | undefined> => {
     const state = stateService.getState(this.ui.getCurrentMode());
-    if (!state?.showImage) {
+    if (!state?.showImage || !state.logoUrl) {
       return Promise.resolve(undefined);
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (
         dom.advancedControls.imageFile.files &&
         dom.advancedControls.imageFile.files.length > 0
       ) {
         const reader = new FileReader();
         reader.onload = (event) => resolve(event.target?.result as string);
-        reader.onerror = reject;
+        reader.onerror = () => resolve(undefined);
         reader.readAsDataURL(dom.advancedControls.imageFile.files[0]);
       } else if (state.logoUrl) {
         fetch(state.logoUrl)
           .then((response) => {
             if (!response.ok) {
-              return Promise.reject(
-                `Failed to fetch logo from URL: ${response.statusText}`
-              );
-            }
-            return response.blob();
-          })
-          .then((blob) => {
-            if (blob.type !== 'image/svg+xml' && blob.size > 0) {
-              console.error('Logo from URL is not an SVG. Ignoring.');
-              resolve(this.loadDefaultLogo());
-              return;
-            }
-            if (blob.size === 0) {
               resolve(undefined);
               return;
             }
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
+            response
+              .blob()
+              .then((blob) => {
+                if (blob.type !== 'image/svg+xml' && blob.size > 0) {
+                  console.error('Logo from URL is not an SVG. Ignoring.');
+                  resolve(undefined);
+                  return;
+                }
+                if (blob.size === 0) {
+                  resolve(undefined);
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = () => resolve(undefined);
+                reader.readAsDataURL(blob);
+              })
+              .catch(() => resolve(undefined));
           })
           .catch((err) => {
             console.error(err);
-            resolve(this.loadDefaultLogo());
+            resolve(undefined);
           });
       } else {
-        resolve(this.loadDefaultLogo());
+        resolve(undefined);
       }
     });
   };

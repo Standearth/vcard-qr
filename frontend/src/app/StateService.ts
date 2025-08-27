@@ -20,7 +20,8 @@ class StateService {
   private tabStates: Partial<Record<Mode, TabState>> = {}; // Tab-specific config state
   private pixelMultipliers: Partial<Record<Mode, number>> = {};
   private uiManager!: UIManager;
-  private subscribers: (() => void)[] = []; // Array of subscriber callbacks
+  private subscribers: ((newState: TabState, oldState: TabState) => void)[] =
+    []; // Array of subscriber callbacks
 
   /**
    * Initializes the default state for all modes when the service is instantiated.
@@ -90,7 +91,9 @@ class StateService {
     return undefined;
   }
 
-  public subscribe(callback: () => void): void {
+  public subscribe(
+    callback: (newState: TabState, oldState: TabState) => void
+  ): void {
     this.subscribers.push(callback);
   }
 
@@ -104,6 +107,7 @@ class StateService {
     newState: Partial<TabState>,
     activeElement?: HTMLElement
   ): void {
+    const oldState = this.getState(mode);
     const currentTabState = this.tabStates[mode];
     if (currentTabState) {
       // Separate the incoming state changes into formState and tabState
@@ -129,7 +133,7 @@ class StateService {
       this.uiManager.renderUIFromState(finalState);
 
       // Notify all subscribers of the state change
-      this.subscribers.forEach((callback) => callback());
+      this.subscribers.forEach((callback) => callback(finalState, oldState!));
     }
   }
 

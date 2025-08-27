@@ -13,6 +13,7 @@ export type Mode = (typeof MODES)[keyof typeof MODES];
 export const DESKTOP_BREAKPOINT_PX = 768;
 
 export type TabState = Partial<Options> & {
+  activeMode?: Mode; // Add this line
   optimizeSize?: boolean;
   roundSize?: boolean;
   showImage?: boolean;
@@ -36,6 +37,7 @@ export type TabState = Partial<Options> & {
   notes?: string;
   linkUrl?: string;
   logoUrl?: string;
+  availableLogos?: string[];
   whatsapp?: string;
   wifiSsid?: string;
   officePhoneFieldType?: 'select' | 'text';
@@ -60,6 +62,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   optimizeSize: false,
   roundSize: true,
   logoUrl: '',
+  availableLogos: [],
 };
 
 export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
@@ -71,6 +74,7 @@ export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
 };
 
 export const DEFAULT_FORM_FIELDS = {
+  activeMode: MODES.VCARD, // Add this line
   firstName: '',
   lastName: '',
   org: import.meta.env.VITE_ORG_NAME || 'Example Organization',

@@ -73,6 +73,39 @@ export class EventManager {
     }, 300); // 300ms delay
   };
 
+  private handleImageInputChange = async (event?: Event): Promise<void> => {
+    const imageFile = dom.advancedControls.imageFile.files?.[0];
+    const logoUrlInput = dom.advancedControls.logoUrl;
+
+    if (imageFile) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        const currentMode = this.uiManager.getCurrentMode();
+        const currentState = stateService.getState(currentMode);
+        const availableLogos = [...(currentState?.availableLogos || [])];
+
+        if (!availableLogos.includes(dataUrl)) {
+          availableLogos.push(dataUrl);
+        }
+
+        stateService.updateState(this.uiManager.getCurrentMode(), {
+          logoUrl: dataUrl,
+          availableLogos: availableLogos,
+        });
+        dom.advancedControls.imageFile.value = ''; // Clear the file input
+        logoUrlInput.value = ''; // Clear the URL input
+        this.handleFormInput(event);
+      };
+      reader.readAsDataURL(imageFile);
+    } else if (event?.target === logoUrlInput) {
+      stateService.updateState(this.uiManager.getCurrentMode(), {
+        logoUrl: logoUrlInput.value,
+      });
+      this.handleFormInput(event);
+    }
+  };
+
   private handlePhoneBlur = (event: Event): void => {
     const input = event.target as HTMLInputElement;
     const currentValue = input.value;
@@ -182,10 +215,7 @@ export class EventManager {
       this.handleFormInput(event)
     );
 
-    dom.formFields.website.addEventListener('input', (event) => {
-      this.app.handleWebsiteChange();
-      this.handleFormInput(event);
-    });
+    dom.formFields.website.addEventListener('input', this.handleFormInput);
 
     Object.values(dom.formFields).forEach((field) => {
       if (
@@ -204,7 +234,11 @@ export class EventManager {
       if (button) {
         const logoUrl = button.getAttribute('data-logo-url');
         if (logoUrl) {
-          dom.advancedControls.logoUrl.value = logoUrl;
+          stateService.updateState(this.uiManager.getCurrentMode(), {
+            logoUrl: logoUrl,
+          });
+          dom.advancedControls.logoUrl.value = logoUrl; // Update the URL input field
+          dom.advancedControls.imageFile.value = ''; // Clear the file input
           this.handleFormInput(event);
         }
       }
@@ -212,6 +246,61 @@ export class EventManager {
 
     this.setupAdvancedControlsListeners();
     this.setupButtonEventListeners();
+    this.setupDragAndDropListeners();
+  }
+
+  private setupDragAndDropListeners(): void {
+    const dropZone = dom.advancedControls.container.querySelector(
+      '.advanced-section:has(#form-image-file)'
+    ) as HTMLElement;
+    const mainContainer = document.querySelector(
+      '.main-container'
+    ) as HTMLElement;
+
+    if (!mainContainer || !dropZone) return;
+
+    mainContainer.addEventListener('dragenter', (event) => {
+      event.preventDefault();
+      mainContainer.classList.add('drag-over');
+      dropZone.classList.add('image-drop-target');
+    });
+
+    mainContainer.addEventListener('dragover', (event) => {
+      event.preventDefault(); // Necessary to allow drop
+    });
+
+    mainContainer.addEventListener('dragleave', (event) => {
+      // Check if the leave event is not triggered by entering a child element
+      if (
+        event.relatedTarget &&
+        mainContainer.contains(event.relatedTarget as Node)
+      ) {
+        return;
+      }
+      mainContainer.classList.remove('drag-over');
+      dropZone.classList.remove('image-drop-target');
+    });
+
+    mainContainer.addEventListener('drop', (event) => {
+      event.preventDefault();
+      mainContainer.classList.remove('drag-over');
+      dropZone.classList.remove('image-drop-target');
+
+      if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+        const imageFile = Array.from(event.dataTransfer.files).find((file) =>
+          file.type.startsWith('image/')
+        );
+
+        if (imageFile) {
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(imageFile);
+          dom.advancedControls.imageFile.files = dataTransfer.files;
+
+          // Manually trigger the form input handling
+          this.handleImageInputChange(event);
+        }
+      }
+    });
   }
 
   private setupButtonEventListeners(): void {
@@ -437,6 +526,10 @@ export class EventManager {
                 break;
             }
           });
+        } else if (key === 'imageFile' || key === 'logoUrl') {
+          field.addEventListener(eventType, (event) =>
+            this.handleImageInputChange(event)
+          );
         } else {
           field.addEventListener(eventType, (event) =>
             this.handleFormInput(event)

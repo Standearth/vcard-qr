@@ -34,6 +34,7 @@ export class App {
     this.ui = new UIManager(this);
     stateService.initialize(this.ui);
     this.initializeIcons();
+    this.setupStateSubscriptions();
 
     const defaultState =
       stateService.getState(this.ui.getCurrentMode()) ||
@@ -58,6 +59,27 @@ export class App {
     faDom.watch();
   }
 
+  private setupStateSubscriptions(): void {
+    stateService.subscribe((newState, oldState) => {
+      // When the website URL changes, update logos and office phone options
+      if (newState.website !== oldState.website) {
+        this.handleWebsiteChange(newState.website);
+      }
+
+      // When the active tab changes, also trigger these updates
+      if (newState.activeMode !== oldState.activeMode) {
+        this.handleWebsiteChange(newState.website);
+        this.updateQRCode();
+        this.ui.getUrlHandler().updateUrlFromState(newState);
+      }
+
+      // When the logoUrl changes, update logo options to include the new image
+      if (newState.logoUrl !== oldState.logoUrl) {
+        this.updateLogoOptions(newState.website);
+      }
+    });
+  }
+
   private _getDomainFromUrl(urlString: string): string {
     if (!urlString) return '';
     try {
@@ -73,20 +95,24 @@ export class App {
     }
   }
 
-  public handleWebsiteChange = (): void => {
-    const website = dom.formFields.website.value;
+  public handleWebsiteChange = (website?: string): void => {
     this.updateOfficePhoneField(website);
     this.updateLogoOptions(website);
   };
 
   private getLogoOptions(website: string, mode: Mode): string[] {
     const domain = this._getDomainFromUrl(website);
+    const currentState = stateService.getState(this.ui.getCurrentMode());
+    const sessionLogos = currentState?.availableLogos || [];
 
     const domainTemplate =
       logosConfig[domain as keyof typeof logosConfig] || {};
     const defaultTemplate = logosConfig.default;
 
     const logoSet = new Set<string>();
+
+    // Add session logos first to ensure they are available
+    sessionLogos.forEach((logo) => logoSet.add(logo));
 
     const addLogos = (template: { main?: string[]; wifi?: string[] }) => {
       if (mode === 'wifi' && template.wifi) {
@@ -102,22 +128,28 @@ export class App {
     return Array.from(logoSet);
   }
 
-  private updateLogoOptions(website: string): void {
+  private updateLogoOptions(website = ''): void {
     const currentMode = this.ui.getCurrentMode();
     const logoOptions = this.getLogoOptions(website, currentMode);
+    const currentState = stateService.getState(currentMode);
+    const currentLogoUrl = currentState?.logoUrl;
 
-    this.ui.renderLogoThumbnails(logoOptions);
+    const finalLogoOptions = [...logoOptions];
 
-    const newLogoUrl = logoOptions.length > 0 ? logoOptions[0] : '';
+    if (currentLogoUrl && !logoOptions.includes(currentLogoUrl)) {
+      finalLogoOptions.unshift(currentLogoUrl);
+    }
 
-    // Only update the DOM if the logo URL has actually changed.
-    // The state update will be handled by the main input handler.
-    if (dom.advancedControls.logoUrl.value !== newLogoUrl) {
-      dom.advancedControls.logoUrl.value = newLogoUrl;
+    this.ui.renderLogoThumbnails(finalLogoOptions);
+    if (
+      finalLogoOptions.length > 0 &&
+      !finalLogoOptions.includes(currentLogoUrl || '')
+    ) {
+      stateService.updateState(currentMode, { logoUrl: finalLogoOptions[0] });
     }
   }
 
-  private updateOfficePhoneField(website: string): void {
+  private updateOfficePhoneField(website = ''): void {
     const phoneSelect = dom.formFields.officePhone;
     if (!phoneSelect) return;
 
@@ -237,48 +269,46 @@ export class App {
 
   private loadImageAsync = (): Promise<string | undefined> => {
     const state = stateService.getState(this.ui.getCurrentMode());
-    if (!state?.showImage || !state.logoUrl) {
+
+    if (!state || !state.showImage || !state.logoUrl) {
       return Promise.resolve(undefined);
     }
+
     return new Promise((resolve) => {
-      if (
-        dom.advancedControls.imageFile.files &&
-        dom.advancedControls.imageFile.files.length > 0
-      ) {
-        const reader = new FileReader();
-        reader.onload = (event) => resolve(event.target?.result as string);
-        reader.onerror = () => resolve(undefined);
-        reader.readAsDataURL(dom.advancedControls.imageFile.files[0]);
-      } else if (state.logoUrl) {
-        fetch(state.logoUrl)
-          .then((response) => {
-            if (!response.ok) {
+      if (state.logoUrl) {
+        if (state.logoUrl.startsWith('data:image')) {
+          resolve(state.logoUrl);
+        } else {
+          fetch(state.logoUrl)
+            .then((response) => {
+              if (!response.ok) {
+                resolve(undefined);
+                return;
+              }
+              response
+                .blob()
+                .then((blob) => {
+                  if (blob.type !== 'image/svg+xml' && blob.size > 0) {
+                    console.error('Logo from URL is not an SVG. Ignoring.');
+                    resolve(undefined);
+                    return;
+                  }
+                  if (blob.size === 0) {
+                    resolve(undefined);
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result as string);
+                  reader.onerror = () => resolve(undefined);
+                  reader.readAsDataURL(blob);
+                })
+                .catch(() => resolve(undefined));
+            })
+            .catch((err) => {
+              console.error(err);
               resolve(undefined);
-              return;
-            }
-            response
-              .blob()
-              .then((blob) => {
-                if (blob.type !== 'image/svg+xml' && blob.size > 0) {
-                  console.error('Logo from URL is not an SVG. Ignoring.');
-                  resolve(undefined);
-                  return;
-                }
-                if (blob.size === 0) {
-                  resolve(undefined);
-                  return;
-                }
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = () => resolve(undefined);
-                reader.readAsDataURL(blob);
-              })
-              .catch(() => resolve(undefined));
-          })
-          .catch((err) => {
-            console.error(err);
-            resolve(undefined);
-          });
+            });
+        }
       } else {
         resolve(undefined);
       }
@@ -318,6 +348,14 @@ export class App {
       ...currentTabState,
       ...urlState,
     };
+
+    if (urlState.logoUrl) {
+      const availableLogos = [...(mergedState.availableLogos || [])];
+      if (!availableLogos.includes(urlState.logoUrl)) {
+        availableLogos.push(urlState.logoUrl);
+      }
+      mergedState.availableLogos = availableLogos;
+    }
 
     if (urlState.officePhone) {
       const website = mergedState.website || DEFAULT_FORM_FIELDS.website;

@@ -120,7 +120,8 @@ export class FormManager {
       whatsapp: formFields.whatsapp.value,
       notes: formFields.notes.value,
       linkUrl: formFields.linkUrl.value,
-      logoUrl: advancedControls.logoUrl.value,
+      // logoUrl is managed by its own event handler, so we don't need to read it here.
+      availableLogos: currentState.availableLogos,
       wifiSsid: formFields.wifiSsid.value,
       officePhoneFieldType: currentState.officePhoneFieldType,
       wifiPassword: formFields.wifiPassword.value,

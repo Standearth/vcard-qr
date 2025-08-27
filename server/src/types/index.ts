@@ -12,6 +12,7 @@ export interface PassData {
   website?: string;
   linkedin?: string;
   whatsapp?: string;
+  signal?: string;
   notes?: string;
 }
 

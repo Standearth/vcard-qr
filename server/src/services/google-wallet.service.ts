@@ -150,6 +150,14 @@ export async function generateGoogleWalletPass(
     });
   }
 
+  if (data.signal) {
+    passObject.linksModuleData.uris.push({
+      uri: data.signal,
+      description: 'Signal',
+      id: 'signal',
+    });
+  }
+
   const claims = {
     iss: credentials.client_email,
     aud: 'google',

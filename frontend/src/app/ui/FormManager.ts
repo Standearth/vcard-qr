@@ -51,6 +51,7 @@ export class FormManager {
       website: formFields.website,
       linkedin: formFields.linkedin,
       whatsapp: formFields.whatsapp,
+      signal: formFields.signal,
       notes: formFields.notes,
     };
   }
@@ -118,6 +119,7 @@ export class FormManager {
       website: formFields.website.value,
       linkedin: formFields.linkedin.value,
       whatsapp: formFields.whatsapp.value,
+      signal: formFields.signal.value,
       notes: formFields.notes.value,
       linkUrl: formFields.linkUrl.value,
       // logoUrl is managed by its own event handler, so we don't need to read it here.
@@ -334,6 +336,11 @@ export class FormManager {
         formFields.whatsapp,
         values.whatsapp ?? DEFAULT_FORM_FIELDS.whatsapp
       );
+    if (formFields.signal)
+      updateField(
+        formFields.signal,
+        values.signal ?? DEFAULT_FORM_FIELDS.signal
+      );
     if (formFields.notes)
       updateField(formFields.notes, values.notes ?? DEFAULT_FORM_FIELDS.notes);
 
@@ -383,6 +390,8 @@ export class FormManager {
       cellPhone: state.cellPhone || '',
       website: state.website || '',
       linkedin: state.linkedin || '',
+      whatsapp: state.whatsapp || '',
+      signal: state.signal || '',
       notes: state.notes || '',
     };
   }

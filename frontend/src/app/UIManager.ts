@@ -178,6 +178,14 @@ export class UIManager {
       }
     }
 
+    const signalLinkContainer = dom.signalLinkContainer;
+    if (state.signal && state.signal.startsWith('https://signal.me/#p/')) {
+      signalLinkContainer.textContent = state.signal;
+      signalLinkContainer.style.display = 'block';
+    } else {
+      signalLinkContainer.style.display = 'none';
+    }
+
     if (dom.advancedControls.container) {
       dom.advancedControls.container.classList.toggle(
         'hidden',

@@ -8,6 +8,8 @@ import {
   faMobileAlt,
   faCog,
   faUndo,
+  faQrcode,
+  faLink,
 } from '@fortawesome/free-solid-svg-icons';
 import { UIManager } from './UIManager';
 import { stateService } from './StateService';
@@ -55,7 +57,7 @@ export class App {
   getModalQrCode = (): AsyncQRCodeStyling => this.modalQrCode;
 
   private initializeIcons(): void {
-    library.add(faDownload, faMobileAlt, faCog, faUndo);
+    library.add(faDownload, faMobileAlt, faCog, faUndo, faQrcode, faLink);
     faDom.watch();
   }
 
@@ -383,6 +385,7 @@ export class App {
       dom.formFields.workPhone,
       dom.formFields.cellPhone,
       dom.formFields.whatsapp,
+      dom.formFields.signal,
     ];
     phoneFields.forEach((field) => {
       if (field.value) {

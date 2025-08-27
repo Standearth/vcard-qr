@@ -15,6 +15,7 @@ interface VCardData {
   website?: string;
   linkedin?: string;
   whatsapp?: string;
+  signal?: string;
   notes?: string;
 }
 
@@ -49,6 +50,7 @@ export function generateVCardString(data: VCardData, useCRLF = false): string {
     data.website ? `URL;TYPE=Website:${data.website}` : '',
     data.linkedin ? `URL;TYPE=LinkedIn:${data.linkedin}` : '',
     whatsAppLink ? `URL;TYPE=WhatsApp:${whatsAppLink}` : '',
+    data.signal ? `URL;TYPE=Signal:${data.signal}` : '',
     data.notes ? `NOTE:${data.notes.replace(/\n/g, '\\n')}` : '',
     'END:VCARD',
   ];

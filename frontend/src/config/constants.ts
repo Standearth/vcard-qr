@@ -39,6 +39,7 @@ export type TabState = Partial<Options> & {
   logoUrl?: string;
   availableLogos?: string[];
   whatsapp?: string;
+  signal?: string;
   wifiSsid?: string;
   officePhoneFieldType?: 'select' | 'text';
   wifiPassword?: string;
@@ -87,6 +88,7 @@ export const DEFAULT_FORM_FIELDS = {
   website: import.meta.env.VITE_ORG_WEBSITE || 'https://www.example.com',
   linkedin: '',
   whatsapp: '',
+  signal: '',
   notes: '',
   linkUrl: import.meta.env.VITE_ORG_WEBSITE || 'https://www.example.com',
   wifiSsid: '',

@@ -75,6 +75,7 @@ export function initializeDomElements() {
       website: document.getElementById('website') as HTMLInputElement,
       linkedin: document.getElementById('linkedin') as HTMLInputElement,
       whatsapp: document.getElementById('whatsapp') as HTMLInputElement,
+      signal: document.getElementById('signal') as HTMLInputElement,
       notes: document.getElementById('notes') as HTMLTextAreaElement,
       wifiSsid: document.getElementById('wifi_ssid') as HTMLInputElement,
       wifiPassword: document.getElementById(
@@ -91,6 +92,9 @@ export function initializeDomElements() {
     },
     whatsappLink: document.getElementById(
       'whatsapp-link'
+    ) as HTMLParagraphElement,
+    signalLinkContainer: document.getElementById(
+      'signal-link'
     ) as HTMLParagraphElement,
     subHeadings: {
       vcard: document.querySelector(

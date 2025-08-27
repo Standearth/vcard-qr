@@ -118,6 +118,33 @@ export class EventManager {
     this.handleFormInput(event);
   };
 
+  private handleSignalBlur = (event: Event): void => {
+    const input = event.target as HTMLInputElement;
+    let value = input.value;
+    const signalLinkContainer = dom.signalLinkContainer;
+
+    if (value) {
+      // Check if it's a phone number
+      if (/^[+\d\s().-]+$/.test(value)) {
+        const e164 = formatPhoneNumber(value, 'E.164');
+        if (e164) {
+          value = `https://signal.me/#p/${e164}`;
+          signalLinkContainer.textContent = value;
+          signalLinkContainer.style.display = 'block';
+        } else {
+          signalLinkContainer.style.display = 'none';
+        }
+      } else {
+        signalLinkContainer.style.display = 'none';
+      }
+      input.value = value;
+    } else {
+      signalLinkContainer.style.display = 'none';
+    }
+
+    this.handleFormInput(event);
+  };
+
   /**
    * Handles the click event on the QR code, scrolling the view back to its natural starting position.
    */
@@ -210,6 +237,13 @@ export class EventManager {
       field.addEventListener('input', (event) => this.handleFormInput(event));
       field.addEventListener('blur', (event) => this.handlePhoneBlur(event));
     });
+
+    dom.formFields.signal.addEventListener('input', (event) =>
+      this.handleFormInput(event)
+    );
+    dom.formFields.signal.addEventListener('blur', (event) =>
+      this.handleSignalBlur(event)
+    );
 
     dom.formFields.officePhone.addEventListener('change', (event) =>
       this.handleFormInput(event)

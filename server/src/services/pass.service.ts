@@ -135,6 +135,14 @@ export async function generatePassBuffer(
     });
   }
 
+  if (data.signal) {
+    pass.backFields.push({
+      key: 'signal',
+      label: 'Signal',
+      value: data.signal,
+    });
+  }
+
   if (data.notes) {
     pass.backFields.push({
       key: 'notes',

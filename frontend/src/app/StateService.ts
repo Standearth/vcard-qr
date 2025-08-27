@@ -16,7 +16,8 @@ import { generateQRCodeData } from '../utils/helpers'; // Import the helper
  * and UI-related data. It ensures that state changes are centralized and predictable.
  */
 class StateService {
-  private tabStates: Partial<Record<Mode, TabState>> = {};
+  private formState: Partial<TabState> = {}; // Shared content state
+  private tabStates: Partial<Record<Mode, TabState>> = {}; // Tab-specific config state
   private pixelMultipliers: Partial<Record<Mode, number>> = {};
   private uiManager!: UIManager;
   private subscribers: (() => void)[] = []; // Array of subscriber callbacks
@@ -25,6 +26,10 @@ class StateService {
    * Initializes the default state for all modes when the service is instantiated.
    */
   constructor() {
+    // Initialize the shared form content state
+    this.formState = { ...DEFAULT_FORM_FIELDS };
+
+    // Initialize the tab-specific configuration states
     for (const mode of Object.values(MODES)) {
       const defaults = DEFAULT_ADVANCED_OPTIONS;
       const specifics = TAB_SPECIFIC_DEFAULTS[mode] || {};
@@ -32,7 +37,6 @@ class StateService {
       this.tabStates[mode] = {
         ...defaults,
         ...specifics,
-        ...DEFAULT_FORM_FIELDS,
         qrOptions: { ...defaults.qrOptions, ...(specifics.qrOptions || {}) },
         dotsOptions: {
           ...defaults.dotsOptions,
@@ -74,12 +78,16 @@ class StateService {
   }
 
   /**
-   * Retrieves the current state for a given mode.
+   * Retrieves the current state for a given mode, merged with the shared form state.
    * @param mode The tab mode ('vcard', 'link', 'wifi') to get the state for.
-   * @returns The state object for the given mode, or undefined if not found.
+   * @returns The combined state object for the given mode, or undefined if not found.
    */
   public getState(mode: Mode): TabState | undefined {
-    return this.tabStates[mode];
+    const tabState = this.tabStates[mode];
+    if (tabState) {
+      return { ...this.formState, ...tabState };
+    }
+    return undefined;
   }
 
   public subscribe(callback: () => void): void {
@@ -92,15 +100,28 @@ class StateService {
    * @param newState A partial state object containing the properties to update.
    */
   public updateState(mode: Mode, newState: Partial<TabState>): void {
-    const currentState = this.getState(mode);
-    if (currentState) {
-      const updatedState = { ...currentState, ...newState };
+    const currentTabState = this.tabStates[mode];
+    if (currentTabState) {
+      const newFormState: Partial<TabState> = {};
+      const newTabState: Partial<TabState> = {};
 
-      updatedState.qrCodeContent = generateQRCodeData(updatedState, mode);
+      // Separate the incoming state changes into formState and tabState
+      for (const key in newState) {
+        const propKey = key as keyof TabState;
+        if (propKey in DEFAULT_FORM_FIELDS) {
+          newFormState[propKey] = newState[propKey] as any;
+        } else {
+          newTabState[propKey] = newState[propKey] as any;
+        }
+      }
 
-      this.tabStates[mode] = updatedState;
+      this.formState = { ...this.formState, ...newFormState };
+      this.tabStates[mode] = { ...currentTabState, ...newTabState };
 
-      this.uiManager.renderUIFromState(this.getState(mode)!);
+      const finalState = this.getState(mode)!;
+      finalState.qrCodeContent = generateQRCodeData(finalState, mode);
+
+      this.uiManager.renderUIFromState(finalState);
 
       // Notify all subscribers of the state change
       this.subscribers.forEach((callback) => callback());

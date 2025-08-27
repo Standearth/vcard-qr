@@ -45,7 +45,7 @@ export class TabManager {
         .getUrlHandler()
         .updateUrlFromState(stateService.getState(newMode)!);
 
-      this.app.handleWebsiteChange(); // This will update logos and phones
+      this.app.handleWebsiteChange();
 
       // After switching tabs, the form column height might have changed.
       // Re-evaluate the sticky layout immediately.

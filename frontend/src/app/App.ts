@@ -58,6 +58,21 @@ export class App {
     faDom.watch();
   }
 
+  private _getDomainFromUrl(urlString: string): string {
+    if (!urlString) return '';
+    try {
+      // Prepend protocol if missing
+      const urlWithProtocol = /^(https?:\/\/)/.test(urlString)
+        ? urlString
+        : `https://${urlString}`;
+      const url = new URL(urlWithProtocol);
+      return url.hostname.replace(/^www\./, '');
+    } catch (e) {
+      // Return empty string for invalid URLs
+      return '';
+    }
+  }
+
   public handleWebsiteChange = (): void => {
     const website = dom.formFields.website.value;
     this.updateOfficePhoneField(website);
@@ -65,13 +80,7 @@ export class App {
   };
 
   private getLogoOptions(website: string, mode: Mode): string[] {
-    let domain = '';
-    try {
-      const url = new URL(website);
-      domain = url.hostname.replace(/^www\./, '');
-    } catch (e) {
-      // ignore invalid url
-    }
+    const domain = this._getDomainFromUrl(website);
 
     const domainTemplate =
       logosConfig[domain as keyof typeof logosConfig] || {};
@@ -81,9 +90,9 @@ export class App {
 
     const addLogos = (template: { main?: string[]; wifi?: string[] }) => {
       if (mode === 'wifi' && template.wifi) {
-        template.wifi.forEach((logo) => logoSet.add(logo));
+        template.wifi.forEach((logo) => logo && logoSet.add(logo));
       } else if (template.main) {
-        template.main.forEach((logo) => logoSet.add(logo));
+        template.main.forEach((logo) => logo && logoSet.add(logo));
       }
     };
 
@@ -130,13 +139,7 @@ export class App {
         rawOptions.length > 0 &&
         rawOptions[0].display;
 
-      let domain = '';
-      try {
-        const url = new URL(website);
-        domain = url.hostname.replace(/^www\./, '');
-      } catch (e) {
-        // ignore invalid url
-      }
+      const domain = this._getDomainFromUrl(website);
 
       const matchedOptions = rawOptions.find((set: any) => set.key === domain);
 
@@ -342,7 +345,6 @@ export class App {
     const mergedState: TabState = {
       ...currentTabState,
       ...urlState,
-      logoUrl: urlState.logoUrl ?? currentTabState?.logoUrl ?? '',
     };
 
     if (urlState.officePhone) {
@@ -364,8 +366,8 @@ export class App {
 
     stateService.updateState(newMode, mergedState);
 
-    this.updateOfficePhoneField(mergedState.website || '');
     this.updateLogoOptions(mergedState.website || '');
+    this.updateOfficePhoneField(mergedState.website || '');
 
     const phoneFields = [
       dom.formFields.workPhone,

@@ -14,6 +14,10 @@ import {
   DEFAULT_FORM_FIELDS,
   MODES,
 } from '../../config/constants';
+import {
+  formatPhoneNumber,
+  parsePhoneNumberFromSignalUrl,
+} from '@vcard-qr/shared-utils';
 
 export class FormManager {
   private uiManager: UIManager;
@@ -314,16 +318,24 @@ export class FormManager {
         formFields.extension,
         values.extension ?? DEFAULT_FORM_FIELDS.extension
       );
-    if (formFields.workPhone)
+    if (formFields.workPhone) {
       updateField(
         formFields.workPhone,
-        values.workPhone ?? DEFAULT_FORM_FIELDS.workPhone
+        formatPhoneNumber(
+          values.workPhone ?? (DEFAULT_FORM_FIELDS.workPhone as string),
+          'CUSTOM'
+        )
       );
-    if (formFields.cellPhone)
+    }
+    if (formFields.cellPhone) {
       updateField(
         formFields.cellPhone,
-        values.cellPhone ?? DEFAULT_FORM_FIELDS.cellPhone
+        formatPhoneNumber(
+          values.cellPhone ?? (DEFAULT_FORM_FIELDS.cellPhone as string),
+          'CUSTOM'
+        )
       );
+    }
     if (formFields.website)
       updateField(
         formFields.website,
@@ -334,16 +346,33 @@ export class FormManager {
         formFields.linkedin,
         values.linkedin ?? DEFAULT_FORM_FIELDS.linkedin
       );
-    if (formFields.whatsapp)
+    if (formFields.whatsapp) {
       updateField(
         formFields.whatsapp,
-        values.whatsapp ?? DEFAULT_FORM_FIELDS.whatsapp
+        formatPhoneNumber(
+          values.whatsapp ?? (DEFAULT_FORM_FIELDS.whatsapp as string),
+          'CUSTOM'
+        )
       );
-    if (formFields.signal)
-      updateField(
-        formFields.signal,
-        values.signal ?? DEFAULT_FORM_FIELDS.signal
-      );
+    }
+    if (formFields.signal) {
+      // This logic now correctly derives the display value from the canonical state URL.
+      const phoneNumber = parsePhoneNumberFromSignalUrl(values.signal);
+      if (phoneNumber) {
+        // If it's a Signal URL with a number, display the formatted number in the input.
+        updateField(
+          formFields.signal,
+          formatPhoneNumber(phoneNumber, 'CUSTOM')
+        );
+      } else {
+        // Otherwise, display the raw value (which could be a non-phone URL,
+        // a partial phone number being typed, or empty).
+        updateField(
+          formFields.signal,
+          values.signal ?? DEFAULT_FORM_FIELDS.signal
+        );
+      }
+    }
     if (formFields.notes)
       updateField(formFields.notes, values.notes ?? DEFAULT_FORM_FIELDS.notes);
 

@@ -120,9 +120,10 @@ export class UrlHandler {
       extension: 'extension',
       workPhone: 'workPhone',
       cellPhone: 'cellPhone',
+      whatsapp: 'whatsapp',
+      signal: 'signal',
       website: 'website',
       linkedin: 'linkedin',
-      whatsapp: 'whatsapp',
       notes: 'notes',
       // Link fields
       linkUrl: 'linkUrl',

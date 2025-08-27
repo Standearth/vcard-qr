@@ -10,7 +10,10 @@ import { WalletManager } from './ui/WalletManager';
 import { stateService } from './StateService';
 import { dom } from '../config/dom';
 import { App } from './App';
-import { generateWhatsAppLink } from '@vcard-qr/shared-utils';
+import {
+  generateWhatsAppLink,
+  parsePhoneNumberFromSignalUrl,
+} from '@vcard-qr/shared-utils';
 
 /**
  * Manages all direct interactions with the DOM. It is responsible for rendering the UI
@@ -53,8 +56,10 @@ export class UIManager {
     this.formManager.getFormControlValues();
 
   /** Sets the values of all form controls based on a TabState object. */
-  setFormControlValues = (values: TabState): void =>
-    this.formManager.setFormControlValues(values);
+  setFormControlValues = (
+    values: TabState,
+    activeElement?: HTMLElement
+  ): void => this.formManager.setFormControlValues(values, activeElement);
 
   /** Retrieves the vCard data specifically for the Apple Wallet feature. */
   getVCardData = (): { [key: string]: string } =>
@@ -162,9 +167,11 @@ export class UIManager {
   /**
    * The main rendering function. Updates the entire UI to match the provided state.
    * @param state The TabState object to render.
+   * @param activeElement The DOM element that is currently being edited.
    */
-  renderUIFromState = (state: TabState): void => {
-    this.setFormControlValues(state);
+  renderUIFromState = (state: TabState, activeElement?: HTMLElement): void => {
+    // *** FIX: Pass the activeElement to the form setter. ***
+    this.setFormControlValues(state, activeElement);
     this.renderTabsAndButtons(state);
 
     // Use the shared utility to generate and display the link
@@ -179,11 +186,15 @@ export class UIManager {
     }
 
     const signalLinkContainer = dom.signalLinkContainer;
-    if (state.signal && state.signal.startsWith('https://signal.me/#p/')) {
-      signalLinkContainer.textContent = state.signal;
-      signalLinkContainer.style.display = 'block';
+    const phoneNumberFromUrl = parsePhoneNumberFromSignalUrl(state.signal);
+
+    if (phoneNumberFromUrl) {
+      // If we could parse a phone number from the URL, display the full URL below.
+      signalLinkContainer.textContent = `Signal Link: ${state.signal}`;
+      signalLinkContainer.classList.remove('hidden');
     } else {
-      signalLinkContainer.style.display = 'none';
+      // Otherwise, hide the link display area.
+      signalLinkContainer.classList.add('hidden');
     }
 
     if (dom.advancedControls.container) {

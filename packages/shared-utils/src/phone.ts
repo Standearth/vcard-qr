@@ -95,3 +95,35 @@ export function generateWhatsAppLink(number?: string): string {
   }
   return '';
 }
+
+/**
+ * A simple check to see if a string looks like a phone number and not a URL.
+ * @param value The string to check.
+ * @returns True if it's likely a phone number.
+ */
+export function isPotentialPhoneNumber(value?: string): boolean {
+  if (!value) return false;
+  // It's a potential phone number if it contains only digits, +, (), -, . and spaces
+  return /^[+\d\s().-]+$/.test(value);
+}
+
+/**
+ * Extracts an E.164 phone number from a Signal.me PHONE URL.
+ * This will specifically ignore non-phone URLs (e.g., #eu/).
+ *
+ * @param url The Signal URL (e.g., "https://signal.me/#p/+12223334444").
+ * @returns The E.164 phone number string if found, otherwise null.
+ */
+export function parsePhoneNumberFromSignalUrl(url?: string): string | null {
+  if (!url) return null;
+
+  // This regex now specifically looks for the /#p/ part of phone-based links.
+  const match = url.match(/signal\.me\/#p\/(\+\d+)/);
+  if (match && match[1]) {
+    const phoneNumber = parsePhoneNumberFromString(match[1]);
+    if (phoneNumber && phoneNumber.isValid()) {
+      return phoneNumber.format('E.164');
+    }
+  }
+  return null;
+}

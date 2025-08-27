@@ -101,11 +101,12 @@ class StateService {
    * Updates the state for a given mode and triggers a UI re-render.
    * @param mode The tab mode to update.
    * @param newState A partial state object containing the properties to update.
+   * @param activeElement The DOM element that triggered the update, to prevent overwriting user input.
    */
   public updateState(
     mode: Mode,
     newState: Partial<TabState>,
-    _activeElement?: HTMLElement
+    activeElement?: HTMLElement
   ): void {
     const oldState = this.getState(mode);
     const currentTabState = this.tabStates[mode];
@@ -131,7 +132,8 @@ class StateService {
       const finalState = this.getState(mode)!;
       finalState.qrCodeContent = generateQRCodeData(finalState, mode);
 
-      this.uiManager.renderUIFromState(finalState);
+      // *** FIX: Pass the activeElement to the rendering function. ***
+      this.uiManager.renderUIFromState(finalState, activeElement);
 
       // Notify all subscribers of the state change
       this.subscribers.forEach((callback) => callback(finalState, oldState!));

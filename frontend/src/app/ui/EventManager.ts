@@ -1,4 +1,4 @@
-// standearth/vcard-qr/vcard-qr-phone-settings/frontend/src/app/ui/EventManager.ts
+// standearth/vcard-qr/vcard-qr-signal/frontend/src/app/ui/EventManager.ts
 
 import { dom } from '../../config/dom';
 import { App } from '../App';
@@ -16,7 +16,10 @@ import {
   TabState,
   DESKTOP_BREAKPOINT_PX,
 } from '../../config/constants';
-import { formatPhoneNumber } from '@vcard-qr/shared-utils';
+import {
+  formatPhoneNumber,
+  isPotentialPhoneNumber,
+} from '@vcard-qr/shared-utils';
 
 export class EventManager {
   private app: App;
@@ -118,31 +121,67 @@ export class EventManager {
     this.handleFormInput(event);
   };
 
+  /**
+   * On every keystroke, this function processes the input to generate a
+   * potential Signal URL in real-time. It updates the central state, which
+   * triggers the UI to show or hide the link preview, but it does NOT
+   * change the text the user is actively typing.
+   */
+  private handleSignalInput = (event: Event): void => {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    let finalUrl = value;
+
+    // In real-time, check if the input looks like a phone number.
+    if (isPotentialPhoneNumber(value)) {
+      const e164 = formatPhoneNumber(value, 'E.164');
+      if (e164) {
+        // If it's a valid number, generate the URL for the state.
+        finalUrl = `https://signal.me/#p/${e164}`;
+      }
+    }
+    const currentMode = this.uiManager.getCurrentMode();
+    // Update the state with the generated URL or the raw value.
+    // The UIManager will use this to render the link preview below the input.
+    stateService.updateState(
+      currentMode,
+      { signal: finalUrl },
+      input // Pass the active element to prevent the input from being overwritten
+    );
+    this.uiManager
+      .getUrlHandler()
+      .updateUrlFromState(stateService.getState(currentMode)!);
+
+    // Trigger a fast, live preview render.
+    void this.app.updateQRCode(true);
+
+    // Debounce the final, high-quality render.
+    clearTimeout(this.qrUpdateTimeout);
+    this.qrUpdateTimeout = window.setTimeout(() => {
+      void this.app.updateQRCode(false);
+    }, 300); // 300ms delay
+  };
+
+  /**
+   * When the user leaves the field, this function commits the final,
+   * user-friendly format back to the input field's display text.
+   */
   private handleSignalBlur = (event: Event): void => {
     const input = event.target as HTMLInputElement;
-    let value = input.value;
-    const signalLinkContainer = dom.signalLinkContainer;
+    const value = input.value;
 
-    if (value) {
-      // Check if it's a phone number
-      if (/^[+\d\s().-]+$/.test(value)) {
-        const e164 = formatPhoneNumber(value, 'E.164');
-        if (e164) {
-          value = `https://signal.me/#p/${e164}`;
-          signalLinkContainer.textContent = value;
-          signalLinkContainer.style.display = 'block';
-        } else {
-          signalLinkContainer.style.display = 'none';
-        }
-      } else {
-        signalLinkContainer.style.display = 'none';
-      }
-      input.value = value;
-    } else {
-      signalLinkContainer.style.display = 'none';
+    // If the final value is a phone number, format it nicely for display.
+    if (isPotentialPhoneNumber(value)) {
+      input.value = formatPhoneNumber(value, 'CUSTOM');
     }
 
-    this.handleFormInput(event);
+    // Trigger a final, high-quality QR code update.
+    void this.app.updateQRCode(false);
+    this.uiManager
+      .getUrlHandler()
+      .updateUrlFromState(
+        stateService.getState(this.uiManager.getCurrentMode())!
+      );
   };
 
   /**
@@ -241,7 +280,7 @@ export class EventManager {
     });
 
     dom.formFields.signal.addEventListener('input', (event) =>
-      this.handleFormInput(event)
+      this.handleSignalInput(event)
     );
     dom.formFields.signal.addEventListener('blur', (event) =>
       this.handleSignalBlur(event)
@@ -258,7 +297,8 @@ export class EventManager {
         field instanceof HTMLElement &&
         !phoneTextFields.includes(field as HTMLInputElement) &&
         field.id !== 'office_phone' &&
-        field.id !== 'website'
+        field.id !== 'website' &&
+        field.id !== 'signal'
       ) {
         field.addEventListener('input', (event) => this.handleFormInput(event));
       }

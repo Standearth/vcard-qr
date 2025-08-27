@@ -98,7 +98,16 @@ select.form-input {
   cursor: pointer;
 }
 
-.whatsapp-link-display {
+.form-explainer {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+  text-align: left;
+}
+
+.whatsapp-link-display,
+.signal-link-display {
   font-size: 0.75rem;
   color: var(--color-secondary-teal);
   margin-top: 0.25rem;

@@ -11,6 +11,11 @@ import {
   faQrcode,
   faLink,
 } from '@fortawesome/free-solid-svg-icons';
+import {
+  faWhatsapp,
+  faSignalMessenger,
+  faLinkedin,
+} from '@fortawesome/free-brands-svg-icons';
 import { UIManager } from './UIManager';
 import { stateService } from './StateService';
 import { dom } from '../config/dom';
@@ -57,7 +62,17 @@ export class App {
   getModalQrCode = (): AsyncQRCodeStyling => this.modalQrCode;
 
   private initializeIcons(): void {
-    library.add(faDownload, faMobileAlt, faCog, faUndo, faQrcode, faLink);
+    library.add(
+      faDownload,
+      faMobileAlt,
+      faCog,
+      faUndo,
+      faQrcode,
+      faLink,
+      faWhatsapp,
+      faSignalMessenger,
+      faLinkedin
+    );
     faDom.watch();
   }
 
@@ -399,18 +414,6 @@ export class App {
 
     this.updateLogoOptions(mergedState.website || '');
     this.updateOfficePhoneField(mergedState.website || '');
-
-    const phoneFields = [
-      dom.formFields.workPhone,
-      dom.formFields.cellPhone,
-      dom.formFields.whatsapp,
-      dom.formFields.signal,
-    ];
-    phoneFields.forEach((field) => {
-      if (field.value) {
-        field.value = formatPhoneNumber(field.value, 'CUSTOM');
-      }
-    });
 
     await this.updateQRCode();
     this.ui.getUrlHandler().updateUrlFromState(stateService.getState(newMode)!);

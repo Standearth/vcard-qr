@@ -11,6 +11,11 @@ import {
   faQrcode,
   faLink,
 } from '@fortawesome/free-solid-svg-icons';
+import {
+  faWhatsapp,
+  faSignalMessenger,
+  faLinkedin,
+} from '@fortawesome/free-brands-svg-icons';
 import { UIManager } from './UIManager';
 import { stateService } from './StateService';
 import { dom } from '../config/dom';
@@ -59,7 +64,17 @@ export class App {
   getLogoManager = (): LogoManager => this.logoManager;
 
   private initializeIcons(): void {
-    library.add(faDownload, faMobileAlt, faCog, faUndo, faQrcode, faLink);
+    library.add(
+      faDownload,
+      faMobileAlt,
+      faCog,
+      faUndo,
+      faQrcode,
+      faLink,
+      faWhatsapp,
+      faSignalMessenger,
+      faLinkedin
+    );
     faDom.watch();
   }
 

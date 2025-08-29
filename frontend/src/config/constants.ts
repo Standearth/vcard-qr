@@ -17,6 +17,7 @@ export type TabState = Partial<Options> & {
   optimizeSize?: boolean;
   roundSize?: boolean;
   showImage?: boolean;
+  showWrapOutline?: boolean;
   dotHidingMode?: 'box' | 'shape' | 'off';
   wrapSize?: number;
   isAdvancedControlsVisible?: boolean;
@@ -56,6 +57,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   cornersDotOptions: { type: 'rounded', color: '#e50b12' },
   backgroundOptions: { color: '#ffffff' },
   showImage: true,
+  showWrapOutline: false,
   dotHidingMode: 'shape',
   wrapSize: 0.5,
   imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 10 },

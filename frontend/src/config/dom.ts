@@ -177,6 +177,9 @@ export function initializeDomElements() {
         'form-hide-background-dots'
       ) as HTMLSelectElement,
       wrapSize: document.getElementById('form-wrap-size') as HTMLInputElement,
+      showWrapOutline: document.getElementById(
+        'form-show-wrap-outline'
+      ) as HTMLInputElement,
       saveAsBlob: document.getElementById(
         'form-save-as-blob'
       ) as HTMLInputElement,

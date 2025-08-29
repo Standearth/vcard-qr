@@ -93,6 +93,7 @@ export class FormManager {
         | 'shape'
         | 'off',
       wrapSize: parseFloat(advancedControls.wrapSize.value),
+      showWrapOutline: advancedControls.showWrapOutline.checked,
       imageOptions: {
         imageSize: parseFloat(advancedControls.imageSize.value),
         margin: parseInt(advancedControls.imageMargin.value),
@@ -250,6 +251,10 @@ export class FormManager {
       updateField(
         advancedControls.wrapSize,
         values.wrapSize ?? DEFAULT_ADVANCED_OPTIONS.wrapSize
+      );
+      updateField(
+        advancedControls.showWrapOutline,
+        values.showWrapOutline ?? DEFAULT_ADVANCED_OPTIONS.showWrapOutline
       );
       updateField(
         advancedControls.imageSize,

@@ -65,24 +65,24 @@ function isPointInPolygon(point: Point, vs: number[][]): boolean {
 class AsyncQRCodeStyling extends QRCodeStyling {
   private _customOutlineResult: OutlineResult | null = null;
   private _shouldApplyCustomLogic = false;
+  private _showWrapOutline = false;
   private _wrapSize = 0.1;
-
-  constructor(options?: Partial<Options>) {
-    super(options);
-  }
 
   public override update(
     options?: Partial<Options> & {
       dotHidingMode?: 'box' | 'shape' | 'off';
       wrapSize?: number;
+      showWrapOutline?: boolean;
     }
   ): void {
     const dotType = options?.dotsOptions?.type;
     const dotHidingMode = options?.dotHidingMode ?? 'shape';
     this._wrapSize = options?.wrapSize ?? 0.1;
+    this._showWrapOutline = options?.showWrapOutline ?? false;
 
     const canUseCustomLogic =
       isSvg(options?.image) && (dotType === 'dots' || dotType === 'square');
+
     this._shouldApplyCustomLogic =
       dotHidingMode === 'shape' && canUseCustomLogic;
 
@@ -134,9 +134,13 @@ class AsyncQRCodeStyling extends QRCodeStyling {
         oldDebugGroup.remove();
       }
     }
+    const oldOutlineGroup = svgElement.querySelector('#outline-group');
+    if (oldOutlineGroup) {
+      oldOutlineGroup.remove();
+    }
 
     if (
-      !this._shouldApplyCustomLogic ||
+      (!this._shouldApplyCustomLogic && !this._showWrapOutline) ||
       !this._customOutlineResult ||
       !(svgElement instanceof SVGSVGElement) ||
       !this._qr
@@ -191,6 +195,32 @@ class AsyncQRCodeStyling extends QRCodeStyling {
         vertices: polygons,
       });
     }
+
+    if (this._showWrapOutline) {
+      const outlineGroup = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'g'
+      );
+      outlineGroup.id = 'outline-group';
+      svgElement.appendChild(outlineGroup);
+
+      polygons.forEach((vertices) => {
+        const outlinePolygon = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'polygon'
+        );
+        outlinePolygon.setAttribute(
+          'points',
+          vertices.map((p) => p.join(',')).join(' ')
+        );
+        outlinePolygon.setAttribute('fill', 'none');
+        outlinePolygon.setAttribute('stroke', 'black');
+        outlinePolygon.setAttribute('stroke-width', '2');
+        outlineGroup.appendChild(outlinePolygon);
+      });
+    }
+
+    if (!this._shouldApplyCustomLogic) return;
 
     const dotClipPath = svgElement.querySelector('defs > clipPath[id*="dot"]');
     if (!dotClipPath) {

@@ -241,6 +241,7 @@ export class App {
   ): Partial<Options> & {
     dotHidingMode?: 'box' | 'shape' | 'off';
     wrapSize?: number;
+    showWrapOutline?: boolean;
   } => {
     const state = stateService.getState(this.ui.getCurrentMode());
     if (!state) return { data };
@@ -265,6 +266,7 @@ export class App {
       cornersDotOptions: { ...state.cornersDotOptions },
       dotHidingMode: dotHidingMode,
       wrapSize: state.wrapSize,
+      showWrapOutline: state.showWrapOutline,
     };
   };
 

@@ -232,7 +232,14 @@ export class UIManager {
     // Disable the "shape" hiding option if the dot type doesn't support it.
     const dotsType = state.dotsOptions?.type;
     const hideDotsSelect = dom.advancedControls.hideBackgroundDots;
-    if (hideDotsSelect) {
+    const showWrapOutlineCheckbox = dom.advancedControls.showWrapOutline;
+    if (hideDotsSelect && showWrapOutlineCheckbox) {
+      const isWrapSelected = hideDotsSelect.value === 'shape';
+      showWrapOutlineCheckbox.disabled = !isWrapSelected;
+      if (!isWrapSelected) {
+        showWrapOutlineCheckbox.checked = false;
+      }
+
       const shapeOption = hideDotsSelect.querySelector('option[value="shape"]');
 
       if (shapeOption) {

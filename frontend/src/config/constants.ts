@@ -60,7 +60,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
   showWrapOutline: false,
   dotHidingMode: 'shape',
   wrapSize: 0.5,
-  imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 10 },
+  imageOptions: { hideBackgroundDots: true, imageSize: 0.5, margin: 10 },
   qrOptions: { typeNumber: 0, errorCorrectionLevel: 'H' },
   optimizeSize: false,
   roundSize: true,
@@ -69,11 +69,9 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
 };
 
 export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
-  [MODES.VCARD]: { margin: 0 },
-  [MODES.LINK]: { margin: 10, imageOptions: { margin: 10 } },
-  [MODES.WIFI]: {
-    imageOptions: {},
-  },
+  [MODES.VCARD]: { margin: 0, imageOptions: { imageSize: 0.3 }, wrapSize: 0.3 },
+  [MODES.LINK]: {},
+  [MODES.WIFI]: {},
 };
 
 export const DEFAULT_FORM_FIELDS: {

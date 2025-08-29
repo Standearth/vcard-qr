@@ -365,17 +365,21 @@ class AsyncQRCodeStyling extends QRCodeStyling {
         shouldHide = true;
       } else {
         isInCorridor = true;
-        const corners: Point[] = [
+        const cornersAndSides: Point[] = [
           { x: dotX, y: dotY },
           { x: dotX + dotWidth, y: dotY },
           { x: dotX, y: dotY + dotHeight },
           { x: dotX + dotWidth, y: dotY + dotHeight },
+          { x: dotX, y: dotY + dotHeight / 2 },
+          { x: dotX + dotWidth, y: dotY + dotHeight / 2 },
+          { x: dotX + dotWidth / 2, y: dotY },
+          { x: dotX + dotWidth / 2, y: dotY + dotHeight },
         ];
 
         let isInsidePolygon = false;
-        for (const corner of corners) {
+        for (const point of cornersAndSides) {
           for (const vertices of polygons) {
-            if (isPointInPolygon(corner, vertices)) {
+            if (isPointInPolygon(point, vertices)) {
               isInsidePolygon = true;
               break;
             }

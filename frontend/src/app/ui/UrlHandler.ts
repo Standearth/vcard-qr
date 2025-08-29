@@ -9,6 +9,7 @@ import {
   TAB_SPECIFIC_DEFAULTS,
 } from '../../config/constants';
 import { DotType, CornerDotType, CornerSquareType } from 'qr-code-styling';
+import { LogoManager } from './LogoManager';
 
 type NestedState =
   | 'dotsOptions'
@@ -20,9 +21,11 @@ type NestedState =
 
 export class UrlHandler {
   private uiManager: UIManager;
+  private logoManager: LogoManager;
 
   constructor(uiManager: UIManager) {
     this.uiManager = uiManager;
+    this.logoManager = new LogoManager();
   }
 
   getStateFromUrl(): Partial<TabState> {
@@ -108,6 +111,12 @@ export class UrlHandler {
       }, obj);
     };
 
+    // Get the dynamic default logo URL
+    const defaultLogoUrl = this.logoManager.getDefaultLogoUrl(
+      state.website || '',
+      currentMode
+    );
+
     // A comprehensive map of all state properties to their URL parameter names
     const statePathMap: { [k: string]: string } = {
       // vCard fields
@@ -162,10 +171,16 @@ export class UrlHandler {
         state as unknown as Record<string, unknown>,
         statePath
       );
-      const defaultValue = getNestedValue(
-        defaultTabState as unknown as Record<string, unknown>,
-        statePath
-      );
+
+      let defaultValue;
+      if (key === 'logoUrl') {
+        defaultValue = defaultLogoUrl;
+      } else {
+        defaultValue = getNestedValue(
+          defaultTabState as unknown as Record<string, unknown>,
+          statePath
+        );
+      }
 
       if (String(currentValue) !== String(defaultValue)) {
         newUrlParams.set(paramName, String(currentValue));

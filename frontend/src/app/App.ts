@@ -11,11 +11,6 @@ import {
   faQrcode,
   faLink,
 } from '@fortawesome/free-solid-svg-icons';
-import {
-  faWhatsapp,
-  faSignalMessenger,
-  faLinkedin,
-} from '@fortawesome/free-brands-svg-icons';
 import { UIManager } from './UIManager';
 import { stateService } from './StateService';
 import { dom } from '../config/dom';
@@ -27,8 +22,7 @@ import {
   TabState,
 } from '../config/constants';
 import { generateQRCodeData } from '../utils/helpers';
-import logosConfig from '../../src/config/logos.json';
-
+import { LogoManager } from './ui/LogoManager';
 import { formatPhoneNumber } from '@vcard-qr/shared-utils';
 
 export let qrCode: AsyncQRCodeStyling;
@@ -36,9 +30,11 @@ export let qrCode: AsyncQRCodeStyling;
 export class App {
   private ui: UIManager;
   private modalQrCode: AsyncQRCodeStyling;
+  private logoManager: LogoManager;
 
   constructor() {
     this.ui = new UIManager(this);
+    this.logoManager = new LogoManager();
     stateService.initialize(this.ui);
     this.initializeIcons();
     this.setupStateSubscriptions();
@@ -60,41 +56,52 @@ export class App {
 
   getQrCode = (): AsyncQRCodeStyling => qrCode;
   getModalQrCode = (): AsyncQRCodeStyling => this.modalQrCode;
+  getLogoManager = (): LogoManager => this.logoManager;
 
   private initializeIcons(): void {
-    library.add(
-      faDownload,
-      faMobileAlt,
-      faCog,
-      faUndo,
-      faQrcode,
-      faLink,
-      faWhatsapp,
-      faSignalMessenger,
-      faLinkedin
-    );
+    library.add(faDownload, faMobileAlt, faCog, faUndo, faQrcode, faLink);
     faDom.watch();
   }
 
   private setupStateSubscriptions(): void {
     stateService.subscribe((newState, oldState) => {
-      // When the website URL changes, update logos and office phone options
       if (newState.website !== oldState.website) {
         this.handleWebsiteChange(newState.website);
       }
-
-      // When the active tab changes, also trigger these updates
       if (newState.activeMode !== oldState.activeMode) {
         this.handleWebsiteChange(newState.website);
         void this.updateQRCode();
         this.ui.getUrlHandler().updateUrlFromState(newState);
       }
-
-      // When the logoUrl changes, update logo options to include the new image
       if (newState.logoUrl !== oldState.logoUrl) {
         this.updateLogoOptions(newState.website);
       }
     });
+  }
+
+  public handleWebsiteChange = (website?: string): void => {
+    this.updateOfficePhoneField(website);
+    this.updateLogoOptions(website);
+  };
+
+  private updateLogoOptions(website = ''): void {
+    const currentMode = this.ui.getCurrentMode();
+    const logoOptions = this.logoManager.getLogoOptions(website, currentMode);
+    const currentState = stateService.getState(currentMode);
+    const currentLogoUrl = currentState?.logoUrl;
+
+    const finalLogoOptions = [...logoOptions];
+    if (currentLogoUrl && !logoOptions.includes(currentLogoUrl)) {
+      finalLogoOptions.unshift(currentLogoUrl);
+    }
+
+    this.ui.renderLogoThumbnails(finalLogoOptions);
+    if (
+      finalLogoOptions.length > 0 &&
+      !finalLogoOptions.includes(currentLogoUrl || '')
+    ) {
+      stateService.updateState(currentMode, { logoUrl: finalLogoOptions[0] });
+    }
   }
 
   private _getDomainFromUrl(urlString: string): string {
@@ -109,60 +116,6 @@ export class App {
     } catch (_e) {
       // Return empty string for invalid URLs
       return '';
-    }
-  }
-
-  public handleWebsiteChange = (website?: string): void => {
-    this.updateOfficePhoneField(website);
-    this.updateLogoOptions(website);
-  };
-
-  private getLogoOptions(website: string, mode: Mode): string[] {
-    const domain = this._getDomainFromUrl(website);
-    const currentState = stateService.getState(this.ui.getCurrentMode());
-    const sessionLogos = currentState?.availableLogos || [];
-
-    const domainTemplate =
-      logosConfig[domain as keyof typeof logosConfig] || {};
-    const defaultTemplate = logosConfig.default;
-
-    const logoSet = new Set<string>();
-
-    // Add session logos first to ensure they are available
-    sessionLogos.forEach((logo) => logoSet.add(logo));
-
-    const addLogos = (template: { main?: string[]; wifi?: string[] }) => {
-      if (mode === 'wifi' && template.wifi) {
-        template.wifi.forEach((logo) => logo && logoSet.add(logo));
-      } else if (template.main) {
-        template.main.forEach((logo) => logo && logoSet.add(logo));
-      }
-    };
-
-    addLogos(domainTemplate);
-    addLogos(defaultTemplate);
-
-    return Array.from(logoSet);
-  }
-
-  private updateLogoOptions(website = ''): void {
-    const currentMode = this.ui.getCurrentMode();
-    const logoOptions = this.getLogoOptions(website, currentMode);
-    const currentState = stateService.getState(currentMode);
-    const currentLogoUrl = currentState?.logoUrl;
-
-    const finalLogoOptions = [...logoOptions];
-
-    if (currentLogoUrl && !logoOptions.includes(currentLogoUrl)) {
-      finalLogoOptions.unshift(currentLogoUrl);
-    }
-
-    this.ui.renderLogoThumbnails(finalLogoOptions);
-    if (
-      finalLogoOptions.length > 0 &&
-      !finalLogoOptions.includes(currentLogoUrl || '')
-    ) {
-      stateService.updateState(currentMode, { logoUrl: finalLogoOptions[0] });
     }
   }
 

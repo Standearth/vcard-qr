@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QR Code Generator</title>
 
+    <script>
+      (function () {
+        if (window.location.search) {
+          var hash = window.location.hash || '#/vcard/';
+          var separator = hash.includes('?') ? '&' : '?';
+          var newUrl =
+            window.location.origin +
+            window.location.pathname +
+            hash +
+            separator +
+            window.location.search.substring(1);
+          window.location.replace(newUrl);
+        }
+      })();
+    </script>
+
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link
       rel="icon"

@@ -1,3 +1,4 @@
+// eslint.config.js
 import globals from 'globals';
 import pluginJs from '@eslint/js';
 import tseslint from 'typescript-eslint';
@@ -16,6 +17,7 @@ export default [
       'packages/shared-utils/dist',
       'server/dist',
       'frontend/dist',
+      'scripts/', // Ignore scripts from typed linting
     ],
   },
   // Base Recommended Config
@@ -23,6 +25,19 @@ export default [
   ...tseslint.configs.recommendedTypeChecked,
   // Prettier config to disable conflicting rules
   eslintPluginPrettierRecommended,
+  // New section for JS/MJS files
+  {
+    files: ['**/*.{js,mjs}'],
+    ...pluginJs.configs.recommended,
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      // Add any specific JS rules here if needed
+    },
+  },
   // Frontend Config
   {
     files: ['frontend/src/**/*.ts'],

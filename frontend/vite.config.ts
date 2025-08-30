@@ -1,3 +1,5 @@
+// frontend/vite.config.ts
+
 import { defineConfig, ServerOptions, loadEnv } from 'vite';
 import fs from 'fs';
 import path from 'path';
@@ -20,7 +22,8 @@ const getLocalNetworkIPs = (): string[] => {
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   const isProduction = mode === 'production';
-  const env = loadEnv(mode, process.cwd(), '');
+  // This loads the variables into the `env` constant
+  const env = loadEnv(mode, path.resolve(process.cwd(), '..'), '');
 
   // Define paths to the development certificate
   const keyPath = path.resolve(__dirname, '../server/certs/localhost.key');
@@ -55,13 +58,13 @@ export default defineConfig(({ command, mode }) => {
     apiBaseUrl = `https://${localIp}:${backendPort}`;
   }
 
-  // Load logos config
-  let logosConfig = '{}';
-  if (process.env.VITE_LOGOS_CONFIG) {
-    logosConfig = process.env.VITE_LOGOS_CONFIG;
+  // Load logos config string from the env object
+  let logosConfigString = '{}';
+  if (env.VITE_LOGOS_CONFIG) {
+    logosConfigString = env.VITE_LOGOS_CONFIG;
   } else {
     try {
-      logosConfig = fs.readFileSync(
+      logosConfigString = fs.readFileSync(
         path.resolve(__dirname, './src/config/logos.json'),
         'utf-8'
       );
@@ -69,6 +72,9 @@ export default defineConfig(({ command, mode }) => {
       console.error('Could not load logos.json. Using empty config.');
     }
   }
+
+  // Load presets config string from the env object
+  const presetsConfigString = env.VITE_PRESETS_CONFIG || '{}';
 
   return {
     envDir: '../',
@@ -79,7 +85,10 @@ export default defineConfig(({ command, mode }) => {
     server, // Use the configured server object
     define: {
       'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
-      'import.meta.env.VITE_LOGOS_CONFIG': JSON.stringify(logosConfig),
+      // Parse the JSON string and then re-stringify it for injection.
+      'import.meta.env.VITE_LOGOS_CONFIG': JSON.stringify(logosConfigString),
+      'import.meta.env.VITE_PRESETS_CONFIG':
+        JSON.stringify(presetsConfigString),
     },
   };
 });

@@ -99,3 +99,11 @@ export const DEFAULT_FORM_FIELDS: {
   wifiHidden: false,
   officePhoneFieldType: 'select',
 };
+
+export type Preset = {
+  [key: string]: string;
+};
+
+export type PresetsConfig = {
+  [key: string]: Preset;
+};

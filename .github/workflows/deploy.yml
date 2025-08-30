@@ -49,6 +49,7 @@ jobs:
           VITE_ORG_WEBSITE: ${{ secrets.VITE_ORG_WEBSITE }}
           VITE_OFFICE_PHONE_OPTIONS: ${{ secrets.VITE_OFFICE_PHONE_OPTIONS }}
           BACKEND_DOMAIN: ${{ secrets.BACKEND_DOMAIN }}
+          VITE_LOGOS_CONFIG: ${{ secrets.VITE_LOGOS_CONFIG }}
       - name: Create CNAME file
         run: echo "${{ secrets.FRONTEND_DOMAIN }}" > ./frontend/dist/CNAME
       - name: Setup Pages

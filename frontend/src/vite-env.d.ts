@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_ORG_WEBSITE: string;
   readonly VITE_OFFICE_PHONE_OPTIONS: string;
   readonly VITE_VISUAL_DEBUG: string;
+  readonly VITE_LOGOS_CONFIG: string;
 }
 
 interface ImportMeta {

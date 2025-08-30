@@ -119,7 +119,6 @@ resource "google_cloud_run_v2_service" "default" {
   project  = var.gcp_project_id
 
   template {
-
     containers {
       image = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.docker_repo.repository_id}/${var.service_name}:latest"
       env {
@@ -131,8 +130,7 @@ resource "google_cloud_run_v2_service" "default" {
         value = var.frontend_domain
       }
       env {
-        name = "VITE_ORG_NAME"
-
+        name  = "VITE_ORG_NAME"
         value = var.vite_org_name
       }
       env {
@@ -148,8 +146,7 @@ resource "google_cloud_run_v2_service" "default" {
         value = "projects/${var.gcp_project_id}/secrets/apple-wallet-signer-key/versions/latest"
       }
       env {
-        name = "SIGNER_CERT_SECRET"
-
+        name  = "SIGNER_CERT_SECRET"
         value = "projects/${var.gcp_project_id}/secrets/apple-wallet-signer-cert/versions/latest"
       }
       env {

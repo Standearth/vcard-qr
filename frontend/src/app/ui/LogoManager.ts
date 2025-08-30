@@ -1,8 +1,23 @@
 // frontend/src/app/ui/LogoManager.ts
 
 import { Mode } from '../../config/constants';
-import logosConfig from '../../config/logos.json';
 import { stateService } from '../StateService';
+
+// Define types for the logo configuration to ensure type safety
+type LogoTemplate = {
+  main?: string[];
+  wifi?: string[];
+};
+
+type LogosConfig = {
+  default?: LogoTemplate;
+  [key: string]: LogoTemplate | undefined;
+};
+
+// Parse the config from the environment variable with a type assertion
+const logosConfig: LogosConfig = JSON.parse(
+  import.meta.env.VITE_LOGOS_CONFIG || '{}'
+) as LogosConfig;
 
 export class LogoManager {
   private _getDomainFromUrl(urlString: string): string {
@@ -23,14 +38,13 @@ export class LogoManager {
     const currentState = stateService.getState(mode);
     const sessionLogos = currentState?.availableLogos || [];
 
-    const domainTemplate =
-      logosConfig[domain as keyof typeof logosConfig] || {};
+    const domainTemplate = logosConfig[domain];
     const defaultTemplate = logosConfig.default;
 
     const logoSet = new Set<string>();
     sessionLogos.forEach((logo) => logoSet.add(logo));
 
-    const addLogos = (template: { main?: string[]; wifi?: string[] }) => {
+    const addLogos = (template: LogoTemplate) => {
       if (mode === 'wifi' && template.wifi) {
         template.wifi.forEach((logo) => logo && logoSet.add(logo));
       } else if (template.main) {
@@ -38,8 +52,12 @@ export class LogoManager {
       }
     };
 
-    addLogos(domainTemplate);
-    addLogos(defaultTemplate);
+    if (domainTemplate) {
+      addLogos(domainTemplate);
+    }
+    if (defaultTemplate) {
+      addLogos(defaultTemplate);
+    }
 
     return Array.from(logoSet);
   }

@@ -55,6 +55,21 @@ export default defineConfig(({ command, mode }) => {
     apiBaseUrl = `https://${localIp}:${backendPort}`;
   }
 
+  // Load logos config
+  let logosConfig = '{}';
+  if (process.env.VITE_LOGOS_CONFIG) {
+    logosConfig = process.env.VITE_LOGOS_CONFIG;
+  } else {
+    try {
+      logosConfig = fs.readFileSync(
+        path.resolve(__dirname, './src/config/logos.json'),
+        'utf-8'
+      );
+    } catch (error) {
+      console.error('Could not load logos.json. Using empty config.');
+    }
+  }
+
   return {
     envDir: '../',
     base: '/',
@@ -64,6 +79,7 @@ export default defineConfig(({ command, mode }) => {
     server, // Use the configured server object
     define: {
       'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
+      'import.meta.env.VITE_LOGOS_CONFIG': JSON.stringify(logosConfig),
     },
   };
 });

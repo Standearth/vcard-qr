@@ -136,21 +136,7 @@ _setup_tasks: create-project setup-project create-service-account create-workloa
 
 update-tfvars:
 	@echo "🔄 Syncing .env and local JSON files to terraform.tfvars..."
-	@# Preserve gcp_project_id
-	@grep 'gcp_project_id' $(TFFILE) > $(TFFILE).tmp
-	@# Add variables from .env
-	@echo "frontend_domain = \"$(FRONTEND_DOMAIN)\"" >> $(TFFILE).tmp
-	@echo "vite_org_name = \"$(VITE_ORG_NAME)\"" >> $(TFFILE).tmp
-	@echo "photo_service_url = \"$(PHOTO_SERVICE_URL)\"" >> $(TFFILE).tmp
-	@echo "google_issuer_id = \"$(GOOGLE_ISSUER_ID)\"" >> $(TFFILE).tmp
-	@# Add JSON configurations
-	@echo 'pass_config = <<EOT' >> $(TFFILE).tmp
-	@node -e 'try { console.log(JSON.stringify(JSON.parse(require("fs").readFileSync("server/src/config/pass-templates.json", "utf-8")))) } catch (e) { console.error("Error: Could not read or parse server/src/config/pass-templates.json."); process.exit(1); }' >> $(TFFILE).tmp
-	@echo 'EOT' >> $(TFFILE).tmp
-	@echo 'pass_google_config = <<EOT' >> $(TFFILE).tmp
-	@node -e 'try { console.log(JSON.stringify(JSON.parse(require("fs").readFileSync("server/src/config/google-wallet-templates.json", "utf-8")))) } catch (e) { console.error("Error: Could not read or parse server/src/config/google-wallet-templates.json."); process.exit(1); }' >> $(TFFILE).tmp
-	@echo 'EOT' >> $(TFFILE).tmp
-	@mv $(TFFILE).tmp $(TFFILE)
+	@node scripts/generate-tfvars.mjs
 
 create-project: check-auth
 	@if [ -f "$(TFFILE)" ]; then \
@@ -371,10 +357,10 @@ show-github-secrets: check-gcp-project check-env-vars
 	@echo "Value: $(VITE_ORG_WEBSITE)"
 	@echo ""
 	@echo " Name: VITE_OFFICE_PHONE_OPTIONS"
-	@printf "Value: %s\n" "$$(echo "$$VITE_OFFICE_PHONE_OPTIONS" | cut -c 2- | rev | cut -c 2- | rev)"
+	@printf "Value: %s\n" "$$(echo '$(VITE_OFFICE_PHONE_OPTIONS)' | sed "s/^'//;s/'$$//")"
 	@echo ""
 	@echo " Name: VITE_LOGOS_CONFIG"
-	@printf "Value: %s\n" "$(shell cat frontend/src/config/logos.json | tr -d '\n' | tr -d ' ')"
+	@printf 'Value: %s\n' "$$(node -e 'process.stdout.write(JSON.stringify(JSON.parse(require(`fs`).readFileSync(`frontend/src/config/logos.json`, `utf-8`))))')"
 	@echo ""
 	@echo " Name: GOOGLE_ISSUER_ID"
 	@echo "Value: $(GOOGLE_ISSUER_ID)"

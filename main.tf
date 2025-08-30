@@ -70,7 +70,7 @@ variable "pass_google_config" {
 
 variable "photo_service_url" {
   type        = string
-  description = "The base URL for the photo lookup service."
+  description = "A JSON string mapping email domains to their photo lookup service URLs."
 }
 
 variable "google_issuer_id" {

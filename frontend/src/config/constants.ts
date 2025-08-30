@@ -69,7 +69,7 @@ export const DEFAULT_ADVANCED_OPTIONS: TabState = {
 };
 
 export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
-  [MODES.VCARD]: { margin: 0, imageOptions: { imageSize: 0.3 }, wrapSize: 0.3 },
+  [MODES.VCARD]: { margin: 0, imageOptions: { imageSize: 0.3 }, wrapSize: 0.2 },
   [MODES.LINK]: {},
   [MODES.WIFI]: {},
 };

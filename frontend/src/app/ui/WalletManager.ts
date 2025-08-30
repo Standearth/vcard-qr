@@ -86,6 +86,7 @@ export class WalletManager {
       cellPhone: state.cellPhone || '',
       website: state.website || '',
       whatsapp: state.whatsapp || '',
+      signal: state.signal || '',
       linkedin: state.linkedin || '',
       notes: state.notes || '',
     };

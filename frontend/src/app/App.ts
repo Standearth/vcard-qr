@@ -336,45 +336,27 @@ export class App {
       });
   };
 
-  // frontend/src/app/App.ts
-
   handleRouteChange = async (): Promise<void> => {
-    let hash = window.location.hash;
+    const hash = window.location.hash;
     const params = new URLSearchParams(hash.split('?')[1] || '');
     const presetName = params.get('presets');
 
+    // 1. If a preset exists, parse it and apply it to all tab states.
     if (presetName) {
       try {
         const presets = JSON.parse(
           import.meta.env.VITE_PRESETS_CONFIG
         ) as PresetsConfig;
-        const preset = presets[presetName];
-
-        if (preset) {
-          const snakeCasePreset = Object.fromEntries(
-            Object.entries(preset).map(([key, value]) => [
-              key.replace(/([A-Z])/g, '_$1').toLowerCase(),
-              value,
-            ])
-          );
-
-          for (const key in snakeCasePreset) {
-            params.set(key, snakeCasePreset[key]);
-          }
-          params.delete('presets');
-
-          const newUrl = `${
-            window.location.pathname
-          }#/${MODES.VCARD}/?${params.toString()}`;
-          history.replaceState(null, '', newUrl);
-
-          hash = newUrl.split('.html')[1] || newUrl;
+        if (presets[presetName]) {
+          // Use the new service method to apply the preset globally
+          stateService.applyPresetOverrides(presets[presetName]);
         }
       } catch (error) {
         console.error('Error parsing presets config:', error);
       }
     }
 
+    // 2. Now, with presets applied to the base state, proceed as normal.
     const downloadType = params.get('download');
     let newMode: Mode = MODES.VCARD;
     if (hash.includes(`#/${MODES.LINK}`)) newMode = MODES.LINK;
@@ -383,11 +365,10 @@ export class App {
     this.ui.getTabManager().switchTab(newMode, true);
 
     const urlState = this.ui.getUrlHandler().getStateFromUrl();
-
     const currentTabState =
       stateService.getState(this.ui.getCurrentMode()) || ({} as TabState);
 
-    // --- CORRECTED MERGE LOGIC ---
+    // The merge is now simpler: defaults (already including preset) + URL params
     const mergedState: TabState = {
       ...currentTabState,
       ...urlState,

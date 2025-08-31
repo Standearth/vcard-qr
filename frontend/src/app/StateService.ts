@@ -1,5 +1,11 @@
-// src/app/StateService.ts
+// frontend/src/app/StateService.ts
 
+import {
+  DotType,
+  CornerSquareType,
+  CornerDotType,
+  Options, // Keep this for type definitions
+} from 'qr-code-styling';
 import {
   Mode,
   MODES,
@@ -7,36 +13,24 @@ import {
   DEFAULT_ADVANCED_OPTIONS,
   TAB_SPECIFIC_DEFAULTS,
   DEFAULT_FORM_FIELDS,
+  Preset,
 } from '../config/constants';
 import { UIManager } from './UIManager';
-import { generateQRCodeData } from '../utils/helpers'; // Import the helper
+import { generateQRCodeData } from '../utils/helpers';
 
-// Define a specific type for the subscriber callback
-type StateSubscriber = (newState: TabState, oldState: TabState) => void;
-
-/**
- * Manages the application's state. It is the single source of truth for all tab states
- * and UI-related data. It ensures that state changes are centralized and predictable.
- */
 class StateService {
-  private formState: Partial<TabState> = {}; // Shared content state
-  private tabStates: Partial<Record<Mode, TabState>> = {}; // Tab-specific config state
+  private formState: Partial<TabState> = {};
+  private tabStates: Partial<Record<Mode, TabState>> = {};
   private pixelMultipliers: Partial<Record<Mode, number>> = {};
   private uiManager!: UIManager;
-  private subscribers: StateSubscriber[] = []; // Array of subscriber callbacks
+  private subscribers: ((newState: TabState, oldState: TabState) => void)[] =
+    [];
 
-  /**
-   * Initializes the default state for all modes when the service is instantiated.
-   */
   constructor() {
-    // Initialize the shared form content state
     this.formState = { ...DEFAULT_FORM_FIELDS };
-
-    // Initialize the tab-specific configuration states
     for (const mode of Object.values(MODES)) {
       const defaults = DEFAULT_ADVANCED_OPTIONS;
       const specifics = TAB_SPECIFIC_DEFAULTS[mode] || {};
-
       this.tabStates[mode] = {
         ...defaults,
         ...specifics,
@@ -71,20 +65,85 @@ class StateService {
     }
   }
 
-  /**
-   * Initializes the StateService with the UIManager instance.
-   * This must be called once at application startup to connect the state to the UI.
-   * @param uiManager The UIManager instance responsible for rendering the UI.
-   */
   public initialize(uiManager: UIManager): void {
     this.uiManager = uiManager;
   }
 
   /**
-   * Retrieves the current state for a given mode, merged with the shared form state.
-   * @param mode The tab mode ('vcard', 'link', 'wifi') to get the state for.
-   * @returns The combined state object for the given mode, or undefined if not found.
+   * Applies a preset's settings to all existing tab states as a base override.
+   * This method correctly maps flat preset keys to the nested state structure,
+   * only updating values that are explicitly defined in the preset.
+   * @param preset A partial state object containing the properties to override.
    */
+  public applyPresetOverrides(preset: Preset): void {
+    const presetOverrides: Partial<TabState> = {
+      ...preset,
+    };
+
+    // --- CORRECTED AND TYPE-SAFE LOGIC ---
+    const dotsOptions: Partial<Options['dotsOptions']> = {};
+    if (preset.dotsType) dotsOptions.type = preset.dotsType as DotType;
+    if (preset.dotsColor) dotsOptions.color = preset.dotsColor as string;
+    if (Object.keys(dotsOptions).length > 0) {
+      presetOverrides.dotsOptions = dotsOptions;
+    }
+
+    const cornersSquareOptions: Partial<Options['cornersSquareOptions']> = {};
+    if (preset.cornersSquareType)
+      cornersSquareOptions.type = preset.cornersSquareType as CornerSquareType;
+    if (preset.cornersSquareColor)
+      cornersSquareOptions.color = preset.cornersSquareColor as string;
+    if (Object.keys(cornersSquareOptions).length > 0) {
+      presetOverrides.cornersSquareOptions = cornersSquareOptions;
+    }
+
+    const cornersDotOptions: Partial<Options['cornersDotOptions']> = {};
+    if (preset.cornersDotType)
+      cornersDotOptions.type = preset.cornersDotType as CornerDotType;
+    if (preset.cornersDotColor)
+      cornersDotOptions.color = preset.cornersDotColor as string;
+    if (Object.keys(cornersDotOptions).length > 0) {
+      presetOverrides.cornersDotOptions = cornersDotOptions;
+    }
+
+    const imageOptions: Partial<Options['imageOptions']> = {};
+    if (preset.imageSize) imageOptions.imageSize = Number(preset.imageSize);
+    if (preset.imageMargin) imageOptions.margin = Number(preset.imageMargin);
+    if (Object.keys(imageOptions).length > 0) {
+      presetOverrides.imageOptions = imageOptions;
+    }
+
+    for (const mode in this.tabStates) {
+      if (Object.prototype.hasOwnProperty.call(this.tabStates, mode)) {
+        const typedMode = mode as Mode;
+        const currentTabState = this.tabStates[typedMode];
+
+        if (currentTabState) {
+          this.tabStates[typedMode] = {
+            ...currentTabState,
+            ...presetOverrides,
+            dotsOptions: {
+              ...currentTabState.dotsOptions,
+              ...presetOverrides.dotsOptions,
+            },
+            cornersSquareOptions: {
+              ...currentTabState.cornersSquareOptions,
+              ...presetOverrides.cornersSquareOptions,
+            },
+            cornersDotOptions: {
+              ...currentTabState.cornersDotOptions,
+              ...presetOverrides.cornersDotOptions,
+            },
+            imageOptions: {
+              ...currentTabState.imageOptions,
+              ...presetOverrides.imageOptions,
+            },
+          };
+        }
+      }
+    }
+  }
+
   public getState(mode: Mode): TabState | undefined {
     const tabState = this.tabStates[mode];
     if (tabState) {
@@ -93,16 +152,12 @@ class StateService {
     return undefined;
   }
 
-  public subscribe(callback: StateSubscriber): void {
+  public subscribe(
+    callback: (newState: TabState, oldState: TabState) => void
+  ): void {
     this.subscribers.push(callback);
   }
 
-  /**
-   * Updates the state for a given mode and triggers a UI re-render.
-   * @param mode The tab mode to update.
-   * @param newState A partial state object containing the properties to update.
-   * @param activeElement The DOM element that triggered the update, to prevent overwriting user input.
-   */
   public updateState(
     mode: Mode,
     newState: Partial<TabState>,
@@ -111,11 +166,9 @@ class StateService {
     const oldState = this.getState(mode);
     const currentTabState = this.tabStates[mode];
     if (currentTabState) {
-      // Separate the incoming state changes into formState and tabState
       const newFormState: Partial<TabState> = {};
       const newTabState: Partial<TabState> = {};
 
-      // Separate shared and tab-specific properties
       for (const key in newState) {
         const propKey = key as keyof TabState;
         if (propKey in DEFAULT_FORM_FIELDS) {
@@ -132,28 +185,16 @@ class StateService {
       const finalState = this.getState(mode)!;
       finalState.qrCodeContent = generateQRCodeData(finalState, mode);
 
-      // *** FIX: Pass the activeElement to the rendering function. ***
       this.uiManager.renderUIFromState(finalState, activeElement);
 
-      // Notify all subscribers of the state change
       this.subscribers.forEach((callback) => callback(finalState, oldState!));
     }
   }
 
-  /**
-   * Gets the pixel multiplier used for QR code size optimization.
-   * @param mode The tab mode for which to get the multiplier.
-   * @returns The current pixel multiplier.
-   */
   public getPixelMultiplier(mode: Mode): number {
     return this.pixelMultipliers[mode] || 0;
   }
 
-  /**
-   * Sets the pixel multiplier for QR code size optimization.
-   * @param mode The tab mode for which to set the multiplier.
-   * @param multiplier The new pixel multiplier value.
-   */
   public setPixelMultiplier(mode: Mode, multiplier: number): void {
     this.pixelMultipliers[mode] = multiplier;
   }

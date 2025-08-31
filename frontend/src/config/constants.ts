@@ -2,6 +2,8 @@
 
 import { Options } from 'qr-code-styling';
 
+export const DESKTOP_BREAKPOINT_PX = 768;
+
 export const MODES = {
   VCARD: 'vcard',
   LINK: 'link',
@@ -10,7 +12,13 @@ export const MODES = {
 
 export type Mode = (typeof MODES)[keyof typeof MODES];
 
-export const DESKTOP_BREAKPOINT_PX = 768;
+export type Preset = {
+  [key: string]: string | number | boolean;
+};
+
+export type PresetsConfig = {
+  [key: string]: Preset;
+};
 
 export type TabState = Partial<Options> & {
   activeMode?: Mode; // Add this line
@@ -98,12 +106,4 @@ export const DEFAULT_FORM_FIELDS: {
   wifiEncryption: 'WPA',
   wifiHidden: false,
   officePhoneFieldType: 'select',
-};
-
-export type Preset = {
-  [key: string]: string;
-};
-
-export type PresetsConfig = {
-  [key: string]: Preset;
 };

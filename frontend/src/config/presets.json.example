@@ -1,0 +1,10 @@
+{
+  "example": {
+    "org": "Example Organization",
+    "website": "example.org",
+    "logoUrl": "/example.svg",
+    "dotsColor": "#006600",
+    "cornersSquareColor": "#009900",
+    "cornersDotColor": "#006600"
+  }
+}

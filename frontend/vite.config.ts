@@ -73,8 +73,20 @@ export default defineConfig(({ command, mode }) => {
     }
   }
 
-  // Load presets config string from the env object
-  const presetsConfigString = env.VITE_PRESETS_CONFIG || '{}';
+  // Load presets config string from the env object, with a fallback to a local JSON file
+  let presetsConfigString = '{}';
+  if (env.VITE_PRESETS_CONFIG) {
+    presetsConfigString = env.VITE_PRESETS_CONFIG;
+  } else {
+    try {
+      presetsConfigString = fs.readFileSync(
+        path.resolve(__dirname, './src/config/presets.json'),
+        'utf-8'
+      );
+    } catch (error) {
+      console.error('Could not load presets.json. Using empty config.');
+    }
+  }
 
   return {
     envDir: '../',
@@ -82,7 +94,7 @@ export default defineConfig(({ command, mode }) => {
     build: {
       outDir: 'dist',
     },
-    server, // Use the configured server object
+    server,
     define: {
       'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBaseUrl),
       // Parse the JSON string and then re-stringify it for injection.

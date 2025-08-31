@@ -43,41 +43,41 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      # This new step checks for all required secrets before attempting to build
-      - name: Check Secrets Availability
-        # This is the most robust way to check secrets that may contain special characters.
+      # This new step checks for all required variable before attempting to build
+      - name: Check Variables Availability
+        # This is the most robust way to check variable that may contain special characters.
         # It maps each secret to an environment variable for this step, which prevents
         # the shell from interpreting the secret's content as part of the script syntax.
         env:
-          CHECK_VITE_ORG_NAME: ${{ secrets.VITE_ORG_NAME }}
-          CHECK_VITE_ORG_WEBSITE: ${{ secrets.VITE_ORG_WEBSITE }}
-          CHECK_VITE_OFFICE_PHONE_OPTIONS: ${{ secrets.VITE_OFFICE_PHONE_OPTIONS }}
-          CHECK_BACKEND_DOMAIN: ${{ secrets.BACKEND_DOMAIN }}
-          CHECK_VITE_LOGOS_CONFIG: ${{ secrets.VITE_LOGOS_CONFIG }}
-          CHECK_VITE_PRESETS_CONFIG: ${{ secrets.VITE_PRESETS_CONFIG }}
-          CHECK_FRONTEND_DOMAIN: ${{ secrets.FRONTEND_DOMAIN }}
+          CHECK_VITE_ORG_NAME: ${{ vars.VITE_ORG_NAME }}
+          CHECK_VITE_ORG_WEBSITE: ${{ vars.VITE_ORG_WEBSITE }}
+          CHECK_VITE_OFFICE_PHONE_OPTIONS: ${{ vars.VITE_OFFICE_PHONE_OPTIONS }}
+          CHECK_BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
+          CHECK_VITE_LOGOS_CONFIG: ${{ vars.VITE_LOGOS_CONFIG }}
+          CHECK_VITE_PRESETS_CONFIG: ${{ vars.VITE_PRESETS_CONFIG }}
+          CHECK_FRONTEND_DOMAIN: ${{ vars.FRONTEND_DOMAIN }}
         run: |
-          if [ -z "$CHECK_VITE_ORG_NAME" ]; then echo "❌ VITE_ORG_NAME secret is not set"; exit 1; fi
-          if [ -z "$CHECK_VITE_ORG_WEBSITE" ]; then echo "❌ VITE_ORG_WEBSITE secret is not set"; exit 1; fi
-          if [ -z "$CHECK_VITE_OFFICE_PHONE_OPTIONS" ]; then echo "❌ VITE_OFFICE_PHONE_OPTIONS secret is not set"; exit 1; fi
-          if [ -z "$CHECK_BACKEND_DOMAIN" ]; then echo "❌ BACKEND_DOMAIN secret is not set"; exit 1; fi
-          if [ -z "$CHECK_VITE_LOGOS_CONFIG" ]; then echo "❌ VITE_LOGOS_CONFIG secret is not set"; exit 1; fi
-          if [ -z "$CHECK_VITE_PRESETS_CONFIG" ]; then echo "❌ VITE_PRESETS_CONFIG secret is not set"; exit 1; fi
-          if [ -z "$CHECK_FRONTEND_DOMAIN" ]; then echo "❌ FRONTEND_DOMAIN secret is not set"; exit 1; fi
-          echo "✅ All required secrets are available."
+          if [ -z "$CHECK_VITE_ORG_NAME" ]; then echo "❌ VITE_ORG_NAME variable is not set"; exit 1; fi
+          if [ -z "$CHECK_VITE_ORG_WEBSITE" ]; then echo "❌ VITE_ORG_WEBSITE variable is not set"; exit 1; fi
+          if [ -z "$CHECK_VITE_OFFICE_PHONE_OPTIONS" ]; then echo "❌ VITE_OFFICE_PHONE_OPTIONS variable is not set"; exit 1; fi
+          if [ -z "$CHECK_BACKEND_DOMAIN" ]; then echo "❌ BACKEND_DOMAIN variable is not set"; exit 1; fi
+          if [ -z "$CHECK_VITE_LOGOS_CONFIG" ]; then echo "❌ VITE_LOGOS_CONFIG variable is not set"; exit 1; fi
+          if [ -z "$CHECK_VITE_PRESETS_CONFIG" ]; then echo "❌ VITE_PRESETS_CONFIG variable is not set"; exit 1; fi
+          if [ -z "$CHECK_FRONTEND_DOMAIN" ]; then echo "❌ FRONTEND_DOMAIN variable is not set"; exit 1; fi
+          echo "✅ All required variable are available."
 
       - name: Build
         run: pnpm build
         env:
-          VITE_ORG_NAME: ${{ secrets.VITE_ORG_NAME }}
-          VITE_ORG_WEBSITE: ${{ secrets.VITE_ORG_WEBSITE }}
-          VITE_OFFICE_PHONE_OPTIONS: ${{ secrets.VITE_OFFICE_PHONE_OPTIONS }}
-          BACKEND_DOMAIN: ${{ secrets.BACKEND_DOMAIN }}
-          VITE_LOGOS_CONFIG: ${{ secrets.VITE_LOGOS_CONFIG }}
-          VITE_PRESETS_CONFIG: ${{ secrets.VITE_PRESETS_CONFIG }}
-          FRONTEND_DOMAIN: ${{ secrets.FRONTEND_DOMAIN }}
+          VITE_ORG_NAME: ${{ vars.VITE_ORG_NAME }}
+          VITE_ORG_WEBSITE: ${{ vars.VITE_ORG_WEBSITE }}
+          VITE_OFFICE_PHONE_OPTIONS: ${{ vars.VITE_OFFICE_PHONE_OPTIONS }}
+          BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
+          VITE_LOGOS_CONFIG: ${{ vars.VITE_LOGOS_CONFIG }}
+          VITE_PRESETS_CONFIG: ${{ vars.VITE_PRESETS_CONFIG }}
+          FRONTEND_DOMAIN: ${{ vars.FRONTEND_DOMAIN }}
       - name: Create CNAME file
-        run: echo "${{ secrets.FRONTEND_DOMAIN }}" > ./frontend/dist/CNAME
+        run: echo "${{ vars.FRONTEND_DOMAIN }}" > ./frontend/dist/CNAME
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

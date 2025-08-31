@@ -363,7 +363,7 @@ show-github-secrets: check-gcp-project check-env-vars
 	@printf 'Value: %s\n' "$$(node -e 'process.stdout.write(JSON.stringify(JSON.parse(require(`fs`).readFileSync(`frontend/src/config/logos.json`, `utf-8`))))')"
 	@echo ""
 	@echo " Name: VITE_PRESETS_CONFIG"
-	@printf "Value: %s\n" "$$(echo "$$VITE_PRESETS_CONFIG" | cut -c 2- | rev | cut -c 2- | rev)"
+	@printf 'Value: %s\n' "$$(node -e 'process.stdout.write(JSON.stringify(JSON.parse(require(`fs`).readFileSync(`frontend/src/config/presets.json`, `utf-8`))))')"
 	@echo ""
 	@echo " Name: GOOGLE_ISSUER_ID"
 	@echo "Value: $(GOOGLE_ISSUER_ID)"

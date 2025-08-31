@@ -87,7 +87,13 @@ export class App {
       if (newState.activeMode !== oldState.activeMode) {
         this.handleWebsiteChange(newState.website);
         void this.updateQRCode();
-        this.ui.getUrlHandler().updateUrlFromState(newState);
+
+        // After handleWebsiteChange, the state may have been updated again.
+        // Fetch the *latest* state before updating the URL.
+        const latestState = stateService.getState(this.ui.getCurrentMode());
+        if (latestState) {
+          this.ui.getUrlHandler().updateUrlFromState(latestState);
+        }
       }
       if (newState.logoUrl !== oldState.logoUrl) {
         this.updateLogoOptions(newState.website);

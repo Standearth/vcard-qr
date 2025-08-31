@@ -124,7 +124,6 @@ export class FormManager {
       website: formFields.website.value,
       linkedin: formFields.linkedin.value,
       whatsapp: formFields.whatsapp.value,
-      signal: formFields.signal.value,
       notes: formFields.notes.value,
       linkUrl: formFields.linkUrl.value,
       // logoUrl is managed by its own event handler, so we don't need to read it here.

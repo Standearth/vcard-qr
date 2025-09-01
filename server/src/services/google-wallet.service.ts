@@ -19,6 +19,7 @@ import {
   Credentials,
   JWTInput,
 } from 'google-auth-library/build/src/auth/credentials.js';
+import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 
 // Helper to get __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -81,12 +82,27 @@ export async function generateGoogleWalletPass(
         'GOOGLE_WALLET_SA_KEY environment variable not set in production'
       );
     }
+
+    // --- FIX START ---
+    // Fetch the secret from Secret Manager
+    const client = new SecretManagerServiceClient();
+    const [version] = await client.accessSecretVersion({
+      name: process.env.GOOGLE_WALLET_SA_KEY,
+    });
+
+    if (!version.payload?.data) {
+      throw new Error(
+        'Could not retrieve Google Wallet SA key from Secret Manager.'
+      );
+    }
+
+    const serviceAccountKey = version.payload.data.toString('utf8');
+
     authOptions = {
-      credentials: JSON.parse(
-        process.env.GOOGLE_WALLET_SA_KEY
-      ) as unknown as JWTInput,
+      credentials: JSON.parse(serviceAccountKey) as unknown as JWTInput,
       scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
     };
+    // --- FIX END ---
   } else {
     const defaultKeyPath = path.join(
       __dirname,

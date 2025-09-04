@@ -1,5 +1,6 @@
 .form-input {
   width: 100%;
+  font-family: Arial, sans-serif;
   padding: 0.75rem;
   background-color: var(--color-primary-light);
   border: 0.0625rem solid var(--color-primary-dark);
@@ -112,4 +113,8 @@ select.form-input {
   color: var(--color-secondary-teal);
   margin-top: 0.25rem;
   text-align: left;
+}
+textarea.form-input {
+  resize: vertical;
+  line-height: 1.4; /* Ensure consistent line height with other inputs */
 }

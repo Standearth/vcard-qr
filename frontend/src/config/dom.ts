@@ -53,11 +53,23 @@ export function initializeDomElements() {
       wifi: document.querySelector(
         '.tab-link[data-tab="wifi"]'
       ) as HTMLButtonElement,
+      sms: document.querySelector(
+        '.tab-link[data-tab="sms"]'
+      ) as HTMLButtonElement,
+      phone: document.querySelector(
+        '.tab-link[data-tab="phone"]'
+      ) as HTMLButtonElement,
+      email: document.querySelector(
+        '.tab-link[data-tab="email"]'
+      ) as HTMLButtonElement,
     },
     formContainers: {
       vcard: document.getElementById('vcard-form') as HTMLFormElement,
       link: document.getElementById('link-form') as HTMLFormElement,
       wifi: document.getElementById('wifi-form') as HTMLFormElement,
+      sms: document.getElementById('sms-form') as HTMLFormElement,
+      phone: document.getElementById('phone-form') as HTMLFormElement,
+      email: document.getElementById('email-form') as HTMLFormElement,
     },
     formFields: {
       firstName: document.getElementById('first_name') as HTMLInputElement,
@@ -89,6 +101,15 @@ export function initializeDomElements() {
         'wifi-password-container'
       ) as HTMLDivElement,
       linkUrl: document.getElementById('link_url') as HTMLInputElement,
+      // New Inputs
+      smsPhone: document.getElementById('sms_phone') as HTMLInputElement,
+      smsMessage: document.getElementById('sms_message') as HTMLTextAreaElement,
+      callPhone: document.getElementById('call_phone') as HTMLInputElement,
+      emailTo: document.getElementById('emailTo') as HTMLInputElement,
+      emailSubject: document.getElementById(
+        'email_subject'
+      ) as HTMLInputElement,
+      emailBody: document.getElementById('email_body') as HTMLTextAreaElement,
     },
     whatsappLink: document.getElementById(
       'whatsapp-link'
@@ -105,6 +126,15 @@ export function initializeDomElements() {
       ) as HTMLParagraphElement,
       wifi: document.querySelector(
         '.sub-heading[data-mode="wifi"]'
+      ) as HTMLParagraphElement,
+      sms: document.querySelector(
+        '.sub-heading[data-mode="sms"]'
+      ) as HTMLParagraphElement,
+      phone: document.querySelector(
+        '.sub-heading[data-mode="phone"]'
+      ) as HTMLParagraphElement,
+      email: document.querySelector(
+        '.sub-heading[data-mode="email"]'
       ) as HTMLParagraphElement,
     },
     toggleAdvancedText: document.getElementById(

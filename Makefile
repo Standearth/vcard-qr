@@ -4,7 +4,6 @@ TFFILE := terraform.tfvars
 # Require the .env file and export its variables.
 # Make will now fail immediately if the .env file is not found.
 include .env
-export
 
 # Define all variables required to be in the .env file for the setup to succeed.
 REQUIRED_ENV_VARS := \
@@ -30,7 +29,7 @@ PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&
 ADC_FILE        = $(HOME)/.config/gcloud/application_default_credentials.json
 
 # --- Argument Parsing & Target Validation ---
-KNOWN_TARGETS   := all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars update-tfvars upload-google-wallet-sa-key
+KNOWN_TARGETS   := all dev setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars update-tfvars upload-google-wallet-sa-key
 
 # This captures the first unlabelled argument passed after the target
 ARG := $(firstword $(filter-out $(KNOWN_TARGETS) $(MAKECMDGOALS),$(MAKECMDGOALS)))

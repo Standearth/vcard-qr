@@ -141,6 +141,15 @@ export class UrlHandler {
       wifiPassword: 'wifiPassword',
       wifiEncryption: 'wifiEncryption',
       wifiHidden: 'wifiHidden',
+      // SMS fields
+      smsPhone: 'smsPhone',
+      smsMessage: 'smsMessage',
+      // Call fields
+      callPhone: 'callPhone',
+      // Email fields
+      emailTo: 'emailTo',
+      emailSubject: 'emailSubject',
+      emailBody: 'emailBody',
       // Advanced Controls
       width: 'width',
       height: 'height',

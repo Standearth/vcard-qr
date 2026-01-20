@@ -38,6 +38,9 @@
           <div class="tabs">
             <button class="tab-link active" data-tab="vcard">vCard</button>
             <button class="tab-link" data-tab="link">Link</button>
+            <button class="tab-link" data-tab="sms">SMS</button>
+            <button class="tab-link" data-tab="phone">Call</button>
+            <button class="tab-link" data-tab="email">Email</button>
             <button class="tab-link" data-tab="wifi">WiFi</button>
           </div>
 
@@ -48,6 +51,15 @@
           </p>
           <p class="sub-heading hidden" data-mode="link">
             Enter a URL to generate a QR code.
+          </p>
+          <p class="sub-heading hidden" data-mode="sms">
+            Enter a phone number and message to generate an SMS QR code.
+          </p>
+          <p class="sub-heading hidden" data-mode="phone">
+            Enter a phone number to generate a click-to-call QR code.
+          </p>
+          <p class="sub-heading hidden" data-mode="email">
+            Enter email details to generate a pre-filled email QR code.
           </p>
           <p class="sub-heading hidden" data-mode="wifi">
             Enter your WiFi details to generate a QR code for network access.
@@ -241,6 +253,44 @@
               <div>
                 <label for="link_url" class="form-label">URL</label>
                 <input type="url" id="link_url" class="form-input" value="" />
+              </div>
+            </form>
+            <form id="sms-form" class="tab-content hidden">
+              <div>
+                <label for="sms_phone" class="form-label">Phone Number</label>
+                <input type="tel" id="sms_phone" class="form-input" />
+              </div>
+              <div>
+                <label for="sms_message" class="form-label">Message</label>
+                <textarea
+                  id="sms_message"
+                  class="form-input"
+                  rows="3"
+                ></textarea>
+              </div>
+            </form>
+            <form id="phone-form" class="tab-content hidden">
+              <div>
+                <label for="call_phone" class="form-label">Phone Number</label>
+                <input type="tel" id="call_phone" class="form-input" />
+              </div>
+            </form>
+            <form id="email-form" class="tab-content hidden">
+              <div>
+                <label for="emailTo" class="form-label">To Email Address</label>
+                <input type="email" id="emailTo" class="form-input" />
+              </div>
+              <div>
+                <label for="email_subject" class="form-label">Subject</label>
+                <input type="text" id="email_subject" class="form-input" />
+              </div>
+              <div>
+                <label for="email_body" class="form-label">Message</label>
+                <textarea
+                  id="email_body"
+                  class="form-input"
+                  rows="3"
+                ></textarea>
               </div>
             </form>
             <form id="wifi-form" class="tab-content hidden">

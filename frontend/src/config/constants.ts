@@ -8,6 +8,9 @@ export const MODES = {
   VCARD: 'vcard',
   LINK: 'link',
   WIFI: 'wifi',
+  SMS: 'sms',
+  PHONE: 'phone',
+  EMAIL: 'email',
 } as const;
 
 export type Mode = (typeof MODES)[keyof typeof MODES];
@@ -21,7 +24,7 @@ export type PresetsConfig = {
 };
 
 export type TabState = Partial<Options> & {
-  activeMode?: Mode; // Add this line
+  activeMode?: Mode;
   optimizeSize?: boolean;
   roundSize?: boolean;
   showImage?: boolean;
@@ -54,6 +57,12 @@ export type TabState = Partial<Options> & {
   wifiPassword?: string;
   wifiEncryption?: string;
   wifiHidden?: boolean;
+  smsPhone?: string;
+  smsMessage?: string;
+  callPhone?: string;
+  emailTo?: string;
+  emailSubject?: string;
+  emailBody?: string;
 };
 
 export const DEFAULT_ADVANCED_OPTIONS: TabState = {
@@ -80,6 +89,9 @@ export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
   [MODES.VCARD]: { margin: 0, imageOptions: { imageSize: 0.3 }, wrapSize: 0.2 },
   [MODES.LINK]: {},
   [MODES.WIFI]: {},
+  [MODES.SMS]: {},
+  [MODES.PHONE]: {},
+  [MODES.EMAIL]: {},
 };
 
 export const DEFAULT_FORM_FIELDS: {
@@ -106,4 +118,10 @@ export const DEFAULT_FORM_FIELDS: {
   wifiEncryption: 'WPA',
   wifiHidden: false,
   officePhoneFieldType: 'select',
+  smsPhone: '',
+  smsMessage: '',
+  callPhone: '',
+  emailTo: '',
+  emailSubject: '',
+  emailBody: '',
 };

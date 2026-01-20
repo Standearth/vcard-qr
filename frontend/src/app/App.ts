@@ -367,6 +367,9 @@ export class App {
     let newMode: Mode = MODES.VCARD;
     if (hash.includes(`#/${MODES.LINK}`)) newMode = MODES.LINK;
     if (hash.includes(`#/${MODES.WIFI}`)) newMode = MODES.WIFI;
+    if (hash.includes(`#/${MODES.SMS}`)) newMode = MODES.SMS;
+    if (hash.includes(`#/${MODES.PHONE}`)) newMode = MODES.PHONE;
+    if (hash.includes(`#/${MODES.EMAIL}`)) newMode = MODES.EMAIL;
 
     this.ui.getTabManager().switchTab(newMode, true);
 

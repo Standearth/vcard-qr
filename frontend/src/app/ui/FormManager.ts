@@ -39,6 +39,18 @@ export class FormManager {
         wifiEncryption: formFields.wifiEncryption,
         wifiHidden: formFields.wifiHidden,
       };
+    if (currentMode === MODES.SMS)
+      return {
+        smsPhone: formFields.smsPhone,
+        smsMessage: formFields.smsMessage,
+      };
+    if (currentMode === MODES.PHONE) return { callPhone: formFields.callPhone };
+    if (currentMode === MODES.EMAIL)
+      return {
+        emailTo: formFields.emailTo,
+        emailSubject: formFields.emailSubject,
+        emailBody: formFields.emailBody,
+      };
     return {
       firstName: formFields.firstName,
       lastName: formFields.lastName,
@@ -126,13 +138,18 @@ export class FormManager {
       whatsapp: formFields.whatsapp.value,
       notes: formFields.notes.value,
       linkUrl: formFields.linkUrl.value,
-      // logoUrl is managed by its own event handler, so we don't need to read it here.
       availableLogos: currentState.availableLogos,
       wifiSsid: formFields.wifiSsid.value,
       officePhoneFieldType: currentState.officePhoneFieldType,
       wifiPassword: formFields.wifiPassword.value,
       wifiEncryption: formFields.wifiEncryption.value,
       wifiHidden: formFields.wifiHidden.checked,
+      smsPhone: formFields.smsPhone.value,
+      smsMessage: formFields.smsMessage.value,
+      callPhone: formFields.callPhone.value,
+      emailTo: formFields.emailTo.value,
+      emailSubject: formFields.emailSubject.value,
+      emailBody: formFields.emailBody.value,
     };
 
     return {
@@ -360,17 +377,13 @@ export class FormManager {
       );
     }
     if (formFields.signal) {
-      // This logic now correctly derives the display value from the canonical state URL.
       const phoneNumber = parsePhoneNumberFromSignalUrl(values.signal);
       if (phoneNumber) {
-        // If it's a Signal URL with a number, display the formatted number in the input.
         updateField(
           formFields.signal,
           formatPhoneNumber(phoneNumber, 'CUSTOM')
         );
       } else {
-        // Otherwise, display the raw value (which could be a non-phone URL,
-        // a partial phone number being typed, or empty).
         updateField(
           formFields.signal,
           values.signal ?? DEFAULT_FORM_FIELDS.signal
@@ -407,6 +420,42 @@ export class FormManager {
       updateField(
         formFields.wifiHidden,
         values.wifiHidden ?? DEFAULT_FORM_FIELDS.wifiHidden
+      );
+
+    // Set SMS fields
+    if (formFields.smsPhone)
+      updateField(
+        formFields.smsPhone,
+        values.smsPhone ?? DEFAULT_FORM_FIELDS.smsPhone
+      );
+    if (formFields.smsMessage)
+      updateField(
+        formFields.smsMessage,
+        values.smsMessage ?? DEFAULT_FORM_FIELDS.smsMessage
+      );
+
+    // Set Call fields
+    if (formFields.callPhone)
+      updateField(
+        formFields.callPhone,
+        values.callPhone ?? DEFAULT_FORM_FIELDS.callPhone
+      );
+
+    // Set Email fields
+    if (formFields.emailTo)
+      updateField(
+        formFields.emailTo,
+        values.emailTo ?? DEFAULT_FORM_FIELDS.emailTo
+      );
+    if (formFields.emailSubject)
+      updateField(
+        formFields.emailSubject,
+        values.emailSubject ?? DEFAULT_FORM_FIELDS.emailSubject
+      );
+    if (formFields.emailBody)
+      updateField(
+        formFields.emailBody,
+        values.emailBody ?? DEFAULT_FORM_FIELDS.emailBody
       );
   }
 

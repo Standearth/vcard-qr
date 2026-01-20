@@ -272,6 +272,8 @@ export class EventManager {
       dom.formFields.cellPhone,
       dom.formFields.whatsapp,
       dom.formFields.officePhoneInput,
+      dom.formFields.smsPhone,
+      dom.formFields.callPhone,
     ];
 
     phoneTextFields.forEach((field) => {

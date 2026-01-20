@@ -5,7 +5,7 @@ import { Mode, MODES, TabState } from '../config/constants';
 import AsyncQRCodeStyling from '../lib/AsyncQRCodeStyling';
 import { UIManager } from '../app/UIManager';
 import { stateService } from '../app/StateService';
-import { generateVCardString } from '@vcard-qr/shared-utils';
+import { generateVCardString, formatPhoneNumber } from '@vcard-qr/shared-utils';
 
 export function calculateAndApplyOptimalQrCodeSize(
   qrCodeInstance: AsyncQRCodeStyling,
@@ -75,6 +75,19 @@ export function generateFilename(currentMode: Mode): string {
       return 'QR-URL-invalid_link';
     }
   }
+  if (currentMode === MODES.SMS) {
+    const phone = sanitizeFilename(dom.formFields.smsPhone.value);
+    return `QR-SMS-${phone || 'message'}`;
+  }
+  if (currentMode === MODES.PHONE) {
+    const phone = sanitizeFilename(dom.formFields.callPhone.value);
+    return `QR-Call-${phone || 'number'}`;
+  }
+  if (currentMode === MODES.EMAIL) {
+    // Use emailTo here
+    const email = sanitizeFilename(dom.formFields.emailTo.value);
+    return `QR-Email-${email || 'message'}`;
+  }
   return 'qr-code';
 }
 
@@ -88,6 +101,29 @@ export function generateQRCodeData(state: TabState, mode: Mode): string {
       };P:${state.wifiPassword || ''};H:${
         state.wifiHidden ? 'true' : 'false'
       };;`;
+    },
+    [MODES.SMS]: () => {
+      // Force E.164 format for the QR code data
+      const phone = formatPhoneNumber(state.smsPhone, 'E.164');
+      return `smsto:${phone || ''}:${state.smsMessage || ''}`;
+    },
+    [MODES.PHONE]: () => {
+      // Force E.164 format for the QR code data
+      const phone = formatPhoneNumber(state.callPhone, 'E.164');
+      return `tel:${phone || ''}`;
+    },
+    [MODES.EMAIL]: () => {
+      let data = `mailto:${state.emailTo || ''}`;
+      const params: string[] = [];
+      if (state.emailSubject)
+        params.push(`subject=${encodeURIComponent(state.emailSubject)}`);
+      if (state.emailBody)
+        params.push(`body=${encodeURIComponent(state.emailBody)}`);
+
+      if (params.length > 0) {
+        data += `?${params.join('&')}`;
+      }
+      return data;
     },
   };
   return generators[mode]!();

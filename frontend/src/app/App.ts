@@ -370,6 +370,7 @@ export class App {
     if (hash.includes(`#/${MODES.SMS}`)) newMode = MODES.SMS;
     if (hash.includes(`#/${MODES.PHONE}`)) newMode = MODES.PHONE;
     if (hash.includes(`#/${MODES.EMAIL}`)) newMode = MODES.EMAIL;
+    if (hash.includes(`#/${MODES.CUSTOM}`)) newMode = MODES.CUSTOM;
 
     this.ui.getTabManager().switchTab(newMode, true);
 

@@ -84,10 +84,18 @@ export function generateFilename(currentMode: Mode): string {
     return `QR-Call-${phone || 'number'}`;
   }
   if (currentMode === MODES.EMAIL) {
-    // Use emailTo here
     const email = sanitizeFilename(dom.formFields.emailTo.value);
     return `QR-Email-${email || 'message'}`;
   }
+  if (currentMode === MODES.CUSTOM) {
+    // Optionally use a snippet of the custom content for the filename,
+    // or just default to 'QR-Custom'
+    const customText = sanitizeFilename(
+      dom.formFields.customContent.value
+    ).substring(0, 15);
+    return `QR-Custom${customText ? `-${customText}` : ''}`;
+  }
+
   return 'qr-code';
 }
 
@@ -125,6 +133,7 @@ export function generateQRCodeData(state: TabState, mode: Mode): string {
       }
       return data;
     },
+    [MODES.CUSTOM]: () => state.customContent || '',
   };
   return generators[mode]!();
 }

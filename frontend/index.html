@@ -42,6 +42,7 @@
             <button class="tab-link" data-tab="phone">Call</button>
             <button class="tab-link" data-tab="email">Email</button>
             <button class="tab-link" data-tab="wifi">WiFi</button>
+            <button class="tab-link" data-tab="custom">Custom</button>
           </div>
 
           <p class="sub-heading" data-mode="vcard">
@@ -65,6 +66,9 @@
             Enter your WiFi details to generate a QR code for network access.
             Please only use for events, or locations where only authorized users
             will have access.
+          </p>
+          <p class="sub-heading hidden" data-mode="custom">
+            Enter custom content to generate a QR code.
           </p>
         </header>
 
@@ -319,6 +323,18 @@
                 <label for="wifi_hidden" class="form-label-checkbox"
                   >Hidden Network</label
                 >
+              </div>
+            </form>
+            <form id="custom-form" class="tab-content hidden">
+              <div>
+                <label for="custom_content" class="form-label"
+                  >QR Content</label
+                >
+                <textarea
+                  id="custom_content"
+                  class="form-input"
+                  rows="4"
+                ></textarea>
               </div>
             </form>
           </div>

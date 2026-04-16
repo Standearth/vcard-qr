@@ -11,6 +11,7 @@ export const MODES = {
   SMS: 'sms',
   PHONE: 'phone',
   EMAIL: 'email',
+  CUSTOM: 'custom',
 } as const;
 
 export type Mode = (typeof MODES)[keyof typeof MODES];
@@ -63,6 +64,7 @@ export type TabState = Partial<Options> & {
   emailTo?: string;
   emailSubject?: string;
   emailBody?: string;
+  customContent?: string;
 };
 
 export const DEFAULT_ADVANCED_OPTIONS: TabState = {
@@ -92,6 +94,7 @@ export const TAB_SPECIFIC_DEFAULTS: Record<Mode, Partial<TabState>> = {
   [MODES.SMS]: {},
   [MODES.PHONE]: {},
   [MODES.EMAIL]: {},
+  [MODES.CUSTOM]: {},
 };
 
 export const DEFAULT_FORM_FIELDS: {
@@ -124,4 +127,5 @@ export const DEFAULT_FORM_FIELDS: {
   emailTo: '',
   emailSubject: '',
   emailBody: '',
+  customContent: '',
 };

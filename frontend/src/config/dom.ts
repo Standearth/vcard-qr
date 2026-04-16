@@ -62,6 +62,9 @@ export function initializeDomElements() {
       email: document.querySelector(
         '.tab-link[data-tab="email"]'
       ) as HTMLButtonElement,
+      custom: document.querySelector(
+        '.tab-link[data-tab="custom"]'
+      ) as HTMLButtonElement,
     },
     formContainers: {
       vcard: document.getElementById('vcard-form') as HTMLFormElement,
@@ -70,6 +73,7 @@ export function initializeDomElements() {
       sms: document.getElementById('sms-form') as HTMLFormElement,
       phone: document.getElementById('phone-form') as HTMLFormElement,
       email: document.getElementById('email-form') as HTMLFormElement,
+      custom: document.getElementById('custom-form') as HTMLFormElement,
     },
     formFields: {
       firstName: document.getElementById('first_name') as HTMLInputElement,
@@ -110,6 +114,9 @@ export function initializeDomElements() {
         'email_subject'
       ) as HTMLInputElement,
       emailBody: document.getElementById('email_body') as HTMLTextAreaElement,
+      customContent: document.getElementById(
+        'custom_content'
+      ) as HTMLTextAreaElement,
     },
     whatsappLink: document.getElementById(
       'whatsapp-link'
@@ -135,6 +142,9 @@ export function initializeDomElements() {
       ) as HTMLParagraphElement,
       email: document.querySelector(
         '.sub-heading[data-mode="email"]'
+      ) as HTMLParagraphElement,
+      custom: document.querySelector(
+        '.sub-heading[data-mode="custom"]'
       ) as HTMLParagraphElement,
     },
     toggleAdvancedText: document.getElementById(

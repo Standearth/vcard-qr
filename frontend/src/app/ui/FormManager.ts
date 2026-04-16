@@ -51,6 +51,8 @@ export class FormManager {
         emailSubject: formFields.emailSubject,
         emailBody: formFields.emailBody,
       };
+    if (currentMode === MODES.CUSTOM)
+      return { customContent: formFields.customContent };
     return {
       firstName: formFields.firstName,
       lastName: formFields.lastName,
@@ -150,6 +152,7 @@ export class FormManager {
       emailTo: formFields.emailTo.value,
       emailSubject: formFields.emailSubject.value,
       emailBody: formFields.emailBody.value,
+      customContent: formFields.customContent.value,
     };
 
     return {
@@ -456,6 +459,13 @@ export class FormManager {
       updateField(
         formFields.emailBody,
         values.emailBody ?? DEFAULT_FORM_FIELDS.emailBody
+      );
+
+    // Set Custom fields
+    if (formFields.customContent)
+      updateField(
+        formFields.customContent,
+        values.customContent ?? DEFAULT_FORM_FIELDS.customContent
       );
   }
 

@@ -150,6 +150,8 @@ export class UrlHandler {
       emailTo: 'emailTo',
       emailSubject: 'emailSubject',
       emailBody: 'emailBody',
+      // Custom fields
+      customContent: 'customContent',
       // Advanced Controls
       width: 'width',
       height: 'height',

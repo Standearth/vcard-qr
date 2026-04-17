@@ -343,18 +343,17 @@ export class App {
   };
 
   handleRouteChange = async (): Promise<void> => {
+    const urlState = this.ui.getUrlHandler().getStateFromUrl();
     const hash = window.location.hash;
     const params = new URLSearchParams(hash.split('?')[1] || '');
     const presetName = params.get('presets');
 
-    // 1. If a preset exists, parse it and apply it to all tab states.
     if (presetName) {
       try {
         const presets = JSON.parse(
           import.meta.env.VITE_PRESETS_CONFIG
         ) as PresetsConfig;
         if (presets[presetName]) {
-          // Use the new service method to apply the preset globally
           stateService.applyPresetOverrides(presets[presetName]);
         }
       } catch (error) {
@@ -362,7 +361,6 @@ export class App {
       }
     }
 
-    // 2. Now, with presets applied to the base state, proceed as normal.
     const downloadType = params.get('download');
     let newMode: Mode = MODES.VCARD;
     if (hash.includes(`#/${MODES.LINK}`)) newMode = MODES.LINK;
@@ -374,11 +372,9 @@ export class App {
 
     this.ui.getTabManager().switchTab(newMode, true);
 
-    const urlState = this.ui.getUrlHandler().getStateFromUrl();
     const currentTabState =
       stateService.getState(this.ui.getCurrentMode()) || ({} as TabState);
 
-    // The merge is now simpler: defaults (already including preset) + URL params
     const mergedState: TabState = {
       ...currentTabState,
       ...urlState,
@@ -409,7 +405,6 @@ export class App {
       },
     };
 
-    // This logic will now execute correctly because urlState is properly populated
     if (urlState.logoUrl) {
       const availableLogos = [...(mergedState.availableLogos || [])];
       if (!availableLogos.includes(urlState.logoUrl)) {

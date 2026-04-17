@@ -7,6 +7,14 @@ on:
   # Runs on pushes targeting the default branch
   push:
     branches: ['main']
+    # Restrict workflow to only run when frontend-related files change
+    paths:
+      - 'frontend/**'
+      - 'packages/shared-utils/**'
+      - '.github/workflows/deploy.yml'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

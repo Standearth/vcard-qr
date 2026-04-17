@@ -1,49 +1,29 @@
 # Stage 1: Builder
-# This stage builds the entire monorepo to get the compiled server code.
 FROM node:24-slim AS builder
 WORKDIR /app
 
-# Install pnpm
 RUN npm install -g pnpm
 
-# Copy all package manifests and workspace configuration
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY server/package.json ./server/
-COPY packages/shared-utils/package.json ./packages/shared-utils/
+# Copy the entire monorepo
+COPY . .
 
-# Install all monorepo dependencies
+# Install dependencies and build
 RUN pnpm install
-
-# Copy source code for server, shared packages, and base tsconfig
-COPY server/ ./server/
-COPY packages/shared-utils/ ./packages/shared-utils/
-COPY tsconfig.base.json ./
-
-# Run a filtered build to only build the server and its dependencies
 RUN pnpm --filter server... build
 
-# Prune development dependencies from the entire workspace
-RUN pnpm prune --prod
-
+# Isolate the server package into a clean, production-ready folder
+RUN pnpm deploy --filter server --prod --legacy /prod/server
 
 # Stage 2: Production
-# This stage creates a lean image with only the server's production code.
 FROM node:24-slim
 WORKDIR /app
 
-# Copy production node_modules from all relevant workspaces from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/server/node_modules ./server/node_modules
-COPY --from=builder /app/packages/shared-utils/node_modules ./packages/shared-utils/node_modules
+# Copy the isolated production package
+COPY --from=builder /prod/server ./
 
-# Copy compiled code and assets from the builder stage
-COPY --from=builder /app/packages/shared-utils/dist ./packages/shared-utils/dist
-COPY --from=builder /app/server/package.json ./server/
-COPY --from=builder /app/packages/shared-utils/package.json ./packages/shared-utils/
-COPY --from=builder /app/server/dist ./server/dist
-COPY --from=builder /app/server/models ./server/models
-COPY --from=builder /app/server/certs/AppleWWDRCAG4.pem ./server/certs/AppleWWDRCAG4.pem
+# Ensure certs directory exists and copy the WWDR cert
+RUN mkdir -p ./certs
+COPY --from=builder /app/server/certs/AppleWWDRCAG4.pem ./certs/AppleWWDRCAG4.pem
 
-# Expose port and start the server
 EXPOSE 3000
-CMD [ "node", "server/dist/index.js" ]
+CMD [ "node", "dist/index.js" ]

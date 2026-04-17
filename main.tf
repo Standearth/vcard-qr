@@ -312,6 +312,14 @@ resource "google_cloud_run_v2_service_iam_member" "deployer" {
   member   = "serviceAccount:${data.google_service_account.github_runner_sa.email}"
 }
 
+resource "google_cloud_run_v2_service_iam_member" "api_deployer" {
+  project  = google_cloud_run_v2_service.headless_api.project
+  location = google_cloud_run_v2_service.headless_api.location
+  name     = google_cloud_run_v2_service.headless_api.name
+  role     = "roles/run.admin"
+  member   = "serviceAccount:${data.google_service_account.github_runner_sa.email}"
+}
+
 # 3. Grant the GitHub Actions SA permission to act as the Cloud Run service's runtime account.
 resource "google_service_account_iam_member" "service_account_user" {
   service_account_id = data.google_compute_default_service_account.default.name

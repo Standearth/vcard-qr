@@ -3,14 +3,16 @@ FROM node:24-slim AS builder
 WORKDIR /app
 
 RUN npm install -g pnpm
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY headless-api/package.json ./headless-api/
-RUN pnpm install --filter headless-api...
 
-COPY headless-api/ ./headless-api/
-COPY tsconfig.base.json ./
+# Copy the entire monorepo
+COPY . .
+
+# Install dependencies and build
+RUN pnpm install
 RUN pnpm --filter headless-api build
-RUN pnpm prune --prod
+
+# Isolate the headless-api package into a clean, production-ready folder
+RUN pnpm deploy --filter headless-api --prod --legacy /prod/headless-api
 
 # Stage 2: Production
 FROM node:24-slim
@@ -22,13 +24,10 @@ RUN apt-get update \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Tell Puppeteer where to find the installed Chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/headless-api/node_modules ./headless-api/node_modules
-COPY --from=builder /app/headless-api/package.json ./headless-api/
-COPY --from=builder /app/headless-api/dist ./headless-api/dist
+# Copy the isolated production package
+COPY --from=builder /prod/headless-api ./
 
 EXPOSE 8080
-CMD [ "node", "headless-api/dist/index.js" ]
+CMD [ "node", "dist/index.js" ]

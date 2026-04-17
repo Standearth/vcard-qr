@@ -20,7 +20,6 @@ function getMinifiedJson(filePath) {
 }
 
 // Helper to parse a JSON string from the .env file
-// It expects the value to be wrapped in single quotes, e.g., '{"key":"value"}'
 function getParsedEnvJson(envVar, varName) {
   if (!envVar) {
     console.error(
@@ -29,7 +28,11 @@ function getParsedEnvJson(envVar, varName) {
     process.exit(1);
   }
   try {
-    const cleanString = envVar.slice(1, -1); // Remove outer single quotes
+    let cleanString = envVar;
+    // Only remove outer single quotes if they actually survived the dotenv parsing
+    if (cleanString.startsWith("'") && cleanString.endsWith("'")) {
+      cleanString = cleanString.slice(1, -1);
+    }
     return JSON.stringify(JSON.parse(cleanString));
   } catch (error) {
     console.error(`Error parsing JSON from ${varName}:`, error.message);

@@ -29,7 +29,7 @@ PROJECT_EXISTS  := $(shell gcloud projects describe $(PROJECT_ID) >/dev/null 2>&
 ADC_FILE        = $(HOME)/.config/gcloud/application_default_credentials.json
 
 # --- Argument Parsing & Target Validation ---
-KNOWN_TARGETS   := all dev setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars update-tfvars upload-google-wallet-sa-key
+KNOWN_TARGETS   := all dev setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars update-tfvars upload-google-wallet-sa-key
 
 # This captures the first unlabelled argument passed after the target
 ARG := $(firstword $(filter-out $(KNOWN_TARGETS) $(MAKECMDGOALS),$(MAKECMDGOALS)))
@@ -66,15 +66,15 @@ SECRET_WWDR           = apple-wallet-wwdr-cert
 SECRET_GOOGLE_WALLET_SA_KEY = google-wallet-sa-key
 REPO_NAME             = $(SERVICE_NAME)-repo
 
-.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets map-custom-domain check-domain-status add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
+.PHONY: all setup _setup_tasks create-project setup-project create-service-account create-workload-identity create-secrets add-secrets-placeholder add-secrets-local terraform-apply terraform-destroy help upload-signer-key upload-signer-cert upload-wwdr-cert show-github-secrets add-local-https-certs add-private-key add-placeholder-certificate create-certificate-signing-request cer-to-pem cleanup-images-now gcloud-auth check-auth create-state-bucket check-env-vars
 
 # Default target
 all: help
 
 # Helper target to ensure essential .env variables are set
 check-env-vars:
-	@if [ -z "$(FRONTEND_DOMAIN)" ] || [ -z "$(BACKEND_DOMAIN)" ] || [ -z "$(GITHUB_REPO)" ]; then \
-		echo "❌ Error: FRONTEND_DOMAIN, BACKEND_DOMAIN, or GITHUB_REPO is not set."; \
+	@if [ -z "$(FRONTEND_DOMAIN)" ] || [ -z "$(BACKEND_DOMAIN)" ] || [ -z "$(API_DOMAIN)" ] || [ -z "$(GITHUB_REPO)" ]; then \
+		echo "❌ Error: FRONTEND_DOMAIN, BACKEND_DOMAIN, API_DOMAIN, or GITHUB_REPO is not set."; \
 		echo "   Please copy .env.template to .env and configure these variables first."; \
 		exit 1; \
 	fi
@@ -434,20 +434,6 @@ terraform-destroy: check-gcp-project
 	@terraform init -backend-config="bucket=$(PROJECT_ID)-tfstate"
 	@terraform destroy -auto-approve
 
-map-custom-domain: check-gcp-project check-env-vars
-	@echo "🌐 Mapping custom domain '$(BACKEND_DOMAIN)' to service '$(SERVICE_NAME)'..."
-	@echo "   -> This requires that you have already configured a CNAME record pointing to ghs.googlehosted.com."
-	@-gcloud beta run domain-mappings create \
-		--service=$(SERVICE_NAME) \
-		--domain=$(BACKEND_DOMAIN) \
-		--region=$(REGION) \
-		--project=$(PROJECT_ID) || \
-	echo "✅ Domain mapping may already exist. Check status with 'make check-domain-status'."
-
-check-domain-status: check-gcp-project check-env-vars
-	@echo "🔎 Checking status for custom domain '$(BACKEND_DOMAIN)'..."
-	@gcloud beta run domain-mappings describe --domain=$(BACKEND_DOMAIN) --project=$(PROJECT_ID) --region=$(REGION)
-
 cleanup-images-now: check-gcp-project
 	@echo "🧹 Deleting all untagged images from Artifact Registry repository '$(REPO_NAME)'..."
 	@gcloud artifacts docker images list $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPO_NAME) --filter='-tags:*' --format='get(digest)' --quiet | \
@@ -489,10 +475,6 @@ help:
 	@echo "  terraform-destroy          Destroys all managed infrastructure."
 	@echo "  create-state-bucket        Creates the GCS bucket for storing Terraform remote state."
 	@echo "  cleanup-images-now         Immediately deletes all untagged Docker images from the repository."
-	@echo ""
-	@echo "--- POST-DEPLOYMENT ---"
-	@echo "  map-custom-domain          Maps your custom domain to the Cloud Run service."
-	@echo "  check-domain-status        Checks the status of the custom domain mapping."
 	@echo ""
 	@echo "--- GITHUB ACTIONS ---"
 	@echo "  show-github-secrets        Displays the required secrets for your GitHub repository."

@@ -5,6 +5,7 @@
   "workspaces": [
     "frontend",
     "server",
+    "headless-api",
     "packages/*"
   ],
   "scripts": {

@@ -54,10 +54,22 @@ variable "frontend_domain" {
   type        = string
   description = "The production domain for the frontend."
 }
+
+variable "backend_domain" {
+  type        = string
+  description = "The production domain for the pkpass backend API."
+}
+
+variable "api_domain" {
+  type        = string
+  description = "The production domain for the headless QR API."
+}
+
 variable "vite_org_name" {
   type        = string
   description = "The name of the organization (from VITE_ORG_NAME)."
 }
+
 variable "pass_config" {
   type        = string
   description = "The pkpass configuration (json)."
@@ -94,7 +106,7 @@ resource "google_project_service" "apis" {
   disable_on_destroy = false
 }
 
-# Artifact Registry to store the Docker image
+# PKPass Server Artifact Registry
 resource "google_artifact_registry_repository" "docker_repo" {
   project       = var.gcp_project_id
   location      = var.gcp_region
@@ -112,7 +124,26 @@ resource "google_artifact_registry_repository" "docker_repo" {
   }
 }
 
-# Cloud Run Service
+# Headless API Artifact Registry
+resource "google_artifact_registry_repository" "api_repo" {
+  project       = var.gcp_project_id
+  location      = var.gcp_region
+  repository_id = "headless-api-repo"
+  description   = "Docker repository for the headless-api"
+  format        = "DOCKER"
+  depends_on    = [google_project_service.apis]
+  
+  cleanup_policies {
+    id     = "delete-untagged-images-after-7-days"
+    action = "DELETE"
+    condition {
+      tag_state  = "UNTAGGED"
+      older_than = "604800s" # 7 days in seconds
+    }
+  }
+}
+
+# PassKit & Google Wallet Cloud Run Service
 resource "google_cloud_run_v2_service" "default" {
   name     = var.service_name
   location = var.gcp_region
@@ -180,6 +211,63 @@ resource "google_cloud_run_service_iam_member" "public_access" {
   member   = "allUsers"
 }
 
+# Headless API Wrapper Cloud Run Service
+resource "google_cloud_run_v2_service" "headless_api" {
+  name     = "headless-api"
+  location = var.gcp_region
+  project  = var.gcp_project_id
+
+  template {
+    containers {
+      image = "${var.gcp_region}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.api_repo.repository_id}/headless-api:latest"
+      
+      resources {
+        limits = {
+          memory = "2Gi"
+          cpu    = "1000m"
+        }
+      }
+      env {
+        name  = "FRONTEND_DOMAIN"
+        value = var.frontend_domain
+      }
+    }
+  }
+}
+
+# Allow public access to the Headless API Wrapper Cloud Run Service
+resource "google_cloud_run_service_iam_member" "headless_public" {
+  location = google_cloud_run_v2_service.headless_api.location
+  project  = google_cloud_run_v2_service.headless_api.project
+  service  = google_cloud_run_v2_service.headless_api.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+# 1. Map the existing Backend Domain
+resource "google_cloud_run_domain_mapping" "backend_domain" {
+  location = var.gcp_region
+  name     = var.backend_domain
+  metadata {
+    namespace = var.gcp_project_id
+  }
+  spec {
+    route_name = google_cloud_run_v2_service.default.name
+  }
+}
+
+# 2. Map the new Headless API Domain
+resource "google_cloud_run_domain_mapping" "api_domain" {
+  location = var.gcp_region
+  name     = var.api_domain
+  metadata {
+    namespace = var.gcp_project_id
+  }
+  spec {
+    route_name = google_cloud_run_v2_service.headless_api.name
+  }
+}
+
 # --- Permissions for the Cloud Run Service Account ---
 # This allows the running service to access its required secrets.
 resource "google_secret_manager_secret_iam_member" "secret_access" {
@@ -203,6 +291,14 @@ resource "google_artifact_registry_repository_iam_member" "writer" {
   project    = google_artifact_registry_repository.docker_repo.project
   location   = google_artifact_registry_repository.docker_repo.location
   repository = google_artifact_registry_repository.docker_repo.name
+  role       = "roles/artifactregistry.writer"
+  member     = "serviceAccount:${data.google_service_account.github_runner_sa.email}"
+}
+
+resource "google_artifact_registry_repository_iam_member" "api_writer" {
+  project    = google_artifact_registry_repository.api_repo.project
+  location   = google_artifact_registry_repository.api_repo.location
+  repository = google_artifact_registry_repository.api_repo.name
   role       = "roles/artifactregistry.writer"
   member     = "serviceAccount:${data.google_service_account.github_runner_sa.email}"
 }

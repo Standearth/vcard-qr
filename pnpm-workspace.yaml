@@ -1,6 +1,7 @@
 packages:
   - frontend
   - server
+  - headless-api
   - packages/*
 
 onlyBuiltDependencies:

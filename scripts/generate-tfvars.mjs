@@ -48,11 +48,14 @@ if (fs.existsSync(tfvarsPath)) {
 }
 
 // Construct the new content for terraform.tfvars
+// scripts/generate-tfvars.mjs
 const newTfvarsContent = `
 ${projectIdLine}
-frontend_domain = ${process.env.FRONTEND_DOMAIN}
-vite_org_name = ${process.env.VITE_ORG_NAME}
-google_issuer_id = ${process.env.GOOGLE_ISSUER_ID}
+frontend_domain = "${process.env.FRONTEND_DOMAIN}"
+backend_domain = "${process.env.BACKEND_DOMAIN}"
+api_domain = "${process.env.API_DOMAIN}"
+vite_org_name = "${process.env.VITE_ORG_NAME}"
+google_issuer_id = "${process.env.GOOGLE_ISSUER_ID}"
 
 photo_service_url = <<EOT
 ${getParsedEnvJson(process.env.PHOTO_SERVICE_URL, 'PHOTO_SERVICE_URL')}

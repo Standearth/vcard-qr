@@ -67,6 +67,7 @@ class AsyncQRCodeStyling extends QRCodeStyling {
   private _shouldApplyCustomLogic = false;
   private _showWrapOutline = false;
   private _wrapSize = 0.1;
+  public renderPromise: Promise<void> = Promise.resolve();
 
   public override update(
     options?: Partial<Options> & {
@@ -111,8 +112,12 @@ class AsyncQRCodeStyling extends QRCodeStyling {
 
       super.update(sanitizedOptions);
     };
+
     if (this._shouldApplyCustomLogic && options?.image) {
-      this.createImageOutline(options.image, originalImageMargin)
+      this.renderPromise = this.createImageOutline(
+        options.image,
+        originalImageMargin
+      )
         .then((outlineResult) => {
           this._customOutlineResult = outlineResult;
         })
@@ -124,6 +129,7 @@ class AsyncQRCodeStyling extends QRCodeStyling {
     } else {
       this._customOutlineResult = null;
       processUpdate();
+      this.renderPromise = Promise.resolve();
     }
   }
 

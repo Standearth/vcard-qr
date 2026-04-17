@@ -37,6 +37,7 @@ export class App {
   private ui: UIManager;
   private modalQrCode: AsyncQRCodeStyling;
   private logoManager: LogoManager;
+  private renderLock: Promise<void> = Promise.resolve();
 
   constructor() {
     this.ui = new UIManager(this);
@@ -325,21 +326,36 @@ export class App {
     });
   };
 
-  updateQRCode = (isLiveUpdate = false): Promise<boolean> => {
-    const data = this.getQRCodeData();
-    const config = this.buildQrConfig(data, isLiveUpdate);
+  updateQRCode = async (isLiveUpdate = false): Promise<boolean> => {
+    let releaseLock: () => void;
+    const localLock = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+    const previousLock = this.renderLock;
+    this.renderLock = previousLock.then(() => localLock);
 
-    return this.loadImageAsync()
-      .then((image) => {
-        config.image = image || '';
-        qrCode.update(config); // This is synchronous
-        return true;
-      })
-      .catch((error: unknown) => {
-        console.error('QR Code generation error:', error);
-        qrCode.update({ ...config, data: '' });
-        return false;
-      });
+    await previousLock;
+
+    try {
+      const data = this.getQRCodeData();
+      const config = this.buildQrConfig(data, isLiveUpdate);
+
+      const image = await this.loadImageAsync();
+      config.image = image || '';
+
+      qrCode.update(config);
+      await qrCode.renderPromise;
+      await qrCode.getRawData('png').catch(() => {});
+
+      return true;
+    } catch (error) {
+      console.error('QR Code generation error:', error);
+      qrCode.update({ ...this.buildQrConfig('', isLiveUpdate), data: '' });
+      await qrCode.renderPromise;
+      return false;
+    } finally {
+      releaseLock!();
+    }
   };
 
   handleRouteChange = async (): Promise<void> => {

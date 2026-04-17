@@ -39,20 +39,10 @@ async function getHotPage(): Promise<Page> {
     if (isDebug) console.log('Booting new hot-reload page...');
     hotPage = await globalBrowser.newPage();
 
-    await hotPage.setRequestInterception(true);
-    hotPage.on('request', (req) => {
-      const resourceType = req.resourceType();
-      if (['stylesheet', 'font', 'media'].includes(resourceType)) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
-
     const frontendDomain = process.env.FRONTEND_DOMAIN || 'qr.stand.earth';
     const targetUrl = `https://${frontendDomain}/#/custom/`;
 
-    // We only pay the 444ms page.goto penalty ONCE
+    // We only pay the page.goto penalty ONCE
     await hotPage.goto(targetUrl, { waitUntil: 'domcontentloaded' });
 
     // Ensure the app instance is bound to the window before returning
@@ -97,7 +87,7 @@ router.get('/generate', async (req, res) => {
 
       window.location.hash = `#/custom/?${qs}`;
 
-      // Directly await your App's built-in state compiler to guarantee the canvas is fully redrawn
+      // Tell the app to update based on the new URL
       await browserWindow.appInstance.handleRouteChange();
 
       const qrCode = browserWindow.appInstance.getQrCode();

@@ -223,8 +223,8 @@ resource "google_cloud_run_v2_service" "headless_api" {
       
       resources {
         limits = {
-          memory = "2Gi"
-          cpu    = "1000m"
+          memory = "4Gi"
+          cpu    = "4000m"
         }
       }
       env {

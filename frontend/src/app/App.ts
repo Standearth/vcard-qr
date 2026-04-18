@@ -345,7 +345,11 @@ export class App {
 
       qrCode.update(config);
       await qrCode.renderPromise;
-      await qrCode.getRawData('png').catch(() => {});
+
+      // Generate blob if not in headless API
+      if (!navigator.userAgent.includes('HeadlessChrome')) {
+        await qrCode.getRawData('png').catch(() => {});
+      }
 
       return true;
     } catch (error) {

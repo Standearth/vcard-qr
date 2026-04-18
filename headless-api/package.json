@@ -10,6 +10,7 @@
     "dev": "pnpm build && node --env-file=../.env $([ -f ../.env.local ] && echo '--env-file=../.env.local') dist/index.js"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^147.0.1",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "puppeteer-core": "^24.41.0"

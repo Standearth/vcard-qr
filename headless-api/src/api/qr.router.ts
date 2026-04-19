@@ -11,7 +11,6 @@ let hotPage: Page | null = null;
 let pageLock: Promise<void> = Promise.resolve();
 let requestCount = 0;
 
-// List of all supported frontend tabs
 const VALID_MODES = [
   'vcard',
   'link',
@@ -22,10 +21,60 @@ const VALID_MODES = [
   'custom',
 ];
 
+// STRICT WHITELIST
+const ALLOWED_PARAMS = [
+  'presets',
+  'first_name',
+  'last_name',
+  'org',
+  'title',
+  'email',
+  'office_phone',
+  'extension',
+  'work_phone',
+  'cell_phone',
+  'website',
+  'linkedin',
+  'whatsapp',
+  'signal',
+  'notes',
+  'link_url',
+  'wifi_ssid',
+  'wifi_password',
+  'wifi_encryption',
+  'wifi_hidden',
+  'sms_phone',
+  'sms_message',
+  'call_phone',
+  'email_to',
+  'email_subject',
+  'email_body',
+  'custom_content',
+  'width',
+  'height',
+  'margin',
+  'optimize_size',
+  'round_size',
+  'show_image',
+  'dots_type',
+  'dots_color',
+  'corners_square_type',
+  'corners_square_color',
+  'corners_dot_type',
+  'corners_dot_color',
+  'background_color',
+  'hide_background_dots',
+  'wrap_size',
+  'image_size',
+  'image_margin',
+  'qr_type_number',
+  'qr_error_correction_level',
+  'logo_url',
+];
+
 async function getHotPage(): Promise<Page> {
   if (!globalBrowser) {
     if (isDebug) console.log('Launching persistent headless browser...');
-
     const isProduction = process.env.NODE_ENV === 'production';
 
     globalBrowser = await puppeteer.launch({
@@ -58,30 +107,31 @@ async function getHotPage(): Promise<Page> {
   if (!hotPage || hotPage.isClosed()) {
     if (isDebug) console.log('Booting new hot-reload page...');
     hotPage = await globalBrowser.newPage();
-
     const port = process.env.PORT || 8080;
-    const targetUrl = `http://localhost:${port}/#/custom/`;
 
-    await hotPage.goto(targetUrl, { waitUntil: 'networkidle0' });
+    // Boot with dummy data to ensure the library mounts the canvas on cold start
+    await hotPage.goto(
+      `http://localhost:${port}/#/custom/?custom_content=prewarm`,
+      {
+        waitUntil: 'networkidle0',
+      }
+    );
 
     await hotPage.waitForFunction(
       () => typeof (window as any).appInstance !== 'undefined'
     );
+    await hotPage.waitForSelector('#canvas canvas', { timeout: 10000 });
   }
 
   return hotPage;
 }
 
-// 1. Define the shared handler
-// Explicitly use express.Request and express.Response
 const generateQrHandler = async (
   req: express.Request,
   res: express.Response
 ): Promise<void> => {
-  // If mode isn't in the path parameters, default to 'custom'
   const mode = String(req.params.mode || 'custom').toLowerCase();
 
-  // Validate the mode
   if (!VALID_MODES.includes(mode)) {
     res
       .status(400)
@@ -91,135 +141,161 @@ const generateQrHandler = async (
 
   const timerLabel = `Hot-Request-${Math.random().toString(36).substring(7)}`;
 
-  // --- MUTEX LOCK START ---
   let releaseLock: () => void;
   const localLock = new Promise<void>((resolve) => {
     releaseLock = resolve;
   });
-
   const previousLock = pageLock;
   pageLock = previousLock.then(() => localLock);
-
   await previousLock;
-  // --- MUTEX LOCK END ---
 
   try {
     if (isDebug) console.time(timerLabel);
     const page = await getHotPage();
 
-    const queryString = new URLSearchParams(
-      req.query as Record<string, string>
-    ).toString();
+    const safeQuery: Record<string, string> = {};
+    for (const key of ALLOWED_PARAMS) {
+      if (req.query[key] !== undefined) {
+        safeQuery[key] = String(req.query[key]);
+      }
+    }
+    const queryString = new URLSearchParams(safeQuery).toString();
 
-    // 3. Pass BOTH the query string and the mode into the headless browser context
     const result = await page.evaluate(
       async ({ qs, targetMode }) => {
         const marks: Record<string, number> = {};
         marks.start = performance.now();
 
         interface ExtendedWindow extends Window {
-          appInstance: {
-            handleRouteChange: () => Promise<void>;
-          };
+          appInstance: { handleRouteChange: () => Promise<void> };
         }
         const browserWindow = window as unknown as ExtendedWindow;
 
-        // Step 1: Update URL with the dynamic mode
-        window.history.replaceState(null, '', `#/${targetMode}/?${qs}`);
-        marks.replaceState = performance.now();
+        const canvas = document.querySelector(
+          '#canvas canvas'
+        ) as HTMLCanvasElement | null;
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
 
-        // --- ASYNC IMAGE TRACKER ---
+        window.history.replaceState(null, '', `#/${targetMode}/?${qs}`);
+
+        let expectsLogo = false;
         const imageLoadPromises: Promise<void>[] = [];
+
         const originalImageSrc = Object.getOwnPropertyDescriptor(
           HTMLImageElement.prototype,
           'src'
         );
-
         if (originalImageSrc) {
           Object.defineProperty(HTMLImageElement.prototype, 'src', {
             set: function (this: HTMLImageElement, value: string) {
               if (value) {
-                // 1. Initialize with a no-op function to satisfy TS control-flow analysis
+                expectsLogo = true;
                 let res: () => void = () => {};
                 imageLoadPromises.push(
                   new Promise((r) => {
                     res = r;
                   })
                 );
-
                 this.addEventListener('load', res, { once: true });
                 this.addEventListener('error', res, { once: true });
               }
-
-              // 2. Explicitly check if the native setter exists before calling it
-              if (originalImageSrc.set) {
-                originalImageSrc.set.call(this, value);
-              }
+              if (originalImageSrc.set) originalImageSrc.set.call(this, value);
             },
           });
         }
 
-        // Step 2: Trigger UI update
-        // This synchronously draws the background and starts downloading the async logo
-        await browserWindow.appInstance.handleRouteChange();
-        marks.routeChange = performance.now();
+        try {
+          await browserWindow.appInstance.handleRouteChange();
+          marks.routeChange = performance.now();
 
-        // Step 3: Dynamic Image Wait
-        if (imageLoadPromises.length > 0) {
-          // Wait for all images to load (with our 2000ms safety net for cold boots)
-          const fallbackTimer = new Promise((resolve) =>
-            setTimeout(resolve, 2000)
-          );
-          await Promise.race([Promise.all(imageLoadPromises), fallbackTimer]);
+          if (expectsLogo && imageLoadPromises.length > 0) {
+            const fallbackTimer = new Promise<void>((resolve) =>
+              setTimeout(resolve, 2000)
+            );
+            await Promise.race([Promise.all(imageLoadPromises), fallbackTimer]);
+          }
 
-          // Give the event loop 10ms to execute the library's img.onload callback
-          // so it has time to actually paint the loaded image to the canvas.
-          await new Promise((r) => setTimeout(r, 10));
+          // --- OPTIMIZED HARDWARE SYNC ---
+          const finalCanvas = document.querySelector(
+            '#canvas canvas'
+          ) as HTMLCanvasElement | null;
+
+          // 1. Force the Canvas API to synchronously flush all pending drawImage commands
+          if (finalCanvas) {
+            const ctx = finalCanvas.getContext('2d');
+            if (ctx) ctx.getImageData(0, 0, 1, 1);
+          }
+
+          // 2. Synchronize with the browser's render cycle.
+          // requestAnimationFrame runs *right before* the browser paints.
+          // By putting a tiny setTimeout inside it, we guarantee our extraction runs
+          // *immediately after* the browser finishes painting the buffer to the screen.
+          await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => {
+              setTimeout(resolve, 15);
+            });
+          });
+
+          marks.paintWait = performance.now();
+
+          const base64 = finalCanvas
+            ? finalCanvas.toDataURL('image/png').substring(22)
+            : '';
+          marks.canvasExtract = performance.now();
+
+          return {
+            base64String: base64,
+            metrics: {
+              routeChangeMs: (marks.routeChange - marks.start).toFixed(2),
+              paintWaitMs: (marks.paintWait - marks.routeChange).toFixed(2),
+              canvasExtractMs: (marks.canvasExtract - marks.paintWait).toFixed(
+                2
+              ),
+              totalBrowserMs: (marks.canvasExtract - marks.start).toFixed(2),
+            },
+          };
+        } finally {
+          if (originalImageSrc) {
+            Object.defineProperty(
+              HTMLImageElement.prototype,
+              'src',
+              originalImageSrc
+            );
+          }
         }
-
-        // Restore pristine browser behavior
-        if (originalImageSrc) {
-          Object.defineProperty(
-            HTMLImageElement.prototype,
-            'src',
-            originalImageSrc
-          );
-        }
-        marks.paintWait = performance.now();
-
-        // Step 4: Extract the fully painted image
-        const canvas = document.querySelector(
-          '#canvas canvas'
-        ) as HTMLCanvasElement;
-        const base64 = canvas.toDataURL('image/png').split(',')[1];
-        marks.canvasExtract = performance.now();
-
-        return {
-          base64String: base64,
-          metrics: {
-            replaceStateMs: (marks.replaceState - marks.start).toFixed(2),
-            routeChangeMs: (marks.routeChange - marks.replaceState).toFixed(2),
-            paintWaitMs: (marks.paintWait - marks.routeChange).toFixed(2),
-            canvasExtractMs: (marks.canvasExtract - marks.paintWait).toFixed(2),
-            totalBrowserMs: (marks.canvasExtract - marks.start).toFixed(2),
-          },
-        };
       },
       { qs: queryString, targetMode: mode }
     );
 
-    if (isDebug)
+    if (isDebug) {
       console.log(`[${timerLabel}] Browser Metrics:`, result.metrics);
+    }
 
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.setHeader('Content-Type', 'image/png');
-    res.send(Buffer.from(result.base64String, 'base64'));
+    if (!result.base64String || result.base64String.length < 500) {
+      res
+        .status(400)
+        .send('Invalid parameters provided. Unable to generate QR code.');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('Content-Type', 'image/png');
+      res.send(Buffer.from(result.base64String, 'base64'));
+    }
 
     if (isDebug) console.timeEnd(timerLabel);
 
-    // Memory Leak Protection
+    const tookTooLong =
+      result.metrics?.paintWaitMs &&
+      parseFloat(result.metrics.paintWaitMs) >= 1900;
     requestCount++;
-    if (requestCount > 100) {
+
+    if (tookTooLong || requestCount > 100) {
+      if (isDebug && tookTooLong)
+        console.log(
+          `[${timerLabel}] Fallback timeout hit. Recycling page state...`
+        );
       hotPage?.close().catch(() => {});
       hotPage = null;
       requestCount = 0;
@@ -233,11 +309,9 @@ const generateQrHandler = async (
   }
 };
 
-// 2. Bind the shared handler to both the legacy and new dynamic routes
 router.get('/generate', generateQrHandler);
 router.get('/:mode/generate', generateQrHandler);
 
-// Pre-warm browser during startup
 getHotPage()
   .then(() => {
     console.log('🔥 Browser and Hot Page pre-warmed and ready.');

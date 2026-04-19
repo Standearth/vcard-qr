@@ -124,7 +124,6 @@ async function createHotPage(): Promise<Page> {
     }
   });
 
-  // INJECT RESILIENT FETCH WITH ABORT CONTROLLER
   await page.evaluateOnNewDocument(() => {
     const originalFetch = window.fetch;
     window.fetch = async (...args) => {
@@ -192,7 +191,6 @@ class PagePool {
           this.pageUsageCount.set(page, 0);
           return page;
         } catch (error) {
-          // If creation fails, decrement count and wake the next person in line
           this.activeCount--;
           if (this.waitingQueue.length > 0) this.waitingQueue.shift()!();
           throw error;
@@ -204,7 +202,6 @@ class PagePool {
   }
 
   release(page: Page | null, forceRecycle = false): void {
-    // FIX: If page is null (e.g. acquire threw), do not touch activeCount here.
     if (!page) {
       if (this.waitingQueue.length > 0) this.waitingQueue.shift()!();
       return;
@@ -212,7 +209,7 @@ class PagePool {
 
     if (forceRecycle || page.isClosed()) {
       page.close().catch(() => {});
-      this.activeCount--; // We safely decrement because we lost a physical page
+      this.activeCount--;
     } else {
       const uses = (this.pageUsageCount.get(page) || 0) + 1;
       this.pageUsageCount.set(page, uses);
@@ -273,7 +270,6 @@ const generateQrHandler = async (
     }
     const queryString = new URLSearchParams(safeQuery).toString();
 
-    // Safety timeout: If evaluate hangs entirely, reject it after 10s
     const evaluatePromise = page.evaluate(
       async ({ qs, targetMode }) => {
         const marks: Record<string, number> = {};
@@ -320,6 +316,39 @@ const generateQrHandler = async (
           });
         }
 
+        let hasStartedDrawing = false;
+        let lastDrawTime = performance.now();
+
+        const originalFillRect = CanvasRenderingContext2D.prototype.fillRect;
+        CanvasRenderingContext2D.prototype.fillRect = function (
+          this: CanvasRenderingContext2D,
+          ...args: any[]
+        ) {
+          hasStartedDrawing = true;
+          lastDrawTime = performance.now();
+          return (originalFillRect as any).apply(this, args);
+        };
+
+        const originalFill = CanvasRenderingContext2D.prototype.fill;
+        CanvasRenderingContext2D.prototype.fill = function (
+          this: CanvasRenderingContext2D,
+          ...args: any[]
+        ) {
+          hasStartedDrawing = true;
+          lastDrawTime = performance.now();
+          return (originalFill as any).apply(this, args);
+        };
+
+        const originalDrawImage = CanvasRenderingContext2D.prototype.drawImage;
+        CanvasRenderingContext2D.prototype.drawImage = function (
+          this: CanvasRenderingContext2D,
+          ...args: any[]
+        ) {
+          hasStartedDrawing = true;
+          lastDrawTime = performance.now();
+          return (originalDrawImage as any).apply(this, args);
+        };
+
         try {
           await browserWindow.appInstance.handleRouteChange();
           marks.routeChange = performance.now();
@@ -331,17 +360,26 @@ const generateQrHandler = async (
             await Promise.race([Promise.all(imageLoadPromises), fallbackTimer]);
           }
 
+          // 1. Wait for Cloud Run to allocate CPU and React to trigger the first draw
+          const waitStart = performance.now();
+          while (!hasStartedDrawing && performance.now() - waitStart < 2500) {
+            await new Promise((r) => setTimeout(r, 10));
+          }
+
+          // 2. Wait until there is a 50ms period of absolute drawing silence
+          if (hasStartedDrawing) {
+            while (performance.now() - lastDrawTime < 50) {
+              await new Promise((r) => setTimeout(r, 10));
+            }
+          }
+
           const finalCanvas = document.querySelector(
             '#canvas canvas'
           ) as HTMLCanvasElement | null;
-
           if (finalCanvas) {
-            // Force the canvas pipeline to synchronously flush all pending draw commands
             const ctx = finalCanvas.getContext('2d');
-            if (ctx) ctx.getImageData(0, 0, 1, 1);
+            if (ctx) ctx.getImageData(0, 0, 1, 1); // Flush pipeline
           }
-
-          await new Promise((r) => setTimeout(r, 20));
 
           marks.paintWait = performance.now();
 
@@ -362,13 +400,15 @@ const generateQrHandler = async (
             },
           };
         } finally {
-          if (originalImageSrc) {
+          if (originalImageSrc)
             Object.defineProperty(
               HTMLImageElement.prototype,
               'src',
               originalImageSrc
             );
-          }
+          CanvasRenderingContext2D.prototype.fillRect = originalFillRect;
+          CanvasRenderingContext2D.prototype.fill = originalFill;
+          CanvasRenderingContext2D.prototype.drawImage = originalDrawImage;
         }
       },
       { qs: queryString, targetMode: mode }
@@ -397,7 +437,7 @@ const generateQrHandler = async (
 
     if (
       result.metrics?.paintWaitMs &&
-      parseFloat(result.metrics.paintWaitMs) >= 1900
+      parseFloat(result.metrics.paintWaitMs) >= 2400
     ) {
       if (isDebug)
         console.log(

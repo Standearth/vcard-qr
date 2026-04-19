@@ -47,3 +47,6 @@ lerna-debug.log*
 
 Temporary files
 *.tmp
+
+# Benchmark output
+headless-api/benchmark-results/

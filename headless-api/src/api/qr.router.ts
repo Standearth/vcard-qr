@@ -6,10 +6,10 @@ import chromium from '@sparticuz/chromium';
 const router: Router = Router();
 const isDebug = (process.env.LOG_LEVEL || '').toLowerCase() === 'debug';
 
+const MAX_PAGES = parseInt(process.env.PAGE_POOL_SIZE || '4', 10);
+const MAX_USES_PER_PAGE = 100;
+
 let globalBrowser: Browser | null = null;
-let hotPage: Page | null = null;
-let pageLock: Promise<void> = Promise.resolve();
-let requestCount = 0;
 
 const VALID_MODES = [
   'vcard',
@@ -21,7 +21,6 @@ const VALID_MODES = [
   'custom',
 ];
 
-// STRICT WHITELIST
 const ALLOWED_PARAMS = [
   'presets',
   'first_name',
@@ -72,59 +71,177 @@ const ALLOWED_PARAMS = [
   'logo_url',
 ];
 
-async function getHotPage(): Promise<Page> {
-  if (!globalBrowser) {
-    if (isDebug) console.log('Launching persistent headless browser...');
-    const isProduction = process.env.NODE_ENV === 'production';
+async function initBrowser(): Promise<void> {
+  if (globalBrowser) return;
+  if (isDebug) console.log('Launching persistent headless browser...');
 
-    globalBrowser = await puppeteer.launch({
-      args: isProduction
-        ? chromium.args
-        : [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--ignore-certificate-errors',
-            '--disable-gpu',
-            '--disable-extensions',
-            '--no-first-run',
-            '--no-zygote',
-          ],
-      defaultViewport: { width: 1920, height: 1080 },
-      executablePath: isProduction
-        ? await chromium.executablePath()
-        : process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
-      headless: true,
-      acceptInsecureCerts: true,
-    });
+  const isProduction = process.env.NODE_ENV === 'production';
 
-    globalBrowser.on('disconnected', () => {
-      globalBrowser = null;
-      hotPage = null;
-    });
-  }
+  const baseArgs = [
+    '--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+  ];
 
-  if (!hotPage || hotPage.isClosed()) {
-    if (isDebug) console.log('Booting new hot-reload page...');
-    hotPage = await globalBrowser.newPage();
-    const port = process.env.PORT || 8080;
+  const launchArgs = isProduction
+    ? [...chromium.args, ...baseArgs]
+    : [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--ignore-certificate-errors',
+        '--disable-gpu',
+        '--disable-extensions',
+        '--no-first-run',
+        '--no-zygote',
+        ...baseArgs,
+      ];
 
-    // Boot with dummy data to ensure the library mounts the canvas on cold start
-    await hotPage.goto(
-      `http://localhost:${port}/#/custom/?custom_content=prewarm`,
-      {
-        waitUntil: 'networkidle0',
-      }
-    );
+  globalBrowser = await puppeteer.launch({
+    args: launchArgs,
+    defaultViewport: { width: 1920, height: 1080 },
+    executablePath: isProduction
+      ? await chromium.executablePath()
+      : process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+    headless: true,
+    acceptInsecureCerts: true,
+  });
 
-    await hotPage.waitForFunction(
-      () => typeof (window as any).appInstance !== 'undefined'
-    );
-    await hotPage.waitForSelector('#canvas canvas', { timeout: 10000 });
-  }
-
-  return hotPage;
+  globalBrowser.on('disconnected', () => {
+    globalBrowser = null;
+    pagePool.reset();
+  });
 }
+
+async function createHotPage(): Promise<Page> {
+  if (!globalBrowser) throw new Error('Browser not initialized');
+
+  const page = await globalBrowser.newPage();
+
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      console.error(`[Browser Error]: ${msg.text()}`);
+    }
+  });
+
+  // INJECT RESILIENT FETCH WITH ABORT CONTROLLER
+  await page.evaluateOnNewDocument(() => {
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      let retries = 3;
+      while (retries > 0) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        try {
+          const reqOpts = (args[1] || {}) as RequestInit;
+          reqOpts.signal = controller.signal;
+          const res = await originalFetch(args[0], reqOpts);
+          clearTimeout(timeoutId);
+          if (res.ok) return res;
+        } catch (e) {
+          clearTimeout(timeoutId);
+          console.warn(
+            `[Fetch Retry] Failed fetching ${args[0]}, retries left: ${retries}`
+          );
+        }
+        retries--;
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      return originalFetch(...args);
+    };
+  });
+
+  const port = process.env.PORT || 8080;
+  await page.goto(`http://localhost:${port}/#/custom/?custom_content=prewarm`, {
+    waitUntil: 'domcontentloaded',
+  });
+
+  await page.waitForFunction(
+    () => typeof (window as any).appInstance !== 'undefined'
+  );
+  await page.waitForSelector('#canvas canvas', { timeout: 10000 });
+
+  return page;
+}
+
+class PagePool {
+  private idlePages: Page[] = [];
+  private activeCount = 0;
+  private waitingQueue: (() => void)[] = [];
+  private pageUsageCount = new WeakMap<Page, number>();
+
+  async acquire(): Promise<Page> {
+    while (true) {
+      if (!globalBrowser) await initBrowser();
+
+      if (this.idlePages.length > 0) {
+        const page = this.idlePages.pop()!;
+        if (!page.isClosed()) return page;
+        this.activeCount--;
+        continue;
+      }
+
+      if (this.activeCount < MAX_PAGES) {
+        this.activeCount++;
+        try {
+          const staggerMs = this.activeCount * 100;
+          if (staggerMs > 0) await new Promise((r) => setTimeout(r, staggerMs));
+
+          const page = await createHotPage();
+          this.pageUsageCount.set(page, 0);
+          return page;
+        } catch (error) {
+          // If creation fails, decrement count and wake the next person in line
+          this.activeCount--;
+          if (this.waitingQueue.length > 0) this.waitingQueue.shift()!();
+          throw error;
+        }
+      }
+
+      await new Promise<void>((resolve) => this.waitingQueue.push(resolve));
+    }
+  }
+
+  release(page: Page | null, forceRecycle = false): void {
+    // FIX: If page is null (e.g. acquire threw), do not touch activeCount here.
+    if (!page) {
+      if (this.waitingQueue.length > 0) this.waitingQueue.shift()!();
+      return;
+    }
+
+    if (forceRecycle || page.isClosed()) {
+      page.close().catch(() => {});
+      this.activeCount--; // We safely decrement because we lost a physical page
+    } else {
+      const uses = (this.pageUsageCount.get(page) || 0) + 1;
+      this.pageUsageCount.set(page, uses);
+
+      if (uses >= MAX_USES_PER_PAGE) {
+        if (isDebug) console.log(`Recycling page after ${uses} uses.`);
+        page.close().catch(() => {});
+        this.activeCount--;
+      } else {
+        this.idlePages.push(page);
+      }
+    }
+
+    if (this.waitingQueue.length > 0) {
+      const next = this.waitingQueue.shift();
+      next!();
+    }
+  }
+
+  reset() {
+    this.idlePages = [];
+    this.activeCount = 0;
+    while (this.waitingQueue.length > 0) {
+      this.waitingQueue.shift()!();
+    }
+  }
+}
+
+const pagePool = new PagePool();
 
 const generateQrHandler = async (
   req: express.Request,
@@ -140,18 +257,13 @@ const generateQrHandler = async (
   }
 
   const timerLabel = `Hot-Request-${Math.random().toString(36).substring(7)}`;
-
-  let releaseLock: () => void;
-  const localLock = new Promise<void>((resolve) => {
-    releaseLock = resolve;
-  });
-  const previousLock = pageLock;
-  pageLock = previousLock.then(() => localLock);
-  await previousLock;
+  let page: Page | null = null;
+  let forceRecycle = false;
 
   try {
     if (isDebug) console.time(timerLabel);
-    const page = await getHotPage();
+
+    page = await pagePool.acquire();
 
     const safeQuery: Record<string, string> = {};
     for (const key of ALLOWED_PARAMS) {
@@ -161,7 +273,8 @@ const generateQrHandler = async (
     }
     const queryString = new URLSearchParams(safeQuery).toString();
 
-    const result = await page.evaluate(
+    // Safety timeout: If evaluate hangs entirely, reject it after 10s
+    const evaluatePromise = page.evaluate(
       async ({ qs, targetMode }) => {
         const marks: Record<string, number> = {};
         marks.start = performance.now();
@@ -218,26 +331,17 @@ const generateQrHandler = async (
             await Promise.race([Promise.all(imageLoadPromises), fallbackTimer]);
           }
 
-          // --- OPTIMIZED HARDWARE SYNC ---
           const finalCanvas = document.querySelector(
             '#canvas canvas'
           ) as HTMLCanvasElement | null;
 
-          // 1. Force the Canvas API to synchronously flush all pending drawImage commands
           if (finalCanvas) {
+            // Force the canvas pipeline to synchronously flush all pending draw commands
             const ctx = finalCanvas.getContext('2d');
             if (ctx) ctx.getImageData(0, 0, 1, 1);
           }
 
-          // 2. Synchronize with the browser's render cycle.
-          // requestAnimationFrame runs *right before* the browser paints.
-          // By putting a tiny setTimeout inside it, we guarantee our extraction runs
-          // *immediately after* the browser finishes painting the buffer to the screen.
-          await new Promise<void>((resolve) => {
-            requestAnimationFrame(() => {
-              setTimeout(resolve, 15);
-            });
-          });
+          await new Promise((r) => setTimeout(r, 20));
 
           marks.paintWait = performance.now();
 
@@ -270,11 +374,16 @@ const generateQrHandler = async (
       { qs: queryString, targetMode: mode }
     );
 
+    const resultTimer = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Evaluate timeout')), 10000)
+    );
+    const result = await Promise.race([evaluatePromise, resultTimer]);
+
     if (isDebug) {
       console.log(`[${timerLabel}] Browser Metrics:`, result.metrics);
     }
 
-    if (!result.base64String || result.base64String.length < 500) {
+    if (!result.base64String || result.base64String.length < 50) {
       res
         .status(400)
         .send('Invalid parameters provided. Unable to generate QR code.');
@@ -286,36 +395,28 @@ const generateQrHandler = async (
 
     if (isDebug) console.timeEnd(timerLabel);
 
-    const tookTooLong =
+    if (
       result.metrics?.paintWaitMs &&
-      parseFloat(result.metrics.paintWaitMs) >= 1900;
-    requestCount++;
-
-    if (tookTooLong || requestCount > 100) {
-      if (isDebug && tookTooLong)
+      parseFloat(result.metrics.paintWaitMs) >= 1900
+    ) {
+      if (isDebug)
         console.log(
-          `[${timerLabel}] Fallback timeout hit. Recycling page state...`
+          `[${timerLabel}] Fallback timeout hit. Forcing page recycle.`
         );
-      hotPage?.close().catch(() => {});
-      hotPage = null;
-      requestCount = 0;
+      forceRecycle = true;
     }
   } catch (error) {
-    console.error('Error generating QR code:', error);
+    console.error(`[${timerLabel}] Error generating QR code:`, error);
     res.status(500).send('Internal Server Error generating QR code.');
-    hotPage = null;
+    forceRecycle = true;
   } finally {
-    releaseLock!();
+    pagePool.release(page, forceRecycle);
   }
 };
 
 router.get('/generate', generateQrHandler);
 router.get('/:mode/generate', generateQrHandler);
 
-getHotPage()
-  .then(() => {
-    console.log('🔥 Browser and Hot Page pre-warmed and ready.');
-  })
-  .catch((err) => console.error('Failed to pre-warm browser:', err));
+initBrowser().catch((err) => console.error('Failed to init browser:', err));
 
 export default router;
